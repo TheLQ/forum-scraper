@@ -42,18 +42,20 @@ public class DatabaseStorage {
   }
 
   public String getNodeBufferJSON(String domain) {
-    List<NodeBufferEntry> pages = context
-        .select()
-        .from(Pages.PAGES)
-        .where(Pages.PAGES.DOMAIN.eq(domain))
-        .limit(DownloadNode.URL_QUEUE_REFILL_SIZE)
-//        .fetchInto(PagesRecord.class);
-//        .fetchInto(NodeBufferEntry.class);
-        .fetch()
-        .map(r -> new NodeBufferEntry(Utils.uuidFromBytes(r.get(Pages.PAGES.ID)), r.get(Pages.PAGES.URL)));
+    List<NodeBufferEntry> pages =
+        context
+            .select()
+            .from(Pages.PAGES)
+            .where(Pages.PAGES.DOMAIN.eq(domain))
+            .limit(DownloadNode.URL_QUEUE_REFILL_SIZE)
+            .fetch()
+            .map(
+                r ->
+                    new NodeBufferEntry(
+                        Utils.uuidFromBytes(r.get(Pages.PAGES.ID)), r.get(Pages.PAGES.URL)));
 
     try {
-    return Utils.jsonMapper.writeValueAsString(pages);
+      return Utils.jsonMapper.writeValueAsString(pages);
     } catch (Exception e) {
       throw new RuntimeException("Stuff", e);
     }

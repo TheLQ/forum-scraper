@@ -31,7 +31,7 @@ public class Utils {
   public static String serverGet(String path) {
     URI uri;
     try {
-       uri = new URI("http://127.0.0.1:8080/" + path);
+      uri = new URI("http://127.0.0.1:8080/" + path);
     } catch (Exception e) {
       throw new RuntimeException("Failed to generate URI", e);
     }
