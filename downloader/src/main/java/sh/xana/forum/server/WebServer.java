@@ -94,7 +94,7 @@ public class WebServer extends NanoHTTPD {
         Utils.jsonMapper.readValue(session.getInputStream(), DownloadResponse[].class);
     processor.processResponses(responses);
 
-    return dbStorage.getNodeBufferJSON(domain);
+    return dbStorage.movePageQueuedToDownloadJSON(domain);
   }
 
   static String getRequiredParameter(IHTTPSession session, String key) {

@@ -41,26 +41,6 @@ public class DatabaseStorage {
     return context.select().from(Pages.PAGES).fetchInto(PagesRecord.class);
   }
 
-  public String getNodeBufferJSON(String domain) {
-    List<DownloadRequest> pages =
-        context
-            .select()
-            .from(Pages.PAGES)
-            .where(Pages.PAGES.DOMAIN.eq(domain))
-            .limit(DownloadNode.URL_QUEUE_REFILL_SIZE)
-            .fetch()
-            .map(
-                r ->
-                    new DownloadRequest(
-                        Utils.uuidFromBytes(r.get(Pages.PAGES.ID)), r.get(Pages.PAGES.URL)));
-
-    try {
-      return Utils.jsonMapper.writeValueAsString(pages);
-    } catch (Exception e) {
-      throw new RuntimeException("Stuff", e);
-    }
-  }
-
   public List<OverviewEntry> getOverviewSites() {
     // TODO: SLOW!!! But easy to write version
     List<SitesRecord> sites = getSites();
@@ -163,7 +143,7 @@ public class DatabaseStorage {
   }
 
   /** Change page status */
-  public void setPageStatus(List<UUID> pageIds, DlStatus status) {
+  public void setPageStatus(Collection<UUID> pageIds, DlStatus status) {
     Collection<byte[]> uuidBytes =
         pageIds.stream().map(uuid -> Utils.uuidAsBytes(uuid)).collect(Collectors.toList());
     Query query =
@@ -174,6 +154,41 @@ public class DatabaseStorage {
             .where(Pages.PAGES.ID.in(uuidBytes));
 
     executeRows(query, pageIds.size());
+  }
+
+  /** Move pages to download status and fetch json for DownloadNode */
+  public String movePageQueuedToDownloadJSON(String domain) {
+    List<DownloadRequest> pages =
+        context
+            .select()
+            .from(Pages.PAGES)
+            .where(Pages.PAGES.DOMAIN.eq(domain))
+            .limit(DownloadNode.URL_QUEUE_REFILL_SIZE)
+            .fetch()
+            .map(
+                r ->
+                    new DownloadRequest(
+                        Utils.uuidFromBytes(r.get(Pages.PAGES.ID)), r.get(Pages.PAGES.URL)));
+
+    setPageStatus(pages.stream().map(e -> e.id()).collect(Collectors.toList()), DlStatus.Download);
+
+    try {
+      return Utils.jsonMapper.writeValueAsString(pages);
+    } catch (Exception e) {
+      throw new RuntimeException("Stuff", e);
+    }
+  }
+
+  public void movePageDownloadToParse(UUID pageId, int statusCode) {
+    Query query =
+        context
+            .update(Pages.PAGES)
+            .set(Pages.PAGES.DLSTATUS, DlStatus.Parse.toString())
+            .set(Pages.PAGES.DLSTATUSCODE, statusCode)
+            .set(Pages.PAGES.UPDATED, LocalDateTime.now())
+            .where(Pages.PAGES.ID.in(Utils.uuidAsBytes(pageId)));
+
+    executeOneRow(query);
   }
 
   public void resetDownloadingStatus() {
@@ -205,6 +220,7 @@ public class DatabaseStorage {
     Parse,
     Done,
     Supersede,
+    Error,
   }
 
   /** Pages.PageType column */

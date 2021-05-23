@@ -5,4 +5,4 @@ import java.util.Map;
 import java.util.UUID;
 
 public record DownloadResponse(
-    UUID id, byte[] body, Map<String, List<String>> headers, int responseCode) {}
+    UUID id, byte[] body, Map<String, List<String>> headers, int responseCode, Exception e) {}

@@ -8,4 +8,5 @@ module sh.xana.forum {
   requires java.xml.bind;
   requires org.jooq;
   requires com.fasterxml.jackson.databind;
+  requires org.apache.commons.lang3;
 }

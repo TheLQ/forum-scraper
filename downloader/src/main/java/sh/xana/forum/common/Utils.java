@@ -8,10 +8,13 @@ import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.nio.ByteBuffer;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Utils {
   private Utils() {}
 
+  public static final Logger log = LoggerFactory.getLogger(Utils.class);
   public static final HttpClient httpClient = HttpClient.newHttpClient();
   public static final ObjectMapper jsonMapper = new ObjectMapper();
 
@@ -37,7 +40,7 @@ public class Utils {
           httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
       if (response.statusCode() != 200) {
-        throw new RuntimeException("Failing status code " + 200);
+        throw new RuntimeException("Failing status code " + response.statusCode());
       }
       return response.body();
     } catch (Exception e) {
@@ -57,11 +60,13 @@ public class Utils {
           httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
       if (response.statusCode() != 200) {
-        throw new RuntimeException("Failing status code " + 200);
+        throw new RuntimeException(
+            "Failing status code " + response.statusCode() + "\r\n" + response.body());
       }
       return response.body();
     } catch (Exception e) {
-      throw new RuntimeException("Failed to generate URI", e);
+      log.info("faile");
+      throw new RuntimeException("Failure on " + urlRaw + " postdata:\r\n" + postData, e);
     }
   }
 }

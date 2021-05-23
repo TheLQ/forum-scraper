@@ -49,11 +49,13 @@ public class DownloadNode {
   }
 
   private void mainLoop() {
+    Exception ex = null;
     while (true) {
       boolean result;
       try {
         result = mainLoopCycle();
       } catch (Exception e) {
+        ex = e;
         log.error("Caught exception in mainLoop, stopping", e);
         break;
       }
@@ -62,6 +64,7 @@ public class DownloadNode {
         break;
       }
     }
+    log.info("main loop ended", ex);
   }
 
   /**
@@ -74,20 +77,25 @@ public class DownloadNode {
       refillQueue();
     }
 
-    // pop request and fetch content
-    DownloadRequest downloadRequest = downloadRequests.remove(0);
+    if (downloadRequests.size() == 0) {
+      log.warn("Queue is empty, not doing anything");
+    } else {
+      // pop request and fetch content
+      DownloadRequest downloadRequest = downloadRequests.remove(0);
 
-    log.debug("Requesting {} url {}", downloadRequest.id(), downloadRequest.url());
-    URI uri = new URI(downloadRequest.url());
-    HttpRequest request = HttpRequest.newBuilder().uri(uri).build();
-    HttpResponse<byte[]> response = Utils.httpClient.send(request, BodyHandlers.ofByteArray());
+      log.debug("Requesting {} url {}", downloadRequest.id(), downloadRequest.url());
+      URI uri = new URI(downloadRequest.url());
+      HttpRequest request = HttpRequest.newBuilder().uri(uri).build();
+      HttpResponse<byte[]> response = Utils.httpClient.send(request, BodyHandlers.ofByteArray());
 
-    downloadResponses.add(
-        new DownloadResponse(
-            downloadRequest.id(),
-            response.body(),
-            response.headers().map(),
-            response.statusCode()));
+      downloadResponses.add(
+          new DownloadResponse(
+              downloadRequest.id(),
+              response.body(),
+              response.headers().map(),
+              response.statusCode(),
+              null));
+    }
 
     // sleep then continue for the next cycle
     log.debug("Queued {} urls, sleeping {} seconds", downloadRequests.size(), CYCLE_SECONDS);
