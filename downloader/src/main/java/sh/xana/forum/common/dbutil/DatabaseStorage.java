@@ -22,7 +22,7 @@ import sh.xana.forum.common.db.tables.Sites;
 import sh.xana.forum.common.db.tables.records.PagesRecord;
 import sh.xana.forum.common.db.tables.records.SitesRecord;
 import sh.xana.forum.common.ipc.DownloadNodeEntry;
-import sh.xana.forum.common.ipc.NodeBufferEntry;
+import sh.xana.forum.common.ipc.DownloadRequest;
 
 public class DatabaseStorage {
   private static final Logger log = LoggerFactory.getLogger(DatabaseStorage.class);
@@ -42,7 +42,7 @@ public class DatabaseStorage {
   }
 
   public String getNodeBufferJSON(String domain) {
-    List<NodeBufferEntry> pages =
+    List<DownloadRequest> pages =
         context
             .select()
             .from(Pages.PAGES)
@@ -51,7 +51,7 @@ public class DatabaseStorage {
             .fetch()
             .map(
                 r ->
-                    new NodeBufferEntry(
+                    new DownloadRequest(
                         Utils.uuidFromBytes(r.get(Pages.PAGES.ID)), r.get(Pages.PAGES.URL)));
 
     try {

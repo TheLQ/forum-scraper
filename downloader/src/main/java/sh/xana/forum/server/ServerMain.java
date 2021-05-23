@@ -9,6 +9,6 @@ public class ServerMain {
 
     DatabaseStorage dbStorage = new DatabaseStorage();
 
-    WebServer server = new WebServer(new WebPages(dbStorage));
+    WebServer server = new WebServer(dbStorage, new Processor(dbStorage));
   }
 }

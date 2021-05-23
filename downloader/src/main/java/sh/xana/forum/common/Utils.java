@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.nio.ByteBuffer;
 import java.util.UUID;
@@ -29,19 +30,38 @@ public class Utils {
   }
 
   public static String serverGet(String path) {
-    URI uri;
+    String urlRaw = "http://127.0.0.1:8080/" + path;
     try {
-      uri = new URI("http://127.0.0.1:8080/" + path);
+      HttpRequest request = HttpRequest.newBuilder().uri(new URI(urlRaw)).build();
+      HttpResponse<String> response =
+          httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+      if (response.statusCode() != 200) {
+        throw new RuntimeException("Failing status code " + 200);
+      }
+      return response.body();
     } catch (Exception e) {
       throw new RuntimeException("Failed to generate URI", e);
     }
+  }
 
-    HttpRequest request = HttpRequest.newBuilder().uri(uri).build();
-    String result =
-        httpClient
-            .sendAsync(request, HttpResponse.BodyHandlers.ofString())
-            .thenApply(HttpResponse::body)
-            .join();
-    return result;
+  public static String serverPost(String path, String postData) {
+    String urlRaw = "http://127.0.0.1:8080/" + path;
+    try {
+      HttpRequest request =
+          HttpRequest.newBuilder()
+              .uri(new URI(urlRaw))
+              .POST(BodyPublishers.ofString(postData))
+              .build();
+      HttpResponse<String> response =
+          httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+      if (response.statusCode() != 200) {
+        throw new RuntimeException("Failing status code " + 200);
+      }
+      return response.body();
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to generate URI", e);
+    }
   }
 }

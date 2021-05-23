@@ -6,7 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.Utils;
 import sh.xana.forum.common.ipc.DownloadNodeEntry;
-import sh.xana.forum.server.WebPages;
+import sh.xana.forum.server.WebServer;
 
 public class ClientMain {
   public static final Logger log = LoggerFactory.getLogger(ClientMain.class);
@@ -15,7 +15,7 @@ public class ClientMain {
   public static void main(String[] args) {
     log.info("Client start, getting download node list");
 
-    String result = Utils.serverGet(WebPages.PAGE_CLIENT_NODEINIT);
+    String result = Utils.serverGet(WebServer.PAGE_CLIENT_NODEINIT);
 
     DownloadNodeEntry[] downloadEntries;
     try {
