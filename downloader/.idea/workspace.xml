@@ -4,7 +4,23 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="9d5343a1-e78e-4bda-a909-8d7e2c58b296" name="Default Changelist" comment="" />
+    <list default="true" id="9d5343a1-e78e-4bda-a909-8d7e2c58b296" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/sh/xana/forum/common/ipc/NodeBufferEntry.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/module-info.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/module-info.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/sh/xana/forum/client/ClientMain.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/sh/xana/forum/client/ClientMain.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/sh/xana/forum/client/DownloadNode.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/sh/xana/forum/client/DownloadNode.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/sh/xana/forum/common/Utils.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/sh/xana/forum/common/Utils.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/sh/xana/forum/common/db/tables/Pages.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/sh/xana/forum/common/db/tables/Pages.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/sh/xana/forum/common/db/tables/Sites.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/sh/xana/forum/common/db/tables/Sites.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/sh/xana/forum/common/db/tables/records/PagesRecord.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/sh/xana/forum/common/db/tables/records/PagesRecord.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/sh/xana/forum/common/dbutil/DatabaseStorage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/sh/xana/forum/common/dbutil/DatabaseStorage.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/sh/xana/forum/server/ServerMain.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/sh/xana/forum/server/ServerMain.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/sh/xana/forum/server/WebPages.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/sh/xana/forum/server/WebPages.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/sh/xana/forum/server/WebServer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/sh/xana/forum/server/WebServer.java" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -18,8 +34,12 @@
       <list>
         <option value="module-info" />
         <option value="Class" />
+        <option value="Record" />
       </list>
     </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
   </component>
   <component name="GitSEFilterConfiguration">
     <file-type-list>
@@ -44,6 +64,7 @@
     <option name="selectedIndex" value="2" />
   </component>
   <component name="ProjectId" id="1sjbvhL10TRS2sxCA2q4xeLQ4fi" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
     <option name="flattenPackages" value="true" />
     <option name="hideEmptyMiddlePackages" value="true" />
@@ -52,6 +73,7 @@
   <component name="PropertiesComponent">
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="com.intellij.ide.scratch.LRUPopupBuilder$1/New Scratch File" value="JAVA" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="project.structure.last.edited" value="Modules" />
@@ -76,13 +98,13 @@
       <command value="mvn spotless:apply" />
     </option>
   </component>
-  <component name="RunManager" selected="Application.JooqGenerator">
-    <configuration name="DatabaseGeneratorTest" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="sh.xana.forum.common.dbutil.DatabaseGeneratorTest" />
+  <component name="RunManager" selected="Application.ClientMain">
+    <configuration name="ClientMain" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="sh.xana.forum.client.ClientMain" />
       <module name="scrape-download" />
       <extension name="coverage">
         <pattern>
-          <option name="PATTERN" value="sh.xana.forum.common.dbutil.*" />
+          <option name="PATTERN" value="sh.xana.forum.client.*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
@@ -153,11 +175,11 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Application.ClientMain" />
         <item itemvalue="Java Scratch.Scratch" />
         <item itemvalue="Application.ServerMain" />
         <item itemvalue="Application.DatabaseStorage" />
         <item itemvalue="Application.JooqGenerator" />
-        <item itemvalue="Application.DatabaseGeneratorTest" />
       </list>
     </recent_temporary>
   </component>
@@ -171,6 +193,17 @@
       <updated>1621389177357</updated>
     </task>
     <servers />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

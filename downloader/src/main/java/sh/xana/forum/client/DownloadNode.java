@@ -1,9 +1,5 @@
 package sh.xana.forum.client;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;
@@ -23,39 +19,36 @@ public class DownloadNode {
   /** Number of URLs to request, and size when to do a request. Should be between SIZE - 2xSIZE */
   public static final int URL_QUEUE_REFILL_SIZE = 10;
 
-  static final String SERVER_URL = "http://127.0.0.1:8080";
-
   final String site;
   final List<String> urlQueue = new ArrayList<>();
   final List<String> submissionBuffer = new ArrayList<>();
-  final HttpClient httpClient = HttpClient.newHttpClient();
 
   Thread thread;
 
   public DownloadNode(String site) {
     this.site = site;
+    this. thread = new Thread(this::mainLoop);
+    thread.setName("DownloadNode");
   }
 
   public void startThread() {
-    thread =
-        new Thread(
-            () -> {
-              while (true) {
-                boolean result;
-                try {
-                  result = mainLoop();
-                } catch (Exception e) {
-                  log.error("Caught exception in mainLoop, stopping");
-                  break;
-                }
-                if (!result) {
-                  log.warn("mainLoop returned false, stopping");
-                  break;
-                }
-              }
-            });
-    thread.setName("DownloadNode");
     thread.start();
+  }
+
+  public void mainLoop() {
+    while (true) {
+      boolean result;
+      try {
+        result = mainLoopCycle();
+      } catch (Exception e) {
+        log.error("Caught exception in mainLoop, stopping");
+        break;
+      }
+      if (!result) {
+        log.warn("mainLoop returned false, stopping");
+        break;
+      }
+    }
   }
 
   /**
@@ -63,7 +56,7 @@ public class DownloadNode {
    *
    * @return true to continue to next loop
    */
-  public boolean mainLoop() {
+  public boolean mainLoopCycle() {
     if (urlQueue.size() < URL_QUEUE_REFILL_SIZE) {
       refillQueue();
     }
@@ -75,16 +68,5 @@ public class DownloadNode {
   public void refillQueue() {
     log.info("-- refill queue");
 
-    HttpRequest request = HttpRequest.newBuilder().uri(URI.create(SERVER_URL + "/hello")).build();
-    String result =
-        httpClient
-            .sendAsync(request, HttpResponse.BodyHandlers.ofString())
-            .thenApply(HttpResponse::body)
-            //                .thenAccept(System.out::println)
-            .join();
-    log.info("got result " + result);
   }
-
-  /** First time seeing a site, create forums */
-  public static void firstTimeSiteInit() {}
 }

@@ -7,4 +7,5 @@ module sh.xana.forum {
   requires org.jooq.codegen;
   requires java.xml.bind;
   requires org.jooq;
+  requires com.fasterxml.jackson.databind;
 }

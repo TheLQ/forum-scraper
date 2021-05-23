@@ -21,9 +21,12 @@ import sh.xana.forum.common.db.tables.Pages;
 import sh.xana.forum.common.db.tables.Sites;
 import sh.xana.forum.common.db.tables.records.PagesRecord;
 import sh.xana.forum.common.db.tables.records.SitesRecord;
+import sh.xana.forum.common.ipc.DownloadNodeEntry;
+import sh.xana.forum.common.ipc.NodeBufferEntry;
 
 public class DatabaseStorage {
   private static final Logger log = LoggerFactory.getLogger(DatabaseStorage.class);
+
   private final CloseableDSLContext context;
 
   public DatabaseStorage() {
@@ -38,13 +41,22 @@ public class DatabaseStorage {
     return context.select().from(Pages.PAGES).fetchInto(PagesRecord.class);
   }
 
-  public List<PagesRecord> getPageBatch(UUID siteId) {
-    return context
+  public String getNodeBufferJSON(String domain) {
+    List<NodeBufferEntry> pages = context
         .select()
         .from(Pages.PAGES)
-        .where(Pages.PAGES.SITEID.eq(Utils.uuidAsBytes(siteId)))
+        .where(Pages.PAGES.DOMAIN.eq(domain))
         .limit(DownloadNode.URL_QUEUE_REFILL_SIZE)
-        .fetchInto(PagesRecord.class);
+//        .fetchInto(PagesRecord.class);
+//        .fetchInto(NodeBufferEntry.class);
+        .fetch()
+        .map(r -> new NodeBufferEntry(Utils.uuidFromBytes(r.get(Pages.PAGES.ID)), r.get(Pages.PAGES.URL)));
+
+    try {
+    return Utils.jsonMapper.writeValueAsString(pages);
+    } catch (Exception e) {
+      throw new RuntimeException("Stuff", e);
+    }
   }
 
   public List<OverviewEntry> getOverviewSites() {
@@ -79,6 +91,22 @@ public class DatabaseStorage {
           });
     }
     return List.copyOf(result.values());
+  }
+
+  public String getDownloadNodesJSON() {
+    var pages =
+        context.selectDistinct(Pages.PAGES.DOMAIN).from(Pages.PAGES).fetchInto(PagesRecord.class);
+
+    List<DownloadNodeEntry> resultList = new ArrayList<>(pages.size());
+    for (PagesRecord page : pages) {
+      resultList.add(new DownloadNodeEntry(page.getDomain()));
+    }
+
+    try {
+      return Utils.jsonMapper.writeValueAsString(resultList);
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to JSON", e);
+    }
   }
 
   /**
@@ -134,7 +162,6 @@ public class DatabaseStorage {
 
   /** Change page status */
   public void setPageStatus(List<UUID> pageIds, DlStatus status) {
-
     Collection<byte[]> uuidBytes =
         pageIds.stream().map(uuid -> Utils.uuidAsBytes(uuid)).collect(Collectors.toList());
     Query query =
@@ -190,9 +217,4 @@ public class DatabaseStorage {
       AtomicInteger totalQueued,
       AtomicInteger totalDownload,
       AtomicInteger totalDone) {}
-
-  public static void main(String[] args) {
-    DatabaseStorage storage = new DatabaseStorage();
-    //    storage.test();
-  }
 }

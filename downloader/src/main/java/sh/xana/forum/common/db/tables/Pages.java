@@ -6,8 +6,16 @@ package sh.xana.forum.common.db.tables;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
-import org.jooq.*;
+import org.jooq.Field;
+import org.jooq.ForeignKey;
+import org.jooq.Name;
 import org.jooq.Record;
+import org.jooq.Row8;
+import org.jooq.Schema;
+import org.jooq.Table;
+import org.jooq.TableField;
+import org.jooq.TableOptions;
+import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
 import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
@@ -57,6 +65,10 @@ public class Pages extends TableImpl<PagesRecord> {
   /** The column <code>Pages.updated</code>. */
   public final TableField<PagesRecord, LocalDateTime> UPDATED =
       createField(DSL.name("updated"), SQLDataType.LOCALDATETIME(0).nullable(false), this, "");
+
+  /** The column <code>Pages.domain</code>. */
+  public final TableField<PagesRecord, String> DOMAIN =
+      createField(DSL.name("domain"), SQLDataType.VARCHAR(50), this, "");
 
   private Pages(Name alias, Table<PagesRecord> aliased) {
     this(alias, aliased, null);
@@ -123,11 +135,11 @@ public class Pages extends TableImpl<PagesRecord> {
   }
 
   // -------------------------------------------------------------------------
-  // Row7 type methods
+  // Row8 type methods
   // -------------------------------------------------------------------------
 
   @Override
-  public Row7<byte[], byte[], byte[], String, String, String, LocalDateTime> fieldsRow() {
-    return (Row7) super.fieldsRow();
+  public Row8<byte[], byte[], byte[], String, String, String, LocalDateTime, String> fieldsRow() {
+    return (Row8) super.fieldsRow();
   }
 }

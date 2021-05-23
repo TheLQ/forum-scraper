@@ -18,7 +18,7 @@ public class WebServer extends NanoHTTPD {
     super(PORT);
     this.pages = pages;
     start(NanoHTTPD.SOCKET_READ_TIMEOUT, false);
-    log.info("server running on http://localhost:{}", PORT);
+    log.info("server running on http://{}:{}", getHostname(), PORT);
   }
 
   /** Router */
@@ -33,10 +33,14 @@ public class WebServer extends NanoHTTPD {
         case "":
           return newFixedLengthResponse(
               "Xana Forum Downloader started " + start + " currently " + new Date());
-        case "addSite":
+        case WebPages.PAGE_SITE_ADD:
           return newFixedLengthResponse(this.pages.pageAddSite(session));
-        case "overview":
+        case WebPages.PAGE_OVERVIEW:
           return newFixedLengthResponse(this.pages.pageOverview());
+        case WebPages.PAGE_CLIENT_NODEINIT:
+          return newFixedLengthResponse(this.pages.pageClientNodeInit());
+        case WebPages.PAGE_CLIENT_BUFFER:
+          return newFixedLengthResponse(this.pages.pageClientBuffer(session));
         default:
           return newFixedLengthResponse(
               Response.Status.NOT_FOUND, "text/plain", "page " + page + " does not exist");
