@@ -1,4 +1,5 @@
 downloader/target
 downloader/sample.db
 downloader/.idea
-downloader/filecache
+filecache
+parser/node_modules
