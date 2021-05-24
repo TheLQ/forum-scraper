@@ -1,6 +1,7 @@
 package sh.xana.forum.client;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +25,7 @@ public class ClientMain {
       log.info("Failed to get node entries, closing", e);
       return;
     }
-    log.info("nodes {}", downloadEntries);
+    log.info("nodes {}", Arrays.toString(downloadEntries));
 
     for (DownloadNodeEntry entry : downloadEntries) {
       log.info("creating node " + entry.domain());

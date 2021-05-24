@@ -52,7 +52,7 @@ public class WebServer extends NanoHTTPD {
               Response.Status.NOT_FOUND, "text/plain", "page " + page + " does not exist");
       }
     } catch (Exception e) {
-      log.error("Caught exception while processing page", session.getUri(), e);
+      log.error("Caught exception while processing page {}", session.getUri(), e);
       return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", e.toString());
     }
   }

@@ -64,7 +64,8 @@ public class DatabaseStorage {
                     new DownloadRequest(
                         Utils.uuidFromBytes(r.get(Pages.PAGES.ID)), r.get(Pages.PAGES.URL)));
 
-    setPageStatus(pages.stream().map(e -> e.id()).collect(Collectors.toList()), DlStatus.Download);
+    setPageStatus(
+        pages.stream().map(DownloadRequest::id).collect(Collectors.toList()), DlStatus.Download);
 
     try {
       return Utils.jsonMapper.writeValueAsString(pages);
@@ -203,7 +204,7 @@ public class DatabaseStorage {
   /** Change page status */
   public void setPageStatus(Collection<UUID> pageIds, DlStatus status) {
     Collection<byte[]> uuidBytes =
-        pageIds.stream().map(uuid -> Utils.uuidAsBytes(uuid)).collect(Collectors.toList());
+        pageIds.stream().map(Utils::uuidAsBytes).collect(Collectors.toList());
     Query query =
         context
             .update(Pages.PAGES)

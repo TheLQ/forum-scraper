@@ -5,6 +5,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
@@ -28,7 +29,7 @@ public class Scraper {
   /** Number of URLs to request, and size when to do a request. Should be between SIZE - 2xSIZE */
   public static final int URL_QUEUE_REFILL_SIZE = 10;
 
-  private static int CYCLE_SECONDS = 20;
+  private static final int CYCLE_SECONDS = 20;
   private static int INSTANCE_COUNTER = 0;
 
   private final String domain;
@@ -103,23 +104,26 @@ public class Scraper {
 
     // sleep then continue for the next cycle
     log.debug("Queued {} urls, sleeping {} seconds", downloadRequests.size(), CYCLE_SECONDS);
-    Thread.sleep(1000 * CYCLE_SECONDS);
+    Thread.sleep(1000L * CYCLE_SECONDS);
     return true;
   }
 
   /** Fetch new batch of URLs to process, and submit completedBuffer */
   private void refillQueue() {
-    log.info("-- Refill, {} requests, {} responses");
+    log.info(
+        "-- Refill, {} requests, {} response success, {} response error",
+        downloadRequests.size(),
+        responseSuccess.size(),
+        responseError.size());
     try {
       DownloadResponse downloads = new DownloadResponse(responseSuccess, responseError);
       String newRequestsJSON =
           Utils.serverPost(
               WebServer.PAGE_CLIENT_BUFFER + "?domain=" + this.domain,
               Utils.jsonMapper.writeValueAsString(downloads));
-      for (DownloadRequest entry :
-          Utils.jsonMapper.readValue(newRequestsJSON, DownloadRequest[].class)) {
-        downloadRequests.add(entry);
-      }
+
+      Collections.addAll(
+          downloadRequests, Utils.jsonMapper.readValue(newRequestsJSON, DownloadRequest[].class));
     } catch (Exception e) {
       throw new RuntimeException("failed to parse buffer json", e);
     }

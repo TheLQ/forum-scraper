@@ -2,7 +2,6 @@ package sh.xana.forum.server;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -31,7 +30,7 @@ public class Processor {
    * Capacity should be infinite to avoid OOM, but shouldn't be too small or pageSpiderThread will
    * deadlock itself on init/load
    */
-  private final BlockingQueue<PagesRecord> spiderQueue = new ArrayBlockingQueue<PagesRecord>(10000);
+  private final BlockingQueue<PagesRecord> spiderQueue = new ArrayBlockingQueue<>(10000);
 
   public Processor(DatabaseStorage dbStorage) {
     this.dbStorage = dbStorage;
@@ -47,12 +46,12 @@ public class Processor {
 
     for (DownloadResponse.Success success : response.successes()) {
       log.info("Writing " + success.id().toString() + " response and header");
-      Files.write(fileCachePath.resolve(success.id().toString() + ".response"), success.body());
+      Files.write(fileCachePath.resolve(success.id() + ".response"), success.body());
       Files.writeString(
-          fileCachePath.resolve(success.id().toString() + ".headers"),
+          fileCachePath.resolve(success.id() + ".headers"),
           Utils.jsonMapper.writeValueAsString(success.headers()));
 
-      log.info("Updating database", "asd");
+      log.info("Updating database");
       dbStorage.movePageDownloadToParse(success.id(), success.responseCode());
     }
   }
@@ -83,7 +82,7 @@ public class Processor {
     log.info("main loop ended", ex);
   }
 
-  private boolean pageSpiderCycle() throws InterruptedException, IOException, URISyntaxException {
+  private boolean pageSpiderCycle() throws InterruptedException {
     PagesRecord page = spiderQueue.take();
     log.info("processing page " + page.getUrl());
 
