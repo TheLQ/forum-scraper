@@ -10,7 +10,7 @@ import sh.xana.forum.server.WebServer;
 
 public class ClientMain {
   public static final Logger log = LoggerFactory.getLogger(ClientMain.class);
-  private static final List<DownloadNode> nodes = new ArrayList<>();
+  private static final List<Scraper> nodes = new ArrayList<>();
 
   public static void main(String[] args) {
     log.info("Client start, getting download node list");
@@ -28,7 +28,7 @@ public class ClientMain {
 
     for (DownloadNodeEntry entry : downloadEntries) {
       log.info("creating node " + entry.domain());
-      DownloadNode downloader = new DownloadNode(entry.domain());
+      Scraper downloader = new Scraper(entry.domain());
       nodes.add(downloader);
 
       downloader.startThread();

@@ -11,6 +11,7 @@ import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.Utils;
@@ -39,16 +40,20 @@ public class Processor {
   }
 
   /** Process responses the download nodes collected */
-  public void processResponses(DownloadResponse[] responses) throws IOException {
-    for (DownloadResponse response : responses) {
-      log.info("Writing " + response.id().toString() + " response and header");
-      Files.write(fileCachePath.resolve(response.id().toString() + ".response"), response.body());
+  public void processResponses(DownloadResponse response) throws IOException {
+    for (DownloadResponse.Error error : response.errors()) {
+      dbStorage.setPageException(error.id(), error.exception());
+    }
+
+    for (DownloadResponse.Success success : response.successes()) {
+      log.info("Writing " + success.id().toString() + " response and header");
+      Files.write(fileCachePath.resolve(success.id().toString() + ".response"), success.body());
       Files.writeString(
-          fileCachePath.resolve(response.id().toString() + ".headers"),
-          Utils.jsonMapper.writeValueAsString(response.headers()));
+          fileCachePath.resolve(success.id().toString() + ".headers"),
+          Utils.jsonMapper.writeValueAsString(success.headers()));
 
       log.info("Updating database", "asd");
-      dbStorage.movePageDownloadToParse(response.id(), response.responseCode());
+      dbStorage.movePageDownloadToParse(success.id(), success.responseCode());
     }
   }
 
@@ -58,7 +63,7 @@ public class Processor {
 
   /** */
   private void pageSpiderThread() {
-    spiderQueue.addAll(dbStorage.getPagesParser());
+    spiderQueue.addAll(dbStorage.getParserPages());
 
     Exception ex = null;
     while (true) {
@@ -82,38 +87,44 @@ public class Processor {
     PagesRecord page = spiderQueue.take();
     log.info("processing page " + page.getUrl());
 
-    UUID pageId = Utils.uuidFromBytes(page.getId());
-    String pageIdStr = pageId.toString();
-    ProcessBuilder pb =
-        new ProcessBuilder("node", "../parser/parser.js", "../filecache/" + pageIdStr + ".response")
-            .redirectErrorStream(true);
-    Process process = pb.start();
-    String output = IOUtils.toString(process.getInputStream(), StandardCharsets.UTF_8);
+    try {
+      UUID pageId = Utils.uuidFromBytes(page.getId());
+      String pageIdStr = pageId.toString();
+      ProcessBuilder pb =
+          new ProcessBuilder(
+                  "node", "../parser/parser.js", "../filecache/" + pageIdStr + ".response")
+              .redirectErrorStream(true);
+      Process process = pb.start();
+      String output = IOUtils.toString(process.getInputStream(), StandardCharsets.UTF_8);
 
-    if (process.exitValue() != 0) {
-      throw new RuntimeException("node parser exit " + process.exitValue() + "\r\n" + output);
-    }
-
-    ParserResult results = Utils.jsonMapper.readValue(output, ParserResult.class);
-    for (ParserResult.ParserEntry result : results.entries()) {
-      URI url = new URI(result.url());
-      if (url.getHost() == null) {
-        URI sourceUrl = new URI(page.getUrl());
-        url =
-            new URI(
-                sourceUrl.getScheme(),
-                sourceUrl.getUserInfo(),
-                sourceUrl.getHost(),
-                sourceUrl.getPort(),
-                url.getPath(),
-                url.getQuery(),
-                url.getFragment());
+      if (process.exitValue() != 0) {
+        throw new RuntimeException("node parser exit " + process.exitValue() + "\r\n" + output);
       }
-      dbStorage.insertPageQueued(
-          Utils.uuidFromBytes(page.getSiteid()), List.of(url.toString()), result.type(), pageId);
-    }
 
-    dbStorage.setPageStatus(List.of(pageId), DlStatus.Done);
+      ParserResult results = Utils.jsonMapper.readValue(output, ParserResult.class);
+      for (ParserResult.ParserEntry result : results.entries()) {
+        URI url = new URI(result.url());
+        if (url.getHost() == null) {
+          URI sourceUrl = new URI(page.getUrl());
+          url =
+              new URI(
+                  sourceUrl.getScheme(),
+                  sourceUrl.getUserInfo(),
+                  sourceUrl.getHost(),
+                  sourceUrl.getPort(),
+                  url.getPath(),
+                  url.getQuery(),
+                  url.getFragment());
+        }
+        dbStorage.insertPageQueued(
+            Utils.uuidFromBytes(page.getSiteid()), List.of(url.toString()), result.type(), pageId);
+      }
+
+      dbStorage.setPageStatus(List.of(pageId), DlStatus.Done);
+    } catch (Exception e) {
+      dbStorage.setPageException(
+          Utils.uuidFromBytes(page.getId()), ExceptionUtils.getStackTrace(e));
+    }
 
     return true;
   }

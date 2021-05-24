@@ -17,7 +17,7 @@ import org.jooq.Query;
 import org.jooq.impl.DSL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sh.xana.forum.client.DownloadNode;
+import sh.xana.forum.client.Scraper;
 import sh.xana.forum.common.Utils;
 import sh.xana.forum.common.db.tables.Pages;
 import sh.xana.forum.common.db.tables.Sites;
@@ -29,24 +29,70 @@ import sh.xana.forum.common.ipc.DownloadRequest;
 public class DatabaseStorage {
   private static final Logger log = LoggerFactory.getLogger(DatabaseStorage.class);
 
-  private final CloseableDSLContext context;
+  private final CloseableDSLContext context = DSL.using("jdbc:sqlite:sample.db");
 
-  public DatabaseStorage() {
-    context = DSL.using("jdbc:sqlite:sample.db");
+  /** Stage: init client */
+  public String getScraperDomainsJSON() {
+    var pages =
+        context.selectDistinct(Pages.PAGES.DOMAIN).from(Pages.PAGES).fetchInto(PagesRecord.class);
+
+    List<DownloadNodeEntry> resultList = new ArrayList<>(pages.size());
+    for (PagesRecord page : pages) {
+      resultList.add(new DownloadNodeEntry(page.getDomain()));
+    }
+
+    try {
+      return Utils.jsonMapper.writeValueAsString(resultList);
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to JSON", e);
+    }
   }
 
-  public List<SitesRecord> getSites() {
-    return context.select().from(Sites.SITES).fetchInto(SitesRecord.class);
+  /** Stage: Load pages to be downloaded by Scraper */
+  public String movePageQueuedToDownloadJSON(String domain) {
+    List<DownloadRequest> pages =
+        context
+            .select()
+            .from(Pages.PAGES)
+            .where(Pages.PAGES.DOMAIN.eq(domain))
+            .and(Pages.PAGES.DLSTATUS.eq(DlStatus.Queued.toString()))
+            .and(Pages.PAGES.EXCEPTION.isNull())
+            .limit(Scraper.URL_QUEUE_REFILL_SIZE)
+            .fetch()
+            .map(
+                r ->
+                    new DownloadRequest(
+                        Utils.uuidFromBytes(r.get(Pages.PAGES.ID)), r.get(Pages.PAGES.URL)));
+
+    setPageStatus(pages.stream().map(e -> e.id()).collect(Collectors.toList()), DlStatus.Download);
+
+    try {
+      return Utils.jsonMapper.writeValueAsString(pages);
+    } catch (Exception e) {
+      throw new RuntimeException("Stuff", e);
+    }
   }
 
-  public List<PagesRecord> getPages(Condition... conditions) {
-    return context.select().from(Pages.PAGES).where(conditions).fetchInto(PagesRecord.class);
+  /** Stage: Page is finished downloading */
+  public void movePageDownloadToParse(UUID pageId, int statusCode) {
+    Query query =
+        context
+            .update(Pages.PAGES)
+            .set(Pages.PAGES.DLSTATUS, DlStatus.Parse.toString())
+            .set(Pages.PAGES.DLSTATUSCODE, statusCode)
+            .set(Pages.PAGES.UPDATED, LocalDateTime.now())
+            .where(Pages.PAGES.ID.in(Utils.uuidAsBytes(pageId)));
+
+    executeOneRow(query);
   }
 
-  public List<PagesRecord> getPagesParser() {
-    return getPages(Pages.PAGES.DLSTATUS.eq(DlStatus.Download.toString()));
+  /** Stage: Load pages for Parser */
+  public List<PagesRecord> getParserPages() {
+    return getPages(
+        Pages.PAGES.DLSTATUS.eq(DlStatus.Download.toString()), Pages.PAGES.EXCEPTION.isNull());
   }
 
+  /** Stage: reporting monitor */
   public List<OverviewEntry> getOverviewSites() {
     // TODO: SLOW!!! But easy to write version
     List<SitesRecord> sites = getSites();
@@ -81,20 +127,15 @@ public class DatabaseStorage {
     return List.copyOf(result.values());
   }
 
-  public String getDownloadNodesJSON() {
-    var pages =
-        context.selectDistinct(Pages.PAGES.DOMAIN).from(Pages.PAGES).fetchInto(PagesRecord.class);
+  /****************************** Utils ******************/
 
-    List<DownloadNodeEntry> resultList = new ArrayList<>(pages.size());
-    for (PagesRecord page : pages) {
-      resultList.add(new DownloadNodeEntry(page.getDomain()));
-    }
+  /** @return */
+  private List<SitesRecord> getSites() {
+    return context.select().from(Sites.SITES).fetchInto(SitesRecord.class);
+  }
 
-    try {
-      return Utils.jsonMapper.writeValueAsString(resultList);
-    } catch (Exception e) {
-      throw new RuntimeException("Failed to JSON", e);
-    }
+  private List<PagesRecord> getPages(Condition... conditions) {
+    return context.select().from(Pages.PAGES).where(conditions).fetchInto(PagesRecord.class);
   }
 
   /**
@@ -173,51 +214,17 @@ public class DatabaseStorage {
     executeRows(query, pageIds.size());
   }
 
-  /** Move pages to download status and fetch json for DownloadNode */
-  public String movePageQueuedToDownloadJSON(String domain) {
-    List<DownloadRequest> pages =
-        context
-            .select()
-            .from(Pages.PAGES)
-            .where(Pages.PAGES.DOMAIN.eq(domain))
-            .and(Pages.PAGES.DLSTATUS.eq(DlStatus.Queued.toString()))
-            .limit(DownloadNode.URL_QUEUE_REFILL_SIZE)
-            .fetch()
-            .map(
-                r ->
-                    new DownloadRequest(
-                        Utils.uuidFromBytes(r.get(Pages.PAGES.ID)), r.get(Pages.PAGES.URL)));
-
-    setPageStatus(pages.stream().map(e -> e.id()).collect(Collectors.toList()), DlStatus.Download);
-
-    try {
-      return Utils.jsonMapper.writeValueAsString(pages);
-    } catch (Exception e) {
-      throw new RuntimeException("Stuff", e);
-    }
-  }
-
-  public void movePageDownloadToParse(UUID pageId, int statusCode) {
+  public void setPageException(UUID pageId, String exception) {
     Query query =
         context
             .update(Pages.PAGES)
-            .set(Pages.PAGES.DLSTATUS, DlStatus.Parse.toString())
-            .set(Pages.PAGES.DLSTATUSCODE, statusCode)
-            .set(Pages.PAGES.UPDATED, LocalDateTime.now())
+            .set(Pages.PAGES.EXCEPTION, exception)
             .where(Pages.PAGES.ID.in(Utils.uuidAsBytes(pageId)));
 
     executeOneRow(query);
   }
 
-  public void resetDownloadingStatus() {
-    throw new UnsupportedOperationException();
-  }
-
-  public void truncateAll() {
-    context.truncate(Pages.PAGES).execute();
-
-    context.truncate(Sites.SITES).execute();
-  }
+  /********************************/
 
   private static void executeOneRow(Query query) {
     executeRows(query, 1);

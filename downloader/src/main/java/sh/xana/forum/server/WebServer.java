@@ -82,7 +82,7 @@ public class WebServer extends NanoHTTPD {
   public static final String PAGE_CLIENT_NODEINIT = "client/nodeinit";
 
   String pageClientNodeInit() {
-    return dbStorage.getDownloadNodesJSON();
+    return dbStorage.getScraperDomainsJSON();
   }
 
   public static final String PAGE_CLIENT_BUFFER = "client/buffer";
@@ -90,7 +90,7 @@ public class WebServer extends NanoHTTPD {
   String pageClientBuffer(NanoHTTPD.IHTTPSession session) throws IOException {
     String domain = WebServer.getRequiredParameter(session, "domain");
     byte[] input = readPostInput(session);
-    DownloadResponse[] responses = Utils.jsonMapper.readValue(input, DownloadResponse[].class);
+    DownloadResponse responses = Utils.jsonMapper.readValue(input, DownloadResponse.class);
     processor.processResponses(responses);
 
     return dbStorage.movePageQueuedToDownloadJSON(domain);
