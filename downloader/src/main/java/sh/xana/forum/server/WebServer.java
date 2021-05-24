@@ -1,5 +1,6 @@
 package sh.xana.forum.server;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import fi.iki.elonen.NanoHTTPD;
 import java.io.IOException;
 import java.util.Date;
@@ -8,6 +9,7 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.Utils;
+import sh.xana.forum.common.ipc.DownloadRequest;
 import sh.xana.forum.common.ipc.DownloadResponse;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
 
@@ -81,19 +83,25 @@ public class WebServer extends NanoHTTPD {
 
   public static final String PAGE_CLIENT_NODEINIT = "client/nodeinit";
 
-  String pageClientNodeInit() {
-    return dbStorage.getScraperDomainsJSON();
+  String pageClientNodeInit() throws JsonProcessingException {
+    return Utils.jsonMapper.writeValueAsString(dbStorage.getScraperDomainsIPC());
   }
 
   public static final String PAGE_CLIENT_BUFFER = "client/buffer";
 
-  String pageClientBuffer(NanoHTTPD.IHTTPSession session) throws IOException {
+  String pageClientBuffer(NanoHTTPD.IHTTPSession session) throws IOException, InterruptedException {
     String domain = WebServer.getRequiredParameter(session, "domain");
     byte[] input = readPostInput(session);
     DownloadResponse responses = Utils.jsonMapper.readValue(input, DownloadResponse.class);
     processor.processResponses(responses);
 
-    return dbStorage.movePageQueuedToDownloadJSON(domain);
+    List<DownloadRequest> requests = dbStorage.movePageQueuedToDownloadIPC(domain);
+    log.info(
+        "client {} downloaded {} download error {} sent",
+        responses.successes().size(),
+        responses.errors().size(),
+        requests.size());
+    return Utils.jsonMapper.writeValueAsString(requests);
   }
 
   static String getRequiredParameter(IHTTPSession session, String key) {

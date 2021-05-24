@@ -32,7 +32,7 @@ public class DatabaseStorage {
   private final CloseableDSLContext context = DSL.using("jdbc:sqlite:sample.db");
 
   /** Stage: init client */
-  public String getScraperDomainsJSON() {
+  public List<DownloadNodeEntry> getScraperDomainsIPC() {
     var pages =
         context.selectDistinct(Pages.PAGES.DOMAIN).from(Pages.PAGES).fetchInto(PagesRecord.class);
 
@@ -41,15 +41,11 @@ public class DatabaseStorage {
       resultList.add(new DownloadNodeEntry(page.getDomain()));
     }
 
-    try {
-      return Utils.jsonMapper.writeValueAsString(resultList);
-    } catch (Exception e) {
-      throw new RuntimeException("Failed to JSON", e);
-    }
+    return resultList;
   }
 
   /** Stage: Load pages to be downloaded by Scraper */
-  public String movePageQueuedToDownloadJSON(String domain) {
+  public List<DownloadRequest> movePageQueuedToDownloadIPC(String domain) {
     List<DownloadRequest> pages =
         context
             .select()
@@ -67,11 +63,7 @@ public class DatabaseStorage {
     setPageStatus(
         pages.stream().map(DownloadRequest::id).collect(Collectors.toList()), DlStatus.Download);
 
-    try {
-      return Utils.jsonMapper.writeValueAsString(pages);
-    } catch (Exception e) {
-      throw new RuntimeException("Stuff", e);
-    }
+    return pages;
   }
 
   /** Stage: Page is finished downloading */
@@ -90,7 +82,7 @@ public class DatabaseStorage {
   /** Stage: Load pages for Parser */
   public List<PagesRecord> getParserPages() {
     return getPages(
-        Pages.PAGES.DLSTATUS.eq(DlStatus.Download.toString()), Pages.PAGES.EXCEPTION.isNull());
+        Pages.PAGES.DLSTATUS.eq(DlStatus.Parse.toString()), Pages.PAGES.EXCEPTION.isNull());
   }
 
   /** Stage: reporting monitor */
@@ -135,7 +127,7 @@ public class DatabaseStorage {
     return context.select().from(Sites.SITES).fetchInto(SitesRecord.class);
   }
 
-  private List<PagesRecord> getPages(Condition... conditions) {
+  public List<PagesRecord> getPages(Condition... conditions) {
     return context.select().from(Pages.PAGES).where(conditions).fetchInto(PagesRecord.class);
   }
 

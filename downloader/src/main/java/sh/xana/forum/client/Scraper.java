@@ -65,7 +65,7 @@ public class Scraper {
         break;
       }
     }
-    log.info("main loop ended", ex);
+    log.info("main loop ended");
   }
 
   /**
@@ -78,12 +78,11 @@ public class Scraper {
       refillQueue();
     }
 
-    // pop request and fetch content
-    DownloadRequest downloadRequest = downloadRequests.remove(0);
-
     if (downloadRequests.size() == 0) {
       log.warn("Queue is empty, not doing anything");
     } else {
+      // pop request and fetch content
+      DownloadRequest downloadRequest = downloadRequests.remove(0);
       try {
         log.debug("Requesting {} url {}", downloadRequest.id(), downloadRequest.url());
         URI uri = new URI(downloadRequest.url());
@@ -97,6 +96,7 @@ public class Scraper {
                 response.headers().map(),
                 response.statusCode()));
       } catch (Exception e) {
+        log.debug("exception during run", e);
         responseError.add(
             new DownloadResponse.Error(downloadRequest.id(), ExceptionUtils.getStackTrace(e)));
       }
@@ -124,6 +124,8 @@ public class Scraper {
 
       Collections.addAll(
           downloadRequests, Utils.jsonMapper.readValue(newRequestsJSON, DownloadRequest[].class));
+      responseSuccess.clear();
+      responseError.clear();
     } catch (Exception e) {
       throw new RuntimeException("failed to parse buffer json", e);
     }

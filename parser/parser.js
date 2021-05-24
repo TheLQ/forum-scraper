@@ -23,12 +23,12 @@ const results = {
     subpages: []
 }
 
-if ($(".thread_summary").length == 0) {
+if ($("div > .post").length == 0) {
     results.type = "ForumList"
 
     // forum list
     $(".child_section .child_section_title a").each((i, elem) => {
-        results.push({
+        results.subpages.push({
             name: elem.childNodes[0].data,
             url: elem.attribs.href,
             type: "ForumList",
@@ -37,7 +37,7 @@ if ($(".thread_summary").length == 0) {
     
     // topic list
     $(".thread_details div:first-child a").each((i, elem) => {
-        results.push({
+        results.subpages.push({
             name: elem.childNodes[0].data,
             url: elem.attribs.href,
             type: "TopicPage",
@@ -48,9 +48,10 @@ if ($(".thread_summary").length == 0) {
 }
 
 $(".page_skip").each((i, elem) => {
-    results.push({
+    results.subpages.push({
         name: elem.childNodes[0].data,
         url: elem.attribs.href,
+        type: results.type,
     })
 })
 
