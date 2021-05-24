@@ -1,4 +1,4 @@
-package sh.xana.forum.common.dbutil;
+package sh.xana.forum.server.dbutil;
 
 import org.jooq.codegen.GenerationTool;
 import org.jooq.meta.jaxb.*;
@@ -17,7 +17,7 @@ public class JooqGenerator {
                             .withIncludes(".*"))
                     .withTarget(
                         new Target()
-                            .withPackageName("sh.xana.forum.common.db")
+                            .withPackageName("sh.xana.forum.server.db")
                             .withDirectory("src/main/java")));
     GenerationTool.generate(config);
   }

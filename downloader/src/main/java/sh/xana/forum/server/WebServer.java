@@ -8,8 +8,8 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.Utils;
-import sh.xana.forum.common.dbutil.DatabaseStorage;
 import sh.xana.forum.common.ipc.DownloadResponse;
+import sh.xana.forum.server.dbutil.DatabaseStorage;
 
 public class WebServer extends NanoHTTPD {
   public static final Logger log = LoggerFactory.getLogger(WebServer.class);

@@ -1,6 +1,6 @@
 package sh.xana.forum.server;
 
-import sh.xana.forum.common.dbutil.DatabaseStorage;
+import sh.xana.forum.server.dbutil.DatabaseStorage;
 
 public class ServerMain {
   public static void main(String[] args) throws Exception {

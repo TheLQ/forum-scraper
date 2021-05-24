@@ -1,4 +1,4 @@
-package sh.xana.forum.common.dbutil;
+package sh.xana.forum.server.dbutil;
 
 import java.net.URL;
 import java.time.LocalDateTime;
@@ -19,12 +19,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sh.xana.forum.client.Scraper;
 import sh.xana.forum.common.Utils;
-import sh.xana.forum.common.db.tables.Pages;
-import sh.xana.forum.common.db.tables.Sites;
-import sh.xana.forum.common.db.tables.records.PagesRecord;
-import sh.xana.forum.common.db.tables.records.SitesRecord;
 import sh.xana.forum.common.ipc.DownloadNodeEntry;
 import sh.xana.forum.common.ipc.DownloadRequest;
+import sh.xana.forum.server.db.tables.Pages;
+import sh.xana.forum.server.db.tables.Sites;
+import sh.xana.forum.server.db.tables.records.PagesRecord;
+import sh.xana.forum.server.db.tables.records.SitesRecord;
 
 public class DatabaseStorage {
   private static final Logger log = LoggerFactory.getLogger(DatabaseStorage.class);

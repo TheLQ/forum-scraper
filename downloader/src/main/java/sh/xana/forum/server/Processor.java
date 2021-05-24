@@ -14,11 +14,11 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.Utils;
-import sh.xana.forum.common.db.tables.records.PagesRecord;
-import sh.xana.forum.common.dbutil.DatabaseStorage;
-import sh.xana.forum.common.dbutil.DatabaseStorage.DlStatus;
 import sh.xana.forum.common.ipc.DownloadResponse;
 import sh.xana.forum.common.ipc.ParserResult;
+import sh.xana.forum.server.db.tables.records.PagesRecord;
+import sh.xana.forum.server.dbutil.DatabaseStorage;
+import sh.xana.forum.server.dbutil.DatabaseStorage.DlStatus;
 
 public class Processor {
   private static final Logger log = LoggerFactory.getLogger(DatabaseStorage.class);
