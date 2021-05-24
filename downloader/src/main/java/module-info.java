@@ -9,4 +9,5 @@ module sh.xana.forum {
   requires org.jooq;
   requires com.fasterxml.jackson.databind;
   requires org.apache.commons.lang3;
+  requires org.apache.commons.io;
 }

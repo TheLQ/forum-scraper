@@ -1,5 +1,6 @@
 package sh.xana.forum.common.dbutil;
 
+import java.net.URL;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -11,6 +12,7 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import org.jooq.CloseableDSLContext;
+import org.jooq.Condition;
 import org.jooq.Query;
 import org.jooq.impl.DSL;
 import org.slf4j.Logger;
@@ -37,8 +39,12 @@ public class DatabaseStorage {
     return context.select().from(Sites.SITES).fetchInto(SitesRecord.class);
   }
 
-  public List<PagesRecord> getPages() {
-    return context.select().from(Pages.PAGES).fetchInto(PagesRecord.class);
+  public List<PagesRecord> getPages(Condition... conditions) {
+    return context.select().from(Pages.PAGES).where(conditions).fetchInto(PagesRecord.class);
+  }
+
+  public List<PagesRecord> getPagesParser() {
+    return getPages(Pages.PAGES.DLSTATUS.eq(DlStatus.Download.toString()));
   }
 
   public List<OverviewEntry> getOverviewSites() {
@@ -110,7 +116,7 @@ public class DatabaseStorage {
    *
    * @return id
    */
-  public List<UUID> insertPageQueued(UUID siteId, List<String> urls, PageType type) {
+  public List<UUID> insertPageQueued(UUID siteId, List<String> urls, PageType type, UUID sourceId) {
     List<UUID> result = new ArrayList<>(urls.size());
 
     var query =
@@ -121,11 +127,20 @@ public class DatabaseStorage {
             Pages.PAGES.URL,
             Pages.PAGES.PAGETYPE,
             Pages.PAGES.DLSTATUS,
-            Pages.PAGES.UPDATED);
+            Pages.PAGES.UPDATED,
+            Pages.PAGES.DOMAIN,
+            Pages.PAGES.SOURCEID);
 
     for (String entry : urls) {
       UUID id = UUID.randomUUID();
       result.add(id);
+
+      String host;
+      try {
+        host = new URL(entry).getHost();
+      } catch (Exception e) {
+        throw new RuntimeException("URL", e);
+      }
 
       query =
           query.values(
@@ -134,7 +149,9 @@ public class DatabaseStorage {
               entry,
               type.toString(),
               DlStatus.Queued.toString(),
-              LocalDateTime.now());
+              LocalDateTime.now(),
+              host,
+              Utils.uuidAsBytes(sourceId));
     }
 
     executeRows(query, urls.size());

@@ -40,7 +40,7 @@ public class DownloadNode {
 
   public DownloadNode(String domain) {
     this.domain = domain;
-    this.thread = new Thread(this::mainLoop);
+    this.thread = new Thread(this::downloadThread);
     thread.setName("DownloadNode" + (INSTANCE_COUNTER++));
   }
 
@@ -48,7 +48,7 @@ public class DownloadNode {
     thread.start();
   }
 
-  private void mainLoop() {
+  private void downloadThread() {
     Exception ex = null;
     while (true) {
       boolean result;

@@ -8,7 +8,9 @@ public class ServerMain {
     System.setProperty("org.jooq.no-logo", "true");
 
     DatabaseStorage dbStorage = new DatabaseStorage();
+    Processor processor = new Processor(dbStorage);
 
-    WebServer server = new WebServer(dbStorage, new Processor(dbStorage));
+    WebServer server = new WebServer(dbStorage, processor);
+    processor.startSpiderThread();
   }
 }

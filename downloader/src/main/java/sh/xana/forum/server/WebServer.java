@@ -64,7 +64,7 @@ public class WebServer extends NanoHTTPD {
 
     UUID siteId = dbStorage.insertSite(siteUrl);
 
-    dbStorage.insertPageQueued(siteId, List.of(siteUrl), DatabaseStorage.PageType.ForumList);
+    dbStorage.insertPageQueued(siteId, List.of(siteUrl), DatabaseStorage.PageType.ForumList, null);
 
     return siteId.toString();
   }
@@ -90,8 +90,7 @@ public class WebServer extends NanoHTTPD {
   String pageClientBuffer(NanoHTTPD.IHTTPSession session) throws IOException {
     String domain = WebServer.getRequiredParameter(session, "domain");
     byte[] input = readPostInput(session);
-    DownloadResponse[] responses =
-        Utils.jsonMapper.readValue(input, DownloadResponse[].class);
+    DownloadResponse[] responses = Utils.jsonMapper.readValue(input, DownloadResponse[].class);
     processor.processResponses(responses);
 
     return dbStorage.movePageQueuedToDownloadJSON(domain);

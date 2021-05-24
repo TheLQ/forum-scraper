@@ -10,7 +10,7 @@ import org.jooq.Field;
 import org.jooq.ForeignKey;
 import org.jooq.Name;
 import org.jooq.Record;
-import org.jooq.Row9;
+import org.jooq.Row10;
 import org.jooq.Schema;
 import org.jooq.Table;
 import org.jooq.TableField;
@@ -73,6 +73,10 @@ public class Pages extends TableImpl<PagesRecord> {
   /** The column <code>Pages.dlStatusCode</code>. */
   public final TableField<PagesRecord, Integer> DLSTATUSCODE =
       createField(DSL.name("dlStatusCode"), SQLDataType.INTEGER, this, "");
+
+  /** The column <code>Pages.exception</code>. */
+  public final TableField<PagesRecord, String> EXCEPTION =
+      createField(DSL.name("exception"), SQLDataType.CLOB, this, "");
 
   private Pages(Name alias, Table<PagesRecord> aliased) {
     this(alias, aliased, null);
@@ -139,12 +143,13 @@ public class Pages extends TableImpl<PagesRecord> {
   }
 
   // -------------------------------------------------------------------------
-  // Row9 type methods
+  // Row10 type methods
   // -------------------------------------------------------------------------
 
   @Override
-  public Row9<byte[], byte[], byte[], String, String, String, LocalDateTime, String, Integer>
+  public Row10<
+          byte[], byte[], byte[], String, String, String, LocalDateTime, String, Integer, String>
       fieldsRow() {
-    return (Row9) super.fieldsRow();
+    return (Row10) super.fieldsRow();
   }
 }
