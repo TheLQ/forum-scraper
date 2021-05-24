@@ -163,6 +163,7 @@ public class DatabaseStorage {
             .select()
             .from(Pages.PAGES)
             .where(Pages.PAGES.DOMAIN.eq(domain))
+            .and(Pages.PAGES.DLSTATUS.eq(DlStatus.Queued.toString()))
             .limit(DownloadNode.URL_QUEUE_REFILL_SIZE)
             .fetch()
             .map(
