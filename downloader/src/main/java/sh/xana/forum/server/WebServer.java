@@ -89,9 +89,9 @@ public class WebServer extends NanoHTTPD {
 
   String pageClientBuffer(NanoHTTPD.IHTTPSession session) throws IOException {
     String domain = WebServer.getRequiredParameter(session, "domain");
-
+    byte[] input = readPostInput(session);
     DownloadResponse[] responses =
-        Utils.jsonMapper.readValue(session.getInputStream(), DownloadResponse[].class);
+        Utils.jsonMapper.readValue(input, DownloadResponse[].class);
     processor.processResponses(responses);
 
     return dbStorage.movePageQueuedToDownloadJSON(domain);
@@ -114,5 +114,22 @@ public class WebServer extends NanoHTTPD {
               + " | "
               + session.getQueryParameterString());
     }
+  }
+
+  byte[] readPostInput(IHTTPSession session) throws IOException {
+    if (session.getMethod() != Method.POST) {
+      throw new RuntimeException("Expected POST got " + session.getMethod());
+    }
+
+    // Clients seem to expect us to close the stream once content-length is reached.
+    // If you read beyond (eg readAllBytes(), while (input.read() != -1), etc) the
+    // connections deadlocks, then hits the socket timeout and kills the connection
+    int length = Integer.parseInt(session.getHeaders().get("content-length"));
+    byte[] data = new byte[length];
+    int currentLength = 0;
+    while (length != currentLength) {
+      currentLength += session.getInputStream().read(data, currentLength, length - currentLength);
+    }
+    return data;
   }
 }

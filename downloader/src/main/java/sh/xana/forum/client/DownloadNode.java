@@ -29,7 +29,7 @@ public class DownloadNode {
   /** Number of URLs to request, and size when to do a request. Should be between SIZE - 2xSIZE */
   public static final int URL_QUEUE_REFILL_SIZE = 10;
 
-  private static int CYCLE_SECONDS = 30;
+  private static int CYCLE_SECONDS = 5;
   private static int INSTANCE_COUNTER = 0;
 
   private final String domain;
