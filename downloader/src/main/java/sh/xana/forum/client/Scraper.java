@@ -86,6 +86,7 @@ public class Scraper {
       try {
         log.debug("Requesting {} url {}", downloadRequest.id(), downloadRequest.url());
         URI uri = new URI(downloadRequest.url());
+
         HttpRequest request = HttpRequest.newBuilder().uri(uri).build();
         HttpResponse<byte[]> response = Utils.httpClient.send(request, BodyHandlers.ofByteArray());
 
