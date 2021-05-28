@@ -18,6 +18,8 @@ public class Utils {
   public static final HttpClient httpClient = HttpClient.newHttpClient();
   public static final ObjectMapper jsonMapper = new ObjectMapper();
 
+  public static String BACKEND_SERVER = "http://127.0.0.1:8080/";
+
   public static UUID uuidFromBytes(byte[] bytes) {
     ByteBuffer bb = ByteBuffer.wrap(bytes);
     long firstLong = bb.getLong();
@@ -33,7 +35,7 @@ public class Utils {
   }
 
   public static String serverGet(String path) {
-    String urlRaw = "http://127.0.0.1:8080/" + path;
+    String urlRaw = BACKEND_SERVER + path;
     try {
       HttpRequest request = HttpRequest.newBuilder().uri(new URI(urlRaw)).build();
       HttpResponse<String> response =
@@ -44,12 +46,12 @@ public class Utils {
       }
       return response.body();
     } catch (Exception e) {
-      throw new RuntimeException("Failed to generate URI", e);
+      throw new RuntimeException("Failure on " + urlRaw, e);
     }
   }
 
   public static String serverPost(String path, String postData) {
-    String urlRaw = "http://127.0.0.1:8080/" + path;
+    String urlRaw = BACKEND_SERVER + path;
     try {
       HttpRequest request =
           HttpRequest.newBuilder()
@@ -65,7 +67,6 @@ public class Utils {
       }
       return response.body();
     } catch (Exception e) {
-      log.info("faile");
       throw new RuntimeException("Failure on " + urlRaw + " postdata:\r\n" + postData, e);
     }
   }

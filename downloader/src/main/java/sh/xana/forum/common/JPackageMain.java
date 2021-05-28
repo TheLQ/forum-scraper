@@ -1,7 +1,6 @@
 package sh.xana.forum.common;
 
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sh.xana.forum.client.ClientMain;
@@ -15,7 +14,7 @@ public class JPackageMain {
       System.out.println("jpackagemain <client/server> ...");
       System.exit(1);
     }
-    log.info("Client start, getting download node list - {}", StringUtils.joinWith("|", args));
+    log.info("Client start, getting download node list - {}", args);
     String mode = args[0];
     args = ArrayUtils.subarray(args, 1, args.length);
 
