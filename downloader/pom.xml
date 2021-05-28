@@ -77,12 +77,6 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.8.1</version>
-<!--        <configuration>-->
-<!--          <compilerArgs>-->
-<!--            <compilerArg>&#45;&#45;module-path</compilerArg>-->
-<!--            <compilerArg>${project.build.directory}/modules</compilerArg>-->
-<!--          </compilerArgs>-->
-<!--        </configuration>-->
       </plugin>
 
       <plugin>
@@ -140,170 +134,201 @@
 
       -->
 
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-shade-plugin</artifactId>
-        <version>3.2.4</version>
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <goals>
-              <goal>shade</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.panteleyev</groupId>
-        <artifactId>jpackage-maven-plugin</artifactId>
-        <version>1.5.1</version>
-        <configuration>
-          <name>forum-scrape</name>
-          <type>APP_IMAGE</type>
-          <verbose>true</verbose>
-          <destination>target/dist</destination>
-          <appVersion>1</appVersion>
-          <mainJar>${project.build.directory}/scrape-download-1.0-SNAPSHOT.jar</mainJar>
-          <mainClass>sh.xana.forum.common.JPackageMain</mainClass>
-          <input>src/main/resources</input>
-          <winConsole>true</winConsole>
-        </configuration>
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <goals>
-              <goal>jpackage</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
+      <!--      <plugin>-->
+      <!--        <groupId>org.apache.maven.plugins</groupId>-->
+      <!--        <artifactId>maven-shade-plugin</artifactId>-->
+      <!--        <version>3.2.4</version>-->
+      <!--        <executions>-->
+      <!--          <execution>-->
+      <!--            <phase>package</phase>-->
+      <!--            <goals>-->
+      <!--              <goal>shade</goal>-->
+      <!--            </goals>-->
+      <!--          </execution>-->
+      <!--        </executions>-->
+      <!--      </plugin>-->
+      <!--      <plugin>-->
+      <!--        <groupId>org.panteleyev</groupId>-->
+      <!--        <artifactId>jpackage-maven-plugin</artifactId>-->
+      <!--        <version>1.5.1</version>-->
+      <!--        <configuration>-->
+      <!--          <name>forum-scrape</name>-->
+      <!--          <type>APP_IMAGE</type>-->
+      <!--          <verbose>true</verbose>-->
+      <!--          <destination>target/dist</destination>-->
+      <!--          <appVersion>1</appVersion>-->
+      <!--          <mainJar>${project.build.directory}/scrape-download-1.0-SNAPSHOT.jar</mainJar>-->
+      <!--          <mainClass>sh.xana.forum.common.JPackageMain</mainClass>-->
+      <!--          <input>src/main/resources</input>-->
+      <!--          <winConsole>true</winConsole>-->
+      <!--        </configuration>-->
+      <!--        <executions>-->
+      <!--          <execution>-->
+      <!--            <phase>package</phase>-->
+      <!--            <goals>-->
+      <!--              <goal>jpackage</goal>-->
+      <!--            </goals>-->
+      <!--          </execution>-->
+      <!--        </executions>-->
+      <!--      </plugin>-->
 
       <!--
 
       Package via modern modules
 
       -->
-      <!--      <plugin>-->
-      <!--        <groupId>org.apache.maven.plugins</groupId>-->
-      <!--        <artifactId>maven-dependency-plugin</artifactId>-->
-      <!--        <version>3.1.2</version>-->
-      <!--        <executions>-->
-      <!--          <execution>-->
-      <!--            <id>copy-dependencies</id>-->
-      <!--            <phase>generate-sources</phase>-->
-      <!--            <goals>-->
-      <!--              <goal>copy-dependencies</goal>-->
-      <!--            </goals>-->
-      <!--            <configuration>-->
-      <!--              <includeScope>runtime</includeScope>-->
-      <!--              <outputDirectory>${project.build.directory}/modules</outputDirectory>-->
-      <!--            </configuration>-->
-      <!--          </execution>-->
-      <!--        </executions>-->
-      <!--      </plugin>-->
-      <!--      <plugin>-->
-      <!--        <groupId>org.moditect</groupId>-->
-      <!--        <artifactId>moditect-maven-plugin</artifactId>-->
-      <!--        <version>1.0.0.RC1</version>-->
-      <!--        <executions>-->
-      <!--          <execution>-->
-      <!--            <id>generate-module-info</id>-->
-      <!--            <phase>generate-sources</phase>-->
-      <!--            <goals>-->
-      <!--              &lt;!&ndash; add-module-info &ndash;&gt;-->
-      <!--              <goal>add-module-info</goal>-->
-      <!--            </goals>-->
-      <!--            <configuration>-->
-      <!--              <outputDirectory>${project.build.directory}/modules</outputDirectory>-->
-      <!--              <overwriteExistingFiles>true</overwriteExistingFiles>-->
-      <!--              <modules>-->
-      <!--                <module>-->
-      <!--                  <artifact>-->
-      <!--                    <groupId>org.apache.commons</groupId>-->
-      <!--                    <artifactId>commons-lang3</artifactId>-->
-      <!--                    <version>3.12.0</version>-->
-      <!--                  </artifact>-->
-      <!--                  <moduleInfo>-->
-      <!--                  </moduleInfo>-->
-      <!--                </module>-->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>3.1.2</version>
+        <executions>
+          <execution>
+            <id>copy-dependencies</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>copy-dependencies</goal>
+            </goals>
+            <configuration>
+              <includeScope>runtime</includeScope>
+              <outputDirectory>${project.build.directory}/modules</outputDirectory>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.moditect</groupId>
+        <artifactId>moditect-maven-plugin</artifactId>
+        <version>1.0.0.RC1</version>
+        <executions>
+          <execution>
+            <id>generate-module-info</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <!-- add-module-info -->
+              <goal>add-module-info</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/modules</outputDirectory>
+              <overwriteExistingFiles>true</overwriteExistingFiles>
+              <modules>
+                <module>
+                  <artifact>
+                    <groupId>org.apache.commons</groupId>
+                    <artifactId>commons-lang3</artifactId>
+                    <version>3.12.0</version>
+                  </artifact>
+                  <moduleInfo>
+                  </moduleInfo>
+                </module>
 
-      <!--                <module>-->
-      <!--                  <artifact>-->
-      <!--                    <groupId>org.jooq</groupId>-->
-      <!--                    <artifactId>jooq</artifactId>-->
-      <!--                    <version>3.14.11</version>-->
-      <!--                  </artifact>-->
-      <!--                  <moduleInfo>-->
-      <!--                    <exports>-->
-      <!--                      *;-->
-      <!--                    </exports>-->
-      <!--                    <requires>-->
-      <!--                      transitive !java.persistence*-->
-      <!--                    </requires>-->
-      <!--                  </moduleInfo>-->
-      <!--                </module>-->
+                <module>
+                  <artifact>
+                    <groupId>org.jooq</groupId>
+                    <artifactId>jooq</artifactId>
+                    <version>3.14.11</version>
+                  </artifact>
+                  <moduleInfo>
+                    <exports>
+                      *;
+                    </exports>
+                    <requires>
+                      transitive !java.persistence*
+                    </requires>
+                  </moduleInfo>
+                </module>
 
-      <!--                <module>-->
-      <!--                  <artifact>-->
-      <!--                    <groupId>org.xerial</groupId>-->
-      <!--                    <artifactId>sqlite-jdbc</artifactId>-->
-      <!--                    <version>3.34.0</version>-->
-      <!--                  </artifact>-->
-      <!--                  <moduleInfo>-->
-      <!--                  </moduleInfo>-->
-      <!--                </module>-->
+                <module>
+                  <artifact>
+                    <groupId>org.xerial</groupId>
+                    <artifactId>sqlite-jdbc</artifactId>
+                    <version>3.34.0</version>
+                  </artifact>
+                  <moduleInfo>
+                  </moduleInfo>
+                </module>
 
-      <!--                <module>-->
-      <!--                  <artifact>-->
-      <!--                    <groupId>org.reactivestreams</groupId>-->
-      <!--                    <artifactId>reactive-streams</artifactId>-->
-      <!--                    <version>1.0.2</version>-->
-      <!--                  </artifact>-->
-      <!--                  <moduleInfo>-->
-      <!--                  </moduleInfo>-->
-      <!--                </module>-->
-      <!--              </modules>-->
-      <!--              <jdepsExtraArgs>-->
-      <!--                <arg>&#45;&#45;multi-release</arg>-->
-      <!--                <arg>16</arg>-->
-      <!--                <arg>&#45;&#45;ignore-missing-deps</arg>-->
-      <!--              </jdepsExtraArgs>-->
-      <!--            </configuration>-->
-      <!--          </execution>-->
-      <!--          <execution>-->
-      <!--            <id>create-runtime-image</id>-->
-      <!--            <phase>package</phase>-->
-      <!--            <goals>-->
-      <!--              <goal>create-runtime-image</goal>-->
-      <!--            </goals>-->
-      <!--            <configuration>-->
-      <!--              <modulePath>-->
-      <!--                <path>${project.build.directory}/modules</path>-->
-      <!--              </modulePath>-->
-      <!--              <launcher>-->
-      <!--                <module>sh.xana.forum</module>-->
-      <!--                <name>sh.xana.forum.common.JPackageMain</name>-->
-      <!--              </launcher>-->
-      <!--              <modules>-->
-      <!--                <module>sh.xana.forum</module>-->
-      <!--                <module>org.apache.commons.lang3</module>-->
-      <!--                <module>org.jooq</module>-->
-      <!--                <module>java.activation</module>-->
-      <!--                <module>org.reactivestreams</module>-->
-      <!--              </modules>-->
-      <!--              <outputDirectory>${project.build.directory}/jlink-image</outputDirectory>-->
-      <!--            </configuration>-->
-      <!--          </execution>-->
-      <!--        </executions>-->
-      <!--      </plugin>-->
-      <!--      <plugin>-->
-      <!--        <groupId>org.apache.maven.plugins</groupId>-->
-      <!--        <artifactId>maven-jar-plugin</artifactId>-->
-      <!--        <version>3.2.0</version>-->
-      <!--        <configuration>-->
-      <!--          <outputDirectory>${project.build.directory}/modules</outputDirectory>-->
-      <!--        </configuration>-->
-      <!--      </plugin>-->
+                <module>
+                  <artifact>
+                    <groupId>org.reactivestreams</groupId>
+                    <artifactId>reactive-streams</artifactId>
+                    <version>1.0.2</version>
+                  </artifact>
+                  <moduleInfo>
+                  </moduleInfo>
+                </module>
+
+                <module>
+                  <artifact>
+                    <groupId>edu.washington.cs.types.checker</groupId>
+                    <artifactId>checker-framework</artifactId>
+                    <version>1.7.0</version>
+                  </artifact>
+                  <moduleInfo>
+                    <addServiceUses>true</addServiceUses>
+                  </moduleInfo>
+                </module>
+
+                <module>
+                  <artifact>
+                    <groupId>javax.activation</groupId>
+                    <artifactId>javax.activation-api</artifactId>
+                    <version>1.2.0</version>
+                  </artifact>
+                  <moduleInfo>
+                  </moduleInfo>
+                </module>
+
+                <module>
+                  <artifact>
+                    <groupId>org.nanohttpd</groupId>
+                    <artifactId>nanohttpd</artifactId>
+                    <version>2.3.1</version>
+                  </artifact>
+                  <moduleInfo>
+                  </moduleInfo>
+                </module>
+              </modules>
+              <jdepsExtraArgs>
+                <arg>--multi-release</arg>
+                <arg>16</arg>
+                <arg>--ignore-missing-deps</arg>
+              </jdepsExtraArgs>
+            </configuration>
+          </execution>
+          <execution>
+            <id>create-runtime-image</id>
+            <phase>package</phase>
+            <goals>
+              <goal>create-runtime-image</goal>
+            </goals>
+            <configuration>
+              <modulePath>
+                <path>${project.build.directory}/modules</path>
+              </modulePath>
+              <launcher>
+                <module>sh.xana.forum/sh.xana.forum.common.JPackageMain</module>
+                <name>main</name>
+              </launcher>
+              <modules>
+                <module>sh.xana.forum</module>
+                <module>org.apache.commons.lang3</module>
+                <module>org.jooq</module>
+                <module>java.activation</module>
+                <module>org.reactivestreams</module>
+              </modules>
+              <outputDirectory>${project.build.directory}/jlink-image</outputDirectory>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>3.2.0</version>
+        <configuration>
+          <outputDirectory>${project.build.directory}/modules</outputDirectory>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
 
