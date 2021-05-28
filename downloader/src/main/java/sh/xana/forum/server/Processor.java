@@ -2,12 +2,14 @@ package sh.xana.forum.server;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -101,8 +103,7 @@ public class Processor {
                   "node", "../parser/parser.js", "../filecache/" + pageIdStr + ".response")
               .redirectErrorStream(true);
       Process process = pb.start();
-//      String output = IOUtils.toString(process.getInputStream(), StandardCharsets.UTF_8);
-      String output = "";
+      String output = IOUtils.toString(process.getInputStream(), StandardCharsets.UTF_8);
 
       if (process.exitValue() != 0) {
         throw new RuntimeException("node parser exit " + process.exitValue() + "\r\n" + output);
