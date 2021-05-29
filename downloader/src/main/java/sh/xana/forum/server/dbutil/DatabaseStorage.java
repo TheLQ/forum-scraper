@@ -70,7 +70,7 @@ public class DatabaseStorage {
             .set(Pages.PAGES.DLSTATUS, DlStatus.Parse)
             .set(Pages.PAGES.DLSTATUSCODE, statusCode)
             .set(Pages.PAGES.UPDATED, LocalDateTime.now())
-            .where(Pages.PAGES.ID.in(pageId));
+            .where(Pages.PAGES.ID.eq(pageId));
 
     executeOneRow(query);
   }
@@ -205,7 +205,7 @@ public class DatabaseStorage {
         context
             .update(Pages.PAGES)
             .set(Pages.PAGES.EXCEPTION, exception)
-            .where(Pages.PAGES.ID.in(pageId));
+            .where(Pages.PAGES.ID.eq(pageId));
 
     executeOneRow(query);
   }
@@ -215,7 +215,7 @@ public class DatabaseStorage {
         context
             .update(Pages.PAGES)
             .set(Pages.PAGES.EXCEPTION, (String) null)
-            .where(Pages.PAGES.ID.in(pageId));
+            .where(Pages.PAGES.ID.eq(pageId));
 
     executeOneRow(query);
   }
