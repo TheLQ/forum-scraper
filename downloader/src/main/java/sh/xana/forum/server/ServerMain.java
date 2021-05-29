@@ -9,8 +9,9 @@ public class ServerMain {
 
     DatabaseStorage dbStorage = new DatabaseStorage();
     Processor processor = new Processor(dbStorage);
+    NodeManager nodeManager = new NodeManager();
 
-    WebServer server = new WebServer(dbStorage, processor);
+    WebServer server = new WebServer(dbStorage, processor, nodeManager);
     processor.startSpiderThread();
   }
 }

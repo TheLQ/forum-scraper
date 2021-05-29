@@ -9,8 +9,8 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.Utils;
-import sh.xana.forum.common.ipc.DownloadRequest;
-import sh.xana.forum.common.ipc.DownloadResponse;
+import sh.xana.forum.common.ipc.ScraperRequest;
+import sh.xana.forum.common.ipc.ScraperResponse;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
 
 public class WebServer extends NanoHTTPD {
@@ -20,11 +20,14 @@ public class WebServer extends NanoHTTPD {
 
   private final DatabaseStorage dbStorage;
   private final Processor processor;
+  private final NodeManager nodeManager;
 
-  public WebServer(DatabaseStorage dbStorage, Processor processor) throws IOException {
+  public WebServer(DatabaseStorage dbStorage, Processor processor, NodeManager nodeManager)
+      throws IOException {
     super(PORT);
     this.dbStorage = dbStorage;
     this.processor = processor;
+    this.nodeManager = nodeManager;
     start(NanoHTTPD.SOCKET_READ_TIMEOUT, false);
     log.info("server running on http://{}:{}", getHostname(), PORT);
   }
@@ -46,7 +49,7 @@ public class WebServer extends NanoHTTPD {
         case PAGE_OVERVIEW:
           return newFixedLengthResponse(pageOverview());
         case PAGE_CLIENT_NODEINIT:
-          return newFixedLengthResponse(pageClientNodeInit());
+          return newFixedLengthResponse(pageClientNodeInit(session));
         case PAGE_CLIENT_BUFFER:
           return newFixedLengthResponse(pageClientBuffer(session));
         default:
@@ -83,7 +86,10 @@ public class WebServer extends NanoHTTPD {
 
   public static final String PAGE_CLIENT_NODEINIT = "client/nodeinit";
 
-  String pageClientNodeInit() throws JsonProcessingException {
+  String pageClientNodeInit(NanoHTTPD.IHTTPSession session) throws JsonProcessingException {
+    nodeManager.registerNode(
+        getRequiredParameter(session, "ip"), getRequiredParameter(session, "hostname"));
+
     return Utils.jsonMapper.writeValueAsString(dbStorage.getScraperDomainsIPC());
   }
 
@@ -92,10 +98,10 @@ public class WebServer extends NanoHTTPD {
   String pageClientBuffer(NanoHTTPD.IHTTPSession session) throws IOException, InterruptedException {
     String domain = WebServer.getRequiredParameter(session, "domain");
     byte[] input = readPostInput(session);
-    DownloadResponse responses = Utils.jsonMapper.readValue(input, DownloadResponse.class);
+    ScraperResponse responses = Utils.jsonMapper.readValue(input, ScraperResponse.class);
     processor.processResponses(responses);
 
-    List<DownloadRequest> requests = dbStorage.movePageQueuedToDownloadIPC(domain);
+    List<ScraperRequest.SiteEntry> requests = dbStorage.movePageQueuedToDownloadIPC(domain);
     log.info(
         "client {} downloaded {} download error {} sent",
         responses.successes().size(),
@@ -104,7 +110,7 @@ public class WebServer extends NanoHTTPD {
     return Utils.jsonMapper.writeValueAsString(requests);
   }
 
-  static String getRequiredParameter(IHTTPSession session, String key) {
+  private static String getRequiredParameter(IHTTPSession session, String key) {
     var params = session.getParameters();
     try {
       List<String> values = params.get(key);
@@ -123,7 +129,7 @@ public class WebServer extends NanoHTTPD {
     }
   }
 
-  byte[] readPostInput(IHTTPSession session) throws IOException {
+  private static byte[] readPostInput(IHTTPSession session) throws IOException {
     if (session.getMethod() != Method.POST) {
       throw new RuntimeException("Expected POST got " + session.getMethod());
     }

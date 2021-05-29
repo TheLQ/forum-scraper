@@ -18,7 +18,7 @@ public class JPackageMain {
     String mode = args[0];
     args = ArrayUtils.subarray(args, 1, args.length);
 
-    switch(mode) {
+    switch (mode) {
       case "client" -> ClientMain.main(args);
       case "server" -> ServerMain.main(args);
       default -> throw new RuntimeException("unknown server name");

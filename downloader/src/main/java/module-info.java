@@ -5,7 +5,7 @@ module sh.xana.forum {
   requires org.apache.commons.io;
   requires org.apache.commons.lang3;
   requires org.jooq;
-//  requires org.jooq.codegen;
-//  requires org.jooq.meta;
+  //  requires org.jooq.codegen;
+  //  requires org.jooq.meta;
   requires org.slf4j;
 }

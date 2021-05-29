@@ -1,10 +1,10 @@
-//package sh.xana.forum.server.dbutil;
+// package sh.xana.forum.server.dbutil;
 //
-//import org.jooq.codegen.GenerationTool;
-//import org.jooq.meta.jaxb.*;
+// import org.jooq.codegen.GenerationTool;
+// import org.jooq.meta.jaxb.*;
 //
-///** Run jOOq CodeGen. Automatically handles removing old files too */
-//public class JooqGenerator {
+/// ** Run jOOq CodeGen. Automatically handles removing old files too */
+// public class JooqGenerator {
 //  public static void main(String[] args) throws Exception {
 //    Configuration config =
 //        new Configuration()
@@ -21,4 +21,4 @@
 //                            .withDirectory("src/main/java")));
 //    GenerationTool.generate(config);
 //  }
-//}
+// }

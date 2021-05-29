@@ -19,8 +19,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sh.xana.forum.client.Scraper;
 import sh.xana.forum.common.Utils;
-import sh.xana.forum.common.ipc.DownloadNodeEntry;
-import sh.xana.forum.common.ipc.DownloadRequest;
+import sh.xana.forum.common.ipc.NodeResponse.ScraperEntry;
+import sh.xana.forum.common.ipc.ScraperRequest;
 import sh.xana.forum.server.db.tables.Pages;
 import sh.xana.forum.server.db.tables.Sites;
 import sh.xana.forum.server.db.tables.records.PagesRecord;
@@ -32,21 +32,21 @@ public class DatabaseStorage {
   private final CloseableDSLContext context = DSL.using("jdbc:sqlite:sample.db");
 
   /** Stage: init client */
-  public List<DownloadNodeEntry> getScraperDomainsIPC() {
+  public List<ScraperEntry> getScraperDomainsIPC() {
     var pages =
         context.selectDistinct(Pages.PAGES.DOMAIN).from(Pages.PAGES).fetchInto(PagesRecord.class);
 
-    List<DownloadNodeEntry> resultList = new ArrayList<>(pages.size());
+    List<ScraperEntry> resultList = new ArrayList<>(pages.size());
     for (PagesRecord page : pages) {
-      resultList.add(new DownloadNodeEntry(page.getDomain()));
+      resultList.add(new ScraperEntry(page.getDomain()));
     }
 
     return resultList;
   }
 
   /** Stage: Load pages to be downloaded by Scraper */
-  public List<DownloadRequest> movePageQueuedToDownloadIPC(String domain) {
-    List<DownloadRequest> pages =
+  public List<ScraperRequest.SiteEntry> movePageQueuedToDownloadIPC(String domain) {
+    List<ScraperRequest.SiteEntry> pages =
         context
             .select()
             .from(Pages.PAGES)
@@ -57,11 +57,12 @@ public class DatabaseStorage {
             .fetch()
             .map(
                 r ->
-                    new DownloadRequest(
+                    new ScraperRequest.SiteEntry(
                         Utils.uuidFromBytes(r.get(Pages.PAGES.ID)), r.get(Pages.PAGES.URL)));
 
     setPageStatus(
-        pages.stream().map(DownloadRequest::id).collect(Collectors.toList()), DlStatus.Download);
+        pages.stream().map(ScraperRequest.SiteEntry::siteId).collect(Collectors.toList()),
+        DlStatus.Download);
 
     return pages;
   }

@@ -11,8 +11,8 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.Utils;
-import sh.xana.forum.common.ipc.DownloadRequest;
-import sh.xana.forum.common.ipc.DownloadResponse;
+import sh.xana.forum.common.ipc.ScraperRequest;
+import sh.xana.forum.common.ipc.ScraperResponse;
 import sh.xana.forum.server.WebServer;
 
 /**
@@ -33,16 +33,16 @@ public class Scraper {
   private static int INSTANCE_COUNTER = 0;
 
   private final String domain;
-  private final List<DownloadRequest> downloadRequests = new ArrayList<>();
-  private final List<DownloadResponse.Success> responseSuccess = new ArrayList<>();
-  private final List<DownloadResponse.Error> responseError = new ArrayList<>();
+  private final List<ScraperRequest.SiteEntry> scraperRequests = new ArrayList<>();
+  private final List<ScraperResponse.Success> responseSuccess = new ArrayList<>();
+  private final List<ScraperResponse.Error> responseError = new ArrayList<>();
 
   private final Thread thread;
 
   public Scraper(String domain) {
     this.domain = domain;
     this.thread = new Thread(this::downloadThread);
-    thread.setName("DownloadNode" + (INSTANCE_COUNTER++));
+    thread.setName("Scraper" + (INSTANCE_COUNTER++));
   }
 
   public void startThread() {
@@ -74,37 +74,37 @@ public class Scraper {
    * @return true to continue to next loop
    */
   private boolean mainLoopCycle() throws InterruptedException {
-    if (downloadRequests.size() < URL_QUEUE_REFILL_SIZE) {
+    if (scraperRequests.size() < URL_QUEUE_REFILL_SIZE) {
       refillQueue();
     }
 
-    if (downloadRequests.size() == 0) {
+    if (scraperRequests.size() == 0) {
       log.warn("Queue is empty, not doing anything");
     } else {
       // pop request and fetch content
-      DownloadRequest downloadRequest = downloadRequests.remove(0);
+      ScraperRequest.SiteEntry scraperRequest = scraperRequests.remove(0);
       try {
-        log.debug("Requesting {} url {}", downloadRequest.id(), downloadRequest.url());
-        URI uri = new URI(downloadRequest.url());
+        log.debug("Requesting {} url {}", scraperRequest.siteId(), scraperRequest.url());
+        URI uri = new URI(scraperRequest.url());
 
         HttpRequest request = HttpRequest.newBuilder().uri(uri).build();
         HttpResponse<byte[]> response = Utils.httpClient.send(request, BodyHandlers.ofByteArray());
 
         responseSuccess.add(
-            new DownloadResponse.Success(
-                downloadRequest.id(),
+            new ScraperResponse.Success(
+                scraperRequest.siteId(),
                 response.body(),
                 response.headers().map(),
                 response.statusCode()));
       } catch (Exception e) {
         log.debug("exception during run", e);
         responseError.add(
-            new DownloadResponse.Error(downloadRequest.id(), ExceptionUtils.getStackTrace(e)));
+            new ScraperResponse.Error(scraperRequest.siteId(), ExceptionUtils.getStackTrace(e)));
       }
     }
 
     // sleep then continue for the next cycle
-    log.debug("Queued {} urls, sleeping {} seconds", downloadRequests.size(), CYCLE_SECONDS);
+    log.debug("Queued {} urls, sleeping {} seconds", scraperRequests.size(), CYCLE_SECONDS);
     Thread.sleep(1000L * CYCLE_SECONDS);
     return true;
   }
@@ -113,18 +113,20 @@ public class Scraper {
   private void refillQueue() {
     log.info(
         "-- Refill, {} requests, {} response success, {} response error",
-        downloadRequests.size(),
+        scraperRequests.size(),
         responseSuccess.size(),
         responseError.size());
     try {
-      DownloadResponse downloads = new DownloadResponse(responseSuccess, responseError);
+      ScraperResponse downloads =
+          new ScraperResponse(ClientMain.NODE_ID, responseSuccess, responseError);
       String newRequestsJSON =
-          Utils.serverPost(
+          Utils.serverPostBackend(
               WebServer.PAGE_CLIENT_BUFFER + "?domain=" + this.domain,
               Utils.jsonMapper.writeValueAsString(downloads));
 
       Collections.addAll(
-          downloadRequests, Utils.jsonMapper.readValue(newRequestsJSON, DownloadRequest[].class));
+          scraperRequests,
+          Utils.jsonMapper.readValue(newRequestsJSON, ScraperRequest.SiteEntry[].class));
       responseSuccess.clear();
       responseError.clear();
     } catch (Exception e) {

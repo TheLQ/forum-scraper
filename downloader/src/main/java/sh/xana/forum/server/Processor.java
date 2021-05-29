@@ -14,8 +14,8 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.Utils;
-import sh.xana.forum.common.ipc.DownloadResponse;
 import sh.xana.forum.common.ipc.ParserResult;
+import sh.xana.forum.common.ipc.ScraperResponse;
 import sh.xana.forum.server.db.tables.Pages;
 import sh.xana.forum.server.db.tables.records.PagesRecord;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
@@ -39,14 +39,14 @@ public class Processor {
     this.spiderThread.setName("ProcessorSpider");
   }
 
-  /** Process responses the download nodes collected */
-  public void processResponses(DownloadResponse response) throws IOException, InterruptedException {
-    for (DownloadResponse.Error error : response.errors()) {
+  /** Process responses the download scraper collected */
+  public void processResponses(ScraperResponse response) throws IOException, InterruptedException {
+    for (ScraperResponse.Error error : response.errors()) {
       log.debug("Found error for {} {}", error.id(), error.exception());
       dbStorage.setPageException(error.id(), error.exception());
     }
 
-    for (DownloadResponse.Success success : response.successes()) {
+    for (ScraperResponse.Success success : response.successes()) {
       log.debug("Writing " + success.id().toString() + " response and header");
       Files.write(fileCachePath.resolve(success.id() + ".response"), success.body());
       Files.writeString(
