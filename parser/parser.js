@@ -23,7 +23,7 @@ const results = {
     subpages: []
 }
 
-if ($("div > .post").length == 0) {
+if ($("div > .post_header").length == 0) {
     results.type = "ForumList"
 
     // forum list
