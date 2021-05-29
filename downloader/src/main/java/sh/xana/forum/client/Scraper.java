@@ -50,13 +50,11 @@ public class Scraper {
   }
 
   private void downloadThread() {
-    Exception ex = null;
     while (true) {
       boolean result;
       try {
         result = mainLoopCycle();
       } catch (Exception e) {
-        ex = e;
         log.error("Caught exception in mainLoop, stopping", e);
         break;
       }
