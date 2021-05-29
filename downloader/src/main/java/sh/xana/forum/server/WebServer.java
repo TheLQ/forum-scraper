@@ -112,7 +112,7 @@ public class WebServer extends NanoHTTPD {
     List<PagesRecord> pages = dbStorage.getPages(Pages.PAGES.EXCEPTION.isNotNull());
     for (PagesRecord page : pages) {
       result.append("<tr>");
-      result.append("<td>").append(Utils.uuidFromBytes(page.getId())).append("</td>");
+      result.append("<td>").append(page.getId()).append("</td>");
       result.append("<td>").append(page.getDlstatus()).append("</td>");
       result.append("<td>").append(page.getPagetype()).append("</td>");
       result.append("<td>").append(page.getUpdated()).append("</td>");
@@ -125,7 +125,7 @@ public class WebServer extends NanoHTTPD {
           .append("<a href='/")
           .append(PAGE_OVERVIEW_ERRORS_CLEAR)
           .append("?pageId=")
-          .append(Utils.uuidFromBytes(page.getId()))
+          .append(page.getId())
           .append("'>clear</a><br/>")
           .append(page.getException())
           .append("</pre></td></tr>");

@@ -6,6 +6,7 @@ package sh.xana.forum.server.db.tables;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
 import org.jooq.Name;
@@ -39,8 +40,8 @@ public class Sites extends TableImpl<SitesRecord> {
   }
 
   /** The column <code>Sites.id</code>. */
-  public final TableField<SitesRecord, byte[]> ID =
-      createField(DSL.name("id"), SQLDataType.BLOB.nullable(false), this, "");
+  public final TableField<SitesRecord, UUID> ID =
+      createField(DSL.name("id"), SQLDataType.UUID.nullable(false), this, "");
 
   /** The column <code>Sites.url</code>. */
   public final TableField<SitesRecord, String> URL =
@@ -119,7 +120,7 @@ public class Sites extends TableImpl<SitesRecord> {
   // -------------------------------------------------------------------------
 
   @Override
-  public Row3<byte[], String, LocalDateTime> fieldsRow() {
+  public Row3<UUID, String, LocalDateTime> fieldsRow() {
     return (Row3) super.fieldsRow();
   }
 }

@@ -69,10 +69,7 @@ public class Processor {
   /** */
   private void pageSpiderThread() {
     // fetch missed parse records from last run
-    dbStorage.getParserPages().stream()
-        .map(PagesRecord::getId)
-        .map(Utils::uuidFromBytes)
-        .forEach(spiderQueue::add);
+    dbStorage.getParserPages().stream().map(PagesRecord::getId).forEach(spiderQueue::add);
 
     Exception ex = null;
     while (true) {
@@ -94,7 +91,7 @@ public class Processor {
 
   private boolean pageSpiderCycle() throws InterruptedException {
     UUID pageId = spiderQueue.take();
-    List<PagesRecord> pages = dbStorage.getPages(Pages.PAGES.ID.eq(Utils.uuidAsBytes(pageId)));
+    List<PagesRecord> pages = dbStorage.getPages(Pages.PAGES.ID.eq(pageId));
     if (pages.size() != 1) {
       throw new RuntimeException("found " + pages.size() + " pages for " + pageId);
     }
@@ -141,10 +138,7 @@ public class Processor {
         if (dbStorage.getPages(Pages.PAGES.URL.eq(url.toString())).size() == 0) {
           log.info("New page {}", url);
           dbStorage.insertPageQueued(
-              Utils.uuidFromBytes(page.getSiteid()),
-              List.of(url.toString()),
-              result.type(),
-              pageId);
+              page.getSiteid(), List.of(url.toString()), result.type(), pageId);
         } else {
           log.info("Ignoring duplicate page " + url);
         }
@@ -153,8 +147,7 @@ public class Processor {
       dbStorage.setPageStatus(List.of(pageId), DlStatus.Done);
     } catch (Exception e) {
       log.warn("Failed in parser", e);
-      dbStorage.setPageException(
-          Utils.uuidFromBytes(page.getId()), ExceptionUtils.getStackTrace(e));
+      dbStorage.setPageException(page.getId(), ExceptionUtils.getStackTrace(e));
     }
 
     return true;

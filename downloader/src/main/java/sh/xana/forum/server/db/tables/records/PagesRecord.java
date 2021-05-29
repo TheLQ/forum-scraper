@@ -4,6 +4,7 @@
 package sh.xana.forum.server.db.tables.records;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 import org.jooq.Field;
 import org.jooq.Record1;
 import org.jooq.Record10;
@@ -15,38 +16,38 @@ import sh.xana.forum.server.db.tables.Pages;
 @SuppressWarnings({"all", "unchecked", "rawtypes"})
 public class PagesRecord extends UpdatableRecordImpl<PagesRecord>
     implements Record10<
-        byte[], byte[], byte[], String, String, String, LocalDateTime, String, Integer, String> {
+        UUID, UUID, UUID, String, String, String, LocalDateTime, String, Integer, String> {
 
   private static final long serialVersionUID = 1L;
 
   /** Setter for <code>Pages.id</code>. */
-  public void setId(byte[] value) {
+  public void setId(UUID value) {
     set(0, value);
   }
 
   /** Getter for <code>Pages.id</code>. */
-  public byte[] getId() {
-    return (byte[]) get(0);
+  public UUID getId() {
+    return (UUID) get(0);
   }
 
   /** Setter for <code>Pages.sourceId</code>. */
-  public void setSourceid(byte[] value) {
+  public void setSourceid(UUID value) {
     set(1, value);
   }
 
   /** Getter for <code>Pages.sourceId</code>. */
-  public byte[] getSourceid() {
-    return (byte[]) get(1);
+  public UUID getSourceid() {
+    return (UUID) get(1);
   }
 
   /** Setter for <code>Pages.siteid</code>. */
-  public void setSiteid(byte[] value) {
+  public void setSiteid(UUID value) {
     set(2, value);
   }
 
   /** Getter for <code>Pages.siteid</code>. */
-  public byte[] getSiteid() {
-    return (byte[]) get(2);
+  public UUID getSiteid() {
+    return (UUID) get(2);
   }
 
   /** Setter for <code>Pages.url</code>. */
@@ -124,7 +125,7 @@ public class PagesRecord extends UpdatableRecordImpl<PagesRecord>
   // -------------------------------------------------------------------------
 
   @Override
-  public Record1<byte[]> key() {
+  public Record1<UUID> key() {
     return (Record1) super.key();
   }
 
@@ -133,31 +134,29 @@ public class PagesRecord extends UpdatableRecordImpl<PagesRecord>
   // -------------------------------------------------------------------------
 
   @Override
-  public Row10<
-          byte[], byte[], byte[], String, String, String, LocalDateTime, String, Integer, String>
+  public Row10<UUID, UUID, UUID, String, String, String, LocalDateTime, String, Integer, String>
       fieldsRow() {
     return (Row10) super.fieldsRow();
   }
 
   @Override
-  public Row10<
-          byte[], byte[], byte[], String, String, String, LocalDateTime, String, Integer, String>
+  public Row10<UUID, UUID, UUID, String, String, String, LocalDateTime, String, Integer, String>
       valuesRow() {
     return (Row10) super.valuesRow();
   }
 
   @Override
-  public Field<byte[]> field1() {
+  public Field<UUID> field1() {
     return Pages.PAGES.ID;
   }
 
   @Override
-  public Field<byte[]> field2() {
+  public Field<UUID> field2() {
     return Pages.PAGES.SOURCEID;
   }
 
   @Override
-  public Field<byte[]> field3() {
+  public Field<UUID> field3() {
     return Pages.PAGES.SITEID;
   }
 
@@ -197,17 +196,17 @@ public class PagesRecord extends UpdatableRecordImpl<PagesRecord>
   }
 
   @Override
-  public byte[] component1() {
+  public UUID component1() {
     return getId();
   }
 
   @Override
-  public byte[] component2() {
+  public UUID component2() {
     return getSourceid();
   }
 
   @Override
-  public byte[] component3() {
+  public UUID component3() {
     return getSiteid();
   }
 
@@ -247,17 +246,17 @@ public class PagesRecord extends UpdatableRecordImpl<PagesRecord>
   }
 
   @Override
-  public byte[] value1() {
+  public UUID value1() {
     return getId();
   }
 
   @Override
-  public byte[] value2() {
+  public UUID value2() {
     return getSourceid();
   }
 
   @Override
-  public byte[] value3() {
+  public UUID value3() {
     return getSiteid();
   }
 
@@ -297,19 +296,19 @@ public class PagesRecord extends UpdatableRecordImpl<PagesRecord>
   }
 
   @Override
-  public PagesRecord value1(byte[] value) {
+  public PagesRecord value1(UUID value) {
     setId(value);
     return this;
   }
 
   @Override
-  public PagesRecord value2(byte[] value) {
+  public PagesRecord value2(UUID value) {
     setSourceid(value);
     return this;
   }
 
   @Override
-  public PagesRecord value3(byte[] value) {
+  public PagesRecord value3(UUID value) {
     setSiteid(value);
     return this;
   }
@@ -358,9 +357,9 @@ public class PagesRecord extends UpdatableRecordImpl<PagesRecord>
 
   @Override
   public PagesRecord values(
-      byte[] value1,
-      byte[] value2,
-      byte[] value3,
+      UUID value1,
+      UUID value2,
+      UUID value3,
       String value4,
       String value5,
       String value6,
@@ -392,9 +391,9 @@ public class PagesRecord extends UpdatableRecordImpl<PagesRecord>
 
   /** Create a detached, initialised PagesRecord */
   public PagesRecord(
-      byte[] id,
-      byte[] sourceid,
-      byte[] siteid,
+      UUID id,
+      UUID sourceid,
+      UUID siteid,
       String url,
       String pagetype,
       String dlstatus,

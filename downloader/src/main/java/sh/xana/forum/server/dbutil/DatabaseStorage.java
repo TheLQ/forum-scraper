@@ -3,7 +3,6 @@ package sh.xana.forum.server.dbutil;
 import java.net.URL;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -58,7 +57,7 @@ public class DatabaseStorage {
             .map(
                 r ->
                     new ScraperRequest.SiteEntry(
-                        Utils.uuidFromBytes(r.get(Pages.PAGES.ID)), r.get(Pages.PAGES.URL)));
+                        r.get(Pages.PAGES.ID), r.get(Pages.PAGES.URL)));
 
     setPageStatus(
         pages.stream().map(ScraperRequest.SiteEntry::siteId).collect(Collectors.toList()),
@@ -75,7 +74,7 @@ public class DatabaseStorage {
             .set(Pages.PAGES.DLSTATUS, DlStatus.Parse.toString())
             .set(Pages.PAGES.DLSTATUSCODE, statusCode)
             .set(Pages.PAGES.UPDATED, LocalDateTime.now())
-            .where(Pages.PAGES.ID.in(Utils.uuidAsBytes(pageId)));
+            .where(Pages.PAGES.ID.in(pageId));
 
     executeOneRow(query);
   }
@@ -93,12 +92,12 @@ public class DatabaseStorage {
     Map<UUID, OverviewEntry> result = new HashMap<>();
     for (PagesRecord page : getPages()) {
       result.compute(
-          Utils.uuidFromBytes(page.getSiteid()),
+          page.getSiteid(),
           (k, v) -> {
             if (v == null) {
               SitesRecord site =
                   sites.stream()
-                      .filter(r -> Arrays.equals(r.getId(), page.getSiteid()))
+                      .filter(r -> r.getId().equals(page.getSiteid()))
                       .findFirst()
                       .orElseThrow();
               v =
@@ -136,7 +135,7 @@ public class DatabaseStorage {
     return context
         .selectOne()
         .from(Pages.PAGES)
-        .where(Pages.PAGES.ID.eq(Utils.uuidAsBytes(pageId)))
+        .where(Pages.PAGES.ID.eq(pageId))
         .fetchOneInto(PagesRecord.class);
   }
 
@@ -150,7 +149,7 @@ public class DatabaseStorage {
     executeOneRow(
         context
             .insertInto(Sites.SITES, Sites.SITES.ID, Sites.SITES.URL, Sites.SITES.UPDATED)
-            .values(Utils.uuidAsBytes(id), url, LocalDateTime.now()));
+            .values(id, url, LocalDateTime.now()));
     return id;
   }
 
@@ -187,14 +186,14 @@ public class DatabaseStorage {
 
       query =
           query.values(
-              Utils.uuidAsBytes(id),
-              Utils.uuidAsBytes(siteId),
+              id,
+              siteId,
               entry,
               type.toString(),
               DlStatus.Queued.toString(),
               LocalDateTime.now(),
               host,
-              Utils.uuidAsBytes(sourceId));
+              sourceId);
     }
 
     executeRows(query, urls.size());
@@ -221,7 +220,7 @@ public class DatabaseStorage {
         context
             .update(Pages.PAGES)
             .set(Pages.PAGES.EXCEPTION, exception)
-            .where(Pages.PAGES.ID.in(Utils.uuidAsBytes(pageId)));
+            .where(Pages.PAGES.ID.in(pageId));
 
     executeOneRow(query);
   }
@@ -231,7 +230,7 @@ public class DatabaseStorage {
         context
             .update(Pages.PAGES)
             .set(Pages.PAGES.EXCEPTION, (String) null)
-            .where(Pages.PAGES.ID.in(Utils.uuidAsBytes(pageId)));
+            .where(Pages.PAGES.ID.in(pageId));
 
     executeOneRow(query);
   }

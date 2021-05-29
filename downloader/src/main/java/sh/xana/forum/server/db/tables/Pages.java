@@ -6,6 +6,7 @@ package sh.xana.forum.server.db.tables;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
 import org.jooq.Name;
@@ -39,16 +40,16 @@ public class Pages extends TableImpl<PagesRecord> {
   }
 
   /** The column <code>Pages.id</code>. */
-  public final TableField<PagesRecord, byte[]> ID =
-      createField(DSL.name("id"), SQLDataType.BLOB.nullable(false), this, "");
+  public final TableField<PagesRecord, UUID> ID =
+      createField(DSL.name("id"), SQLDataType.UUID.nullable(false), this, "");
 
   /** The column <code>Pages.sourceId</code>. */
-  public final TableField<PagesRecord, byte[]> SOURCEID =
-      createField(DSL.name("sourceId"), SQLDataType.BLOB, this, "");
+  public final TableField<PagesRecord, UUID> SOURCEID =
+      createField(DSL.name("sourceId"), SQLDataType.UUID, this, "");
 
   /** The column <code>Pages.siteid</code>. */
-  public final TableField<PagesRecord, byte[]> SITEID =
-      createField(DSL.name("siteid"), SQLDataType.BLOB.nullable(false), this, "");
+  public final TableField<PagesRecord, UUID> SITEID =
+      createField(DSL.name("siteid"), SQLDataType.UUID.nullable(false), this, "");
 
   /** The column <code>Pages.url</code>. */
   public final TableField<PagesRecord, String> URL =
@@ -117,7 +118,7 @@ public class Pages extends TableImpl<PagesRecord> {
 
   @Override
   public List<UniqueKey<PagesRecord>> getKeys() {
-    return Arrays.<UniqueKey<PagesRecord>>asList(Keys.PK_PAGES);
+    return Arrays.<UniqueKey<PagesRecord>>asList(Keys.PK_PAGES, Keys.SQLITE_AUTOINDEX_PAGES_2);
   }
 
   @Override
@@ -147,8 +148,7 @@ public class Pages extends TableImpl<PagesRecord> {
   // -------------------------------------------------------------------------
 
   @Override
-  public Row10<
-          byte[], byte[], byte[], String, String, String, LocalDateTime, String, Integer, String>
+  public Row10<UUID, UUID, UUID, String, String, String, LocalDateTime, String, Integer, String>
       fieldsRow() {
     return (Row10) super.fieldsRow();
   }

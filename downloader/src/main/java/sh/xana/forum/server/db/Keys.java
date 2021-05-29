@@ -23,6 +23,12 @@ public class Keys {
   public static final UniqueKey<PagesRecord> PK_PAGES =
       Internal.createUniqueKey(
           Pages.PAGES, DSL.name("pk_Pages"), new TableField[] {Pages.PAGES.ID}, true);
+  public static final UniqueKey<PagesRecord> SQLITE_AUTOINDEX_PAGES_2 =
+      Internal.createUniqueKey(
+          Pages.PAGES,
+          DSL.name("sqlite_autoindex_Pages_2"),
+          new TableField[] {Pages.PAGES.URL},
+          true);
   public static final UniqueKey<SitesRecord> PK_SITES =
       Internal.createUniqueKey(
           Sites.SITES, DSL.name("pk_Sites"), new TableField[] {Sites.SITES.ID}, true);
