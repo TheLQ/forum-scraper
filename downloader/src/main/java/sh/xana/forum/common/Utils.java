@@ -2,13 +2,12 @@ package sh.xana.forum.common;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
-import java.nio.ByteBuffer;
 import java.util.Iterator;
-import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.helpers.MessageFormatter;
@@ -22,18 +21,12 @@ public class Utils {
 
   public static String BACKEND_SERVER = "http://127.0.0.1:8080/";
 
-  public static UUID uuidFromBytes(byte[] bytes) {
-    ByteBuffer bb = ByteBuffer.wrap(bytes);
-    long firstLong = bb.getLong();
-    long secondLong = bb.getLong();
-    return new UUID(firstLong, secondLong);
-  }
-
-  public static byte[] uuidAsBytes(UUID uuid) {
-    ByteBuffer bb = ByteBuffer.wrap(new byte[16]);
-    bb.putLong(uuid.getMostSignificantBits());
-    bb.putLong(uuid.getLeastSignificantBits());
-    return bb.array();
+  public static URI toURI(String raw) {
+    try {
+      return new URI(raw);
+    } catch (URISyntaxException e) {
+      throw new RuntimeException("Failed to make URI from " + raw, e);
+    }
   }
 
   public static String serverGetBackend(String path) {

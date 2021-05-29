@@ -119,7 +119,7 @@ public class Processor {
       for (ParserResult.ParserEntry result : results.subpages()) {
         URI url = new URI(result.url());
         if (url.getHost() == null) {
-          URI sourceUrl = new URI(page.getUrl());
+          URI sourceUrl = page.getUrl();
           String path = url.getPath();
           if (!path.startsWith("/")) {
             path = "/" + path;
@@ -135,10 +135,9 @@ public class Processor {
                   url.getFragment());
         }
 
-        if (dbStorage.getPages(Pages.PAGES.URL.eq(url.toString())).size() == 0) {
+        if (dbStorage.getPages(Pages.PAGES.URL.eq(url)).size() == 0) {
           log.info("New page {}", url);
-          dbStorage.insertPageQueued(
-              page.getSiteid(), List.of(url.toString()), result.type(), pageId);
+          dbStorage.insertPageQueued(page.getSiteid(), List.of(url), result.type(), pageId);
         } else {
           log.info("Ignoring duplicate page " + url);
         }

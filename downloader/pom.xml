@@ -32,6 +32,11 @@
       <artifactId>jooq</artifactId>
       <version>3.14.11</version>
     </dependency>
+<!--    <dependency>-->
+<!--      <groupId>org.jooq</groupId>-->
+<!--      <artifactId>jooq-codegen</artifactId>-->
+<!--      <version>3.14.11</version>-->
+<!--    </dependency>-->
     <!-- SQL Lib -->
     <dependency>
       <groupId>org.xerial</groupId>

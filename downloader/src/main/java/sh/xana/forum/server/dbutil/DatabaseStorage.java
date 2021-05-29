@@ -1,6 +1,6 @@
 package sh.xana.forum.server.dbutil;
 
-import java.net.URL;
+import java.net.URI;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -17,7 +17,6 @@ import org.jooq.impl.DSL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sh.xana.forum.client.Scraper;
-import sh.xana.forum.common.Utils;
 import sh.xana.forum.common.ipc.NodeResponse.ScraperEntry;
 import sh.xana.forum.common.ipc.ScraperRequest;
 import sh.xana.forum.server.db.tables.Pages;
@@ -50,14 +49,11 @@ public class DatabaseStorage {
             .select()
             .from(Pages.PAGES)
             .where(Pages.PAGES.DOMAIN.eq(domain))
-            .and(Pages.PAGES.DLSTATUS.eq(DlStatus.Queued.toString()))
+            .and(Pages.PAGES.DLSTATUS.eq(DlStatus.Queued))
             .and(Pages.PAGES.EXCEPTION.isNull())
             .limit(Scraper.URL_QUEUE_REFILL_SIZE)
             .fetch()
-            .map(
-                r ->
-                    new ScraperRequest.SiteEntry(
-                        r.get(Pages.PAGES.ID), r.get(Pages.PAGES.URL)));
+            .map(r -> new ScraperRequest.SiteEntry(r.get(Pages.PAGES.ID), r.get(Pages.PAGES.URL)));
 
     setPageStatus(
         pages.stream().map(ScraperRequest.SiteEntry::siteId).collect(Collectors.toList()),
@@ -71,7 +67,7 @@ public class DatabaseStorage {
     Query query =
         context
             .update(Pages.PAGES)
-            .set(Pages.PAGES.DLSTATUS, DlStatus.Parse.toString())
+            .set(Pages.PAGES.DLSTATUS, DlStatus.Parse)
             .set(Pages.PAGES.DLSTATUSCODE, statusCode)
             .set(Pages.PAGES.UPDATED, LocalDateTime.now())
             .where(Pages.PAGES.ID.in(pageId));
@@ -81,8 +77,7 @@ public class DatabaseStorage {
 
   /** Stage: Load pages for Parser */
   public List<PagesRecord> getParserPages() {
-    return getPages(
-        Pages.PAGES.DLSTATUS.eq(DlStatus.Parse.toString()), Pages.PAGES.EXCEPTION.isNull());
+    return getPages(Pages.PAGES.DLSTATUS.eq(DlStatus.Parse), Pages.PAGES.EXCEPTION.isNull());
   }
 
   /** Stage: reporting monitor */
@@ -108,7 +103,7 @@ public class DatabaseStorage {
                       new AtomicInteger(),
                       new AtomicInteger());
             }
-            switch (DlStatus.valueOf(page.getDlstatus())) {
+            switch (page.getDlstatus()) {
               case Done -> v.totalDone.incrementAndGet();
               case Download -> v.totalDownload.incrementAndGet();
               case Queued -> v.totalQueued.incrementAndGet();
@@ -120,9 +115,8 @@ public class DatabaseStorage {
     return List.copyOf(result.values());
   }
 
-  /****************************** Utils ******************/
+  // **************************** Utils ******************
 
-  /** @return */
   private List<SitesRecord> getSites() {
     return context.select().from(Sites.SITES).fetchInto(SitesRecord.class);
   }
@@ -144,7 +138,7 @@ public class DatabaseStorage {
    *
    * @return id
    */
-  public UUID insertSite(String url) {
+  public UUID insertSite(URI url) {
     UUID id = UUID.randomUUID();
     executeOneRow(
         context
@@ -158,7 +152,7 @@ public class DatabaseStorage {
    *
    * @return id
    */
-  public List<UUID> insertPageQueued(UUID siteId, List<String> urls, PageType type, UUID sourceId) {
+  public List<UUID> insertPageQueued(UUID siteId, List<URI> urls, PageType type, UUID sourceId) {
     List<UUID> result = new ArrayList<>(urls.size());
 
     var query =
@@ -173,27 +167,20 @@ public class DatabaseStorage {
             Pages.PAGES.DOMAIN,
             Pages.PAGES.SOURCEID);
 
-    for (String entry : urls) {
+    for (URI entry : urls) {
       UUID id = UUID.randomUUID();
       result.add(id);
 
       String host;
       try {
-        host = new URL(entry).getHost();
+        host = entry.getHost();
       } catch (Exception e) {
         throw new RuntimeException("URL", e);
       }
 
       query =
           query.values(
-              id,
-              siteId,
-              entry,
-              type.toString(),
-              DlStatus.Queued.toString(),
-              LocalDateTime.now(),
-              host,
-              sourceId);
+              id, siteId, entry, type, DlStatus.Queued, LocalDateTime.now(), host, sourceId);
     }
 
     executeRows(query, urls.size());
@@ -203,14 +190,12 @@ public class DatabaseStorage {
 
   /** Change page status */
   public void setPageStatus(Collection<UUID> pageIds, DlStatus status) {
-    Collection<byte[]> uuidBytes =
-        pageIds.stream().map(Utils::uuidAsBytes).collect(Collectors.toList());
     Query query =
         context
             .update(Pages.PAGES)
-            .set(Pages.PAGES.DLSTATUS, status.toString())
+            .set(Pages.PAGES.DLSTATUS, status)
             .set(Pages.PAGES.UPDATED, LocalDateTime.now())
-            .where(Pages.PAGES.ID.in(uuidBytes));
+            .where(Pages.PAGES.ID.in(pageIds));
 
     executeRows(query, pageIds.size());
   }
@@ -235,7 +220,7 @@ public class DatabaseStorage {
     executeOneRow(query);
   }
 
-  /********************************/
+  // *******************************
 
   private static void executeOneRow(Query query) {
     executeRows(query, 1);
@@ -267,7 +252,7 @@ public class DatabaseStorage {
 
   public record OverviewEntry(
       UUID siteId,
-      String siteUrl,
+      URI siteUrl,
       AtomicInteger totalQueued,
       AtomicInteger totalDownload,
       AtomicInteger totalDone) {}

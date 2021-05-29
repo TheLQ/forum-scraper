@@ -83,7 +83,7 @@ public class Scraper {
       ScraperRequest.SiteEntry scraperRequest = scraperRequests.remove(0);
       try {
         log.debug("Requesting {} url {}", scraperRequest.siteId(), scraperRequest.url());
-        URI uri = new URI(scraperRequest.url());
+        URI uri = scraperRequest.url();
 
         HttpRequest request = HttpRequest.newBuilder().uri(uri).build();
         HttpResponse<byte[]> response = Utils.httpClient.send(request, BodyHandlers.ofByteArray());

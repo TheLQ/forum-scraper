@@ -2,6 +2,7 @@ package sh.xana.forum.server;
 
 import fi.iki.elonen.NanoHTTPD;
 import java.io.IOException;
+import java.net.URI;
 import java.util.Date;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -74,7 +75,7 @@ public class WebServer extends NanoHTTPD {
   public static final String PAGE_SITE_ADD = "site/add";
 
   String pageAddSite(NanoHTTPD.IHTTPSession session) {
-    String siteUrl = WebServer.getRequiredParameter(session, "siteurl");
+    URI siteUrl = Utils.toURI(WebServer.getRequiredParameter(session, "siteurl"));
 
     UUID siteId = dbStorage.insertSite(siteUrl);
 
