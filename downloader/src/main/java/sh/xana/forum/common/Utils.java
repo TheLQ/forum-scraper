@@ -66,7 +66,13 @@ public class Utils {
 
       if (response.statusCode() != 200) {
         throw new RuntimeException(
-            "Failing status code " + response.statusCode() + "\r\n" + response.body());
+            "Failing status code "
+                + response.statusCode()
+                + ". Response length "
+                + response.body().length()
+                + " '"
+                + response.body()
+                + "'");
       }
       return response.body();
     } catch (Exception e) {

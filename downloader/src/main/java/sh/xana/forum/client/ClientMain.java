@@ -7,13 +7,14 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.Utils;
+import sh.xana.forum.common.ipc.NodeInitRequest;
 import sh.xana.forum.common.ipc.NodeResponse;
 import sh.xana.forum.common.ipc.NodeResponse.ScraperEntry;
 import sh.xana.forum.server.WebServer;
 
 public class ClientMain {
   public static final Logger log = LoggerFactory.getLogger(ClientMain.class);
-  private static final List<Scraper> nodes = new ArrayList<>();
+  private static final List<Scraper> scrapers = new ArrayList<>();
 
   private static String PUBLIC_ADDRESS = null;
   private static final String HOSTNAME = System.getenv("HOSTNAME");
@@ -35,13 +36,13 @@ public class ClientMain {
     log.info("Running on IP {} hostname {}", PUBLIC_ADDRESS, HOSTNAME);
 
     // Init scrapers
-    String resultUrl =
-        WebServer.PAGE_CLIENT_NODEINIT + "?nodeip=" + PUBLIC_ADDRESS + "&hostname=" + HOSTNAME;
-    log.info("Request node init and scraper domain list {}", resultUrl);
+    log.info("Request node init and scraper domain list");
     NodeResponse nodeResponse;
     try {
-      String raw = Utils.serverGetBackend(resultUrl);
-      nodeResponse = Utils.jsonMapper.readValue(raw, NodeResponse.class);
+      NodeInitRequest request = new NodeInitRequest(PUBLIC_ADDRESS, HOSTNAME);
+      String requestPost = Utils.jsonMapper.writeValueAsString(request);
+      String rawResponse = Utils.serverPostBackend(WebServer.PAGE_CLIENT_NODEINIT, requestPost);
+      nodeResponse = Utils.jsonMapper.readValue(rawResponse, NodeResponse.class);
     } catch (Exception e) {
       log.info("Failed to get node entries, closing", e);
       return;
@@ -53,7 +54,7 @@ public class ClientMain {
     for (ScraperEntry entry : nodeResponse.scraper()) {
       log.info("creating node " + entry.domain());
       Scraper downloader = new Scraper(entry.domain());
-      nodes.add(downloader);
+      scrapers.add(downloader);
 
       downloader.startThread();
     }

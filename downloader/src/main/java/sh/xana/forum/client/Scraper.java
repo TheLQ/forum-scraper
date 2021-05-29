@@ -27,7 +27,7 @@ import sh.xana.forum.server.WebServer;
 public class Scraper {
   public static final Logger log = LoggerFactory.getLogger(Scraper.class);
   /** Number of URLs to request, and size when to do a request. Should be between SIZE - 2xSIZE */
-  public static final int URL_QUEUE_REFILL_SIZE = 10;
+  public static final int URL_QUEUE_REFILL_SIZE = 3;
 
   private static final int CYCLE_SECONDS = 20;
   private static int INSTANCE_COUNTER = 0;

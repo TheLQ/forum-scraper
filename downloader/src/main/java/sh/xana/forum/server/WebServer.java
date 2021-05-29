@@ -1,14 +1,16 @@
 package sh.xana.forum.server;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import fi.iki.elonen.NanoHTTPD;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.Utils;
+import sh.xana.forum.common.ipc.NodeInitRequest;
+import sh.xana.forum.common.ipc.NodeResponse;
 import sh.xana.forum.common.ipc.ScraperRequest;
 import sh.xana.forum.common.ipc.ScraperResponse;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
@@ -86,11 +88,16 @@ public class WebServer extends NanoHTTPD {
 
   public static final String PAGE_CLIENT_NODEINIT = "client/nodeinit";
 
-  String pageClientNodeInit(NanoHTTPD.IHTTPSession session) throws JsonProcessingException {
-    nodeManager.registerNode(
-        getRequiredParameter(session, "ip"), getRequiredParameter(session, "hostname"));
+  String pageClientNodeInit(NanoHTTPD.IHTTPSession session) throws IOException {
+    byte[] input = readPostInput(session);
+    NodeInitRequest request = Utils.jsonMapper.readValue(input, NodeInitRequest.class);
+    UUID nodeId = nodeManager.registerNode(request.ip(), request.hostname());
 
-    return Utils.jsonMapper.writeValueAsString(dbStorage.getScraperDomainsIPC());
+    NodeResponse response =
+        new NodeResponse(
+            nodeId, dbStorage.getScraperDomainsIPC().toArray(new NodeResponse.ScraperEntry[0]));
+
+    return Utils.jsonMapper.writeValueAsString(response);
   }
 
   public static final String PAGE_CLIENT_BUFFER = "client/buffer";
@@ -114,7 +121,9 @@ public class WebServer extends NanoHTTPD {
     var params = session.getParameters();
     try {
       List<String> values = params.get(key);
-      if (values.size() != 1) {
+      if (values == null) {
+        throw new NoSuchElementException(key);
+      } else if (values.size() != 1) {
         throw new RuntimeException("Found duplicate keys " + values);
       }
       return values.get(0);
@@ -125,7 +134,8 @@ public class WebServer extends NanoHTTPD {
               + " from url "
               + session.getUri()
               + " | "
-              + session.getQueryParameterString());
+              + session.getQueryParameterString(),
+          e);
     }
   }
 
