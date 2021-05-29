@@ -54,8 +54,12 @@ public class Processor {
           Utils.jsonMapper.writeValueAsString(success.headers()));
 
       dbStorage.movePageDownloadToParse(success.id(), success.responseCode());
-      spiderQueue.put(success.id());
+      queuePage(success.id());
     }
+  }
+
+  public void queuePage(UUID page) throws InterruptedException {
+    spiderQueue.put(page);
   }
 
   public void startSpiderThread() {
@@ -64,6 +68,7 @@ public class Processor {
 
   /** */
   private void pageSpiderThread() {
+    // fetch missed parse records from last run
     dbStorage.getParserPages().stream()
         .map(PagesRecord::getId)
         .map(Utils::uuidFromBytes)

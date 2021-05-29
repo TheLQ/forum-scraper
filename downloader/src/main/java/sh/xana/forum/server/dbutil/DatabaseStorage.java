@@ -132,6 +132,14 @@ public class DatabaseStorage {
     return context.select().from(Pages.PAGES).where(conditions).fetchInto(PagesRecord.class);
   }
 
+  public PagesRecord getPage(UUID pageId) {
+    return context
+        .selectOne()
+        .from(Pages.PAGES)
+        .where(Pages.PAGES.ID.eq(Utils.uuidAsBytes(pageId)))
+        .fetchOneInto(PagesRecord.class);
+  }
+
   /**
    * New site
    *
@@ -213,6 +221,16 @@ public class DatabaseStorage {
         context
             .update(Pages.PAGES)
             .set(Pages.PAGES.EXCEPTION, exception)
+            .where(Pages.PAGES.ID.in(Utils.uuidAsBytes(pageId)));
+
+    executeOneRow(query);
+  }
+
+  public void setPageExceptionNull(UUID pageId) {
+    Query query =
+        context
+            .update(Pages.PAGES)
+            .set(Pages.PAGES.EXCEPTION, (String) null)
             .where(Pages.PAGES.ID.in(Utils.uuidAsBytes(pageId)));
 
     executeOneRow(query);

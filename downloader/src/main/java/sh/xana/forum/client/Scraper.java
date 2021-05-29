@@ -16,7 +16,7 @@ import sh.xana.forum.common.ipc.ScraperResponse;
 import sh.xana.forum.server.WebServer;
 
 /**
- * Each node handles 1 site. Nodes are distributed among multiple instances on different IPs
+ * Each scraper handles 1 site. Scrapers are distributed among multiple nodes on different IPs
  *
  * <p>Rate limits all traffic to a particular site
  *

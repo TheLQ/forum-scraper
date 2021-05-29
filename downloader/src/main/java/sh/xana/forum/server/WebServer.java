@@ -13,7 +13,10 @@ import sh.xana.forum.common.ipc.NodeInitRequest;
 import sh.xana.forum.common.ipc.NodeResponse;
 import sh.xana.forum.common.ipc.ScraperRequest;
 import sh.xana.forum.common.ipc.ScraperResponse;
+import sh.xana.forum.server.db.tables.Pages;
+import sh.xana.forum.server.db.tables.records.PagesRecord;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
+import sh.xana.forum.server.dbutil.DatabaseStorage.DlStatus;
 
 public class WebServer extends NanoHTTPD {
   public static final Logger log = LoggerFactory.getLogger(WebServer.class);
@@ -54,6 +57,10 @@ public class WebServer extends NanoHTTPD {
           return newFixedLengthResponse(pageClientNodeInit(session));
         case PAGE_CLIENT_BUFFER:
           return newFixedLengthResponse(pageClientBuffer(session));
+        case PAGE_OVERVIEW_ERRORS:
+          return newFixedLengthResponse(pageOverviewErrors());
+        case PAGE_OVERVIEW_ERRORS_CLEAR:
+          return newFixedLengthResponse(pageOverviewErrorsClear(session));
         default:
           return newFixedLengthResponse(
               Response.Status.NOT_FOUND, "text/plain", "page " + page + " does not exist");
@@ -84,6 +91,65 @@ public class WebServer extends NanoHTTPD {
       result.append(entry.toString()).append("\r\n");
     }
     return result.toString();
+  }
+
+  public static final String PAGE_OVERVIEW_ERRORS = "overview/errors";
+
+  private String pageOverviewErrors() {
+    StringBuilder result = new StringBuilder();
+    result.append("<style>th, td { border: 1px solid; }</style>");
+    result.append("<table border=1>");
+
+    result.append("<thead><tr>");
+    result.append("<th>PageId</th>");
+    result.append("<th>DlStatus</th>");
+    result.append("<th>PageType</th>");
+    result.append("<th>Updated</th>");
+    result.append("<th>URL</th>");
+    result.append("</tr><thead>");
+
+    result.append("<tbody>");
+    List<PagesRecord> pages = dbStorage.getPages(Pages.PAGES.EXCEPTION.isNotNull());
+    for (PagesRecord page : pages) {
+      result.append("<tr>");
+      result.append("<td>").append(Utils.uuidFromBytes(page.getId())).append("</td>");
+      result.append("<td>").append(page.getDlstatus()).append("</td>");
+      result.append("<td>").append(page.getPagetype()).append("</td>");
+      result.append("<td>").append(page.getUpdated()).append("</td>");
+      result.append("<td>").append(page.getUrl()).append("</td>");
+      result.append("</tr>");
+
+      result
+          .append("<tr><td colspan=5><pre>")
+          // need slash for base url
+          .append("<a href='/")
+          .append(PAGE_OVERVIEW_ERRORS_CLEAR)
+          .append("?pageId=")
+          .append(Utils.uuidFromBytes(page.getId()))
+          .append("'>clear</a><br/>")
+          .append(page.getException())
+          .append("</pre></td></tr>");
+    }
+    result.append("</tbody>");
+
+    result.append("</table>");
+    return result.toString();
+  }
+
+  public static final String PAGE_OVERVIEW_ERRORS_CLEAR = "overview/errors/clear";
+
+  private String pageOverviewErrorsClear(NanoHTTPD.IHTTPSession session)
+      throws InterruptedException {
+    UUID pageId = UUID.fromString(getRequiredParameter(session, "pageId"));
+
+    dbStorage.setPageExceptionNull(pageId);
+
+    PagesRecord page = dbStorage.getPage(pageId);
+    if (page.getDlstatus().equals(DlStatus.Parse.toString())) {
+      processor.queuePage(pageId);
+      return "ok and queued parse page";
+    }
+    return "ok";
   }
 
   public static final String PAGE_CLIENT_NODEINIT = "client/nodeinit";
