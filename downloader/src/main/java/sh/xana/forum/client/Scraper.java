@@ -115,11 +115,11 @@ public class Scraper {
         responseSuccess.size(),
         responseError.size());
     try {
-      ScraperUpload request = new ScraperUpload(ClientMain.NODE_ID, responseSuccess, responseError);
+      ScraperUpload request =
+          new ScraperUpload(ClientMain.NODE_ID, this.domain, responseSuccess, responseError);
       String newRequestsJSON =
           Utils.serverPostBackend(
-              WebServer.PAGE_CLIENT_BUFFER + "?domain=" + this.domain,
-              Utils.jsonMapper.writeValueAsString(request));
+              WebServer.PAGE_CLIENT_BUFFER, Utils.jsonMapper.writeValueAsString(request));
 
       ScraperDownload response = Utils.jsonMapper.readValue(newRequestsJSON, ScraperDownload.class);
       Collections.addAll(scraperRequests, response.entries());

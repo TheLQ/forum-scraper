@@ -173,12 +173,12 @@ public class WebServer extends NanoHTTPD {
   public static final String PAGE_CLIENT_BUFFER = "client/buffer";
 
   String pageClientBuffer(NanoHTTPD.IHTTPSession session) throws IOException, InterruptedException {
-    String domain = WebServer.getRequiredParameter(session, "domain");
     byte[] input = readPostInput(session);
     ScraperUpload responses = Utils.jsonMapper.readValue(input, ScraperUpload.class);
     processor.processResponses(responses);
 
-    List<ScraperDownload.SiteEntry> requests = dbStorage.movePageQueuedToDownloadIPC(domain);
+    List<ScraperDownload.SiteEntry> requests =
+        dbStorage.movePageQueuedToDownloadIPC(responses.domain());
     log.info(
         "client {} downloaded {} download error {} sent",
         responses.successes().size(),
