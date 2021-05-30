@@ -21,6 +21,7 @@ import sh.xana.forum.server.db.tables.records.PagesRecord;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
 import sh.xana.forum.server.dbutil.DatabaseStorage.DlStatus;
 
+/** Parse stage. Extract further URLs for downloading */
 public class Processor {
   private static final Logger log = LoggerFactory.getLogger(Processor.class);
   private static final Path fileCachePath = Path.of("..", "filecache");

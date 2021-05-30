@@ -171,16 +171,8 @@ public class DatabaseStorage {
       UUID id = UUID.randomUUID();
       result.add(id);
 
-      String host;
-      try {
-        host = entry.getHost();
-      } catch (Exception e) {
-        throw new RuntimeException("URL", e);
-      }
-
-      query =
-          query.values(
-              id, siteId, entry, type, DlStatus.Queued, LocalDateTime.now(), host, sourceId);
+      query.values(
+          id, siteId, entry, type, DlStatus.Queued, LocalDateTime.now(), entry.getHost(), sourceId);
     }
 
     executeRows(query, urls.size());
