@@ -64,11 +64,11 @@ public class WebServer extends NanoHTTPD {
           return newFixedLengthResponse(pageOverviewErrorsClear(session));
         default:
           return newFixedLengthResponse(
-              Response.Status.NOT_FOUND, "text/plain", "page " + page + " does not exist");
+              Response.Status.NOT_FOUND, "text/html", "page " + page + " does not exist");
       }
     } catch (Exception e) {
       log.error("Caught exception while processing page {}", session.getUri(), e);
-      return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", e.toString());
+      return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/html", e.toString());
     }
   }
 
@@ -146,7 +146,7 @@ public class WebServer extends NanoHTTPD {
     dbStorage.setPageExceptionNull(pageId);
 
     PagesRecord page = dbStorage.getPage(pageId);
-    if (page.getDlstatus().equals(DlStatus.Parse.toString())) {
+    if (page.getDlstatus().equals(DlStatus.Parse)) {
       processor.queuePage(pageId);
       return "ok and queued parse page";
     }

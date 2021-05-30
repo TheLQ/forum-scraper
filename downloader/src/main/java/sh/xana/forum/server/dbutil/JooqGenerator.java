@@ -1,10 +1,10 @@
 package sh.xana.forum.server.dbutil;
 
 import java.net.URI;
+import java.nio.ByteBuffer;
+import java.util.UUID;
 import org.jooq.Converter;
 import sh.xana.forum.common.Utils;
-import sh.xana.forum.server.dbutil.DatabaseStorage.DlStatus;
-import sh.xana.forum.server.dbutil.DatabaseStorage.PageType;
 
 /** Run jOOq CodeGen. Automatically handles removing old files too */
 public class JooqGenerator {
@@ -19,21 +19,21 @@ public class JooqGenerator {
   //                            .withName("org.jooq.meta.sqlite.SQLiteDatabase")
   //                            .withIncludes(".*")
   //                            .withForcedTypes(
-  //                                new
-  // ForcedType().withName("UUID").withIncludeExpression(".*[iI]d"),
+  //                                new ForcedType()
+  //                                    .withUserType("java.util.UUID")
+  //                                    .withConverter(
+  //
+  // "sh.xana.forum.server.dbutil.JooqGenerator.UUIDConverter")
+  //                                    .withIncludeExpression(".*[iI]d"),
   //                                new ForcedType()
   //                                    .withUserType(
   //                                        "sh.xana.forum.server.dbutil.DatabaseStorage.PageType")
-  //                                    .withConverter(
-  //
-  // "sh.xana.forum.server.dbutil.JooqGenerator.PageTypeConverter")
-  //                                    .withIncludeExpression("pageType"),
+  //                                    .withIncludeExpression("pageType")
+  //                                    .withEnumConverter(true),
   //                                new ForcedType()
   //                                    .withUserType(
   //                                        "sh.xana.forum.server.dbutil.DatabaseStorage.DlStatus")
-  //                                    .withConverter(
-  //
-  // "sh.xana.forum.server.dbutil.JooqGenerator.DlStatusConverter")
+  //                                    .withEnumConverter(true)
   //                                    .withIncludeExpression("dlstatus"),
   //                                new ForcedType()
   //                                    .withUserType("java.net.URI")
@@ -47,49 +47,6 @@ public class JooqGenerator {
   //                            .withDirectory("src/main/java")));
   //    GenerationTool.generate(config);
   //  }
-
-  private abstract static class EnumConverter<T extends Enum<T>> implements Converter<String, T> {
-
-    private final Class<T> clazz;
-
-    EnumConverter(Class<T> clazz) {
-      this.clazz = clazz;
-    }
-
-    @Override
-    public T from(String databaseObject) {
-      return Enum.valueOf(clazz, databaseObject);
-    }
-
-    @Override
-    public String to(T userObject) {
-      return userObject.toString();
-    }
-
-    @Override
-    public Class<String> fromType() {
-      return String.class;
-    }
-
-    @Override
-    public Class<T> toType() {
-      return clazz;
-    }
-  }
-
-  public static class PageTypeConverter extends EnumConverter<PageType> {
-
-    public PageTypeConverter() {
-      super(PageType.class);
-    }
-  }
-
-  public static class DlStatusConverter extends EnumConverter<DlStatus> {
-
-    public DlStatusConverter() {
-      super(DlStatus.class);
-    }
-  }
 
   public static class UriConverter implements Converter<String, URI> {
 
@@ -111,6 +68,52 @@ public class JooqGenerator {
     @Override
     public Class<URI> toType() {
       return URI.class;
+    }
+  }
+
+  /**
+   * For some reason, forcing the type to UUID doesn't make jOOq automatically convert, so need our
+   * own converter.
+   */
+  public static class UUIDConverter implements Converter<byte[], UUID> {
+
+    @Override
+    public UUID from(byte[] databaseObject) {
+      // Avoid breaking ByteBuffer.wrap
+      // We never have null UUIDs, maybe it's from object init?
+      if (databaseObject == null) {
+        return null;
+      }
+      return uuidFromBytes(databaseObject);
+    }
+
+    @Override
+    public byte[] to(UUID userObject) {
+      return uuidAsBytes(userObject);
+    }
+
+    @Override
+    public Class<byte[]> fromType() {
+      return byte[].class;
+    }
+
+    @Override
+    public Class<UUID> toType() {
+      return UUID.class;
+    }
+
+    private static UUID uuidFromBytes(byte[] bytes) {
+      ByteBuffer bb = ByteBuffer.wrap(bytes);
+      long firstLong = bb.getLong();
+      long secondLong = bb.getLong();
+      return new UUID(firstLong, secondLong);
+    }
+
+    private static byte[] uuidAsBytes(UUID uuid) {
+      ByteBuffer bb = ByteBuffer.wrap(new byte[16]);
+      bb.putLong(uuid.getMostSignificantBits());
+      bb.putLong(uuid.getLeastSignificantBits());
+      return bb.array();
     }
   }
 }
