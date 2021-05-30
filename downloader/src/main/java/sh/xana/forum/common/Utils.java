@@ -7,7 +7,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
-import java.util.Iterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.helpers.MessageFormatter;
@@ -71,18 +70,6 @@ public class Utils {
     } catch (Exception e) {
       throw new RuntimeException("Failure on " + request.uri(), e);
     }
-  }
-
-  private static String parameterBuilder(Iterator<Param> parameters) {
-    StringBuilder sb = new StringBuilder();
-    while (parameters.hasNext()) {
-      Param param = parameters.next();
-      sb.append(param.key()).append('=').append(param.value());
-      if (parameters.hasNext()) {
-        sb.append('&');
-      }
-    }
-    return sb.toString();
   }
 
   public static String format(String message, Object... args) {

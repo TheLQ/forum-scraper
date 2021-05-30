@@ -112,7 +112,7 @@ public class Processor {
       }
 
       ParserResult results = Utils.jsonMapper.readValue(output, ParserResult.class);
-      if (!results.type().toString().equals(page.getPagetype())) {
+      if (!results.type().equals(page.getPagetype())) {
         throw new RuntimeException(
             "Unexpected pageType " + results.type() + " expected " + page.getPagetype());
       }
