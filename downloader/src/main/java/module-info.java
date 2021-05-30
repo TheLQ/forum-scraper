@@ -8,4 +8,7 @@ module sh.xana.forum {
   //  requires org.jooq.codegen;
   //  requires org.jooq.meta;
   requires org.slf4j;
+  requires commons.cli;
+
+  exports sh.xana.forum.common.ipc;
 }
