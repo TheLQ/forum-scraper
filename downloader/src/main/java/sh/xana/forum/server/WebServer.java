@@ -28,12 +28,14 @@ public class WebServer extends NanoHTTPD {
   private final Processor processor;
   private final NodeManager nodeManager;
 
-  public WebServer(DatabaseStorage dbStorage, Processor processor, NodeManager nodeManager)
-      throws IOException {
+  public WebServer(DatabaseStorage dbStorage, Processor processor, NodeManager nodeManager) {
     super(PORT);
     this.dbStorage = dbStorage;
     this.processor = processor;
     this.nodeManager = nodeManager;
+  }
+
+  public void start() throws IOException {
     start(NanoHTTPD.SOCKET_READ_TIMEOUT, false);
     log.info("server running on http://{}:{}", getHostname(), PORT);
   }
@@ -64,11 +66,12 @@ public class WebServer extends NanoHTTPD {
           return newFixedLengthResponse(pageOverviewErrorsClear(session));
         default:
           return newFixedLengthResponse(
-              Response.Status.NOT_FOUND, "text/html", "page " + page + " does not exist");
+              Response.Status.NOT_FOUND, NanoHTTPD.MIME_PLAINTEXT, "Not Found");
       }
     } catch (Exception e) {
       log.error("Caught exception while processing page {}", session.getUri(), e);
-      return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/html", e.toString());
+      return newFixedLengthResponse(
+          Response.Status.INTERNAL_ERROR, NanoHTTPD.MIME_HTML, e.toString());
     }
   }
 

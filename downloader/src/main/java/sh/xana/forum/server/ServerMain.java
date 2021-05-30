@@ -12,6 +12,7 @@ public class ServerMain {
     NodeManager nodeManager = new NodeManager();
 
     WebServer server = new WebServer(dbStorage, processor, nodeManager);
+    server.start();
     processor.startSpiderThread();
   }
 }
