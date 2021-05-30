@@ -3,3 +3,4 @@ downloader/sample.db
 downloader/.idea
 filecache
 parser/node_modules
+parser/dist

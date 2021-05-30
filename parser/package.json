@@ -11,5 +11,9 @@
   "dependencies": {
     "cheerio": "^1.0.0-rc.9"
   },
-  "type":"module"
+  "type": "module",
+  "devDependencies": {
+    "@types/node": "^15.6.1",
+    "typescript": "^4.3.2"
+  }
 }
