@@ -31,6 +31,7 @@
       <groupId>org.jooq</groupId>
       <artifactId>jooq</artifactId>
       <version>3.14.11</version>
+      <!-- Needed for jooq generator -->
       <exclusions>
         <exclusion>
           <groupId>javax.xml.bind</groupId>
@@ -38,6 +39,7 @@
         </exclusion>
       </exclusions>
     </dependency>
+    <!-- Needed for jooq generator -->
 <!--    <dependency>-->
 <!--      <groupId>org.jooq</groupId>-->
 <!--      <artifactId>jooq-codegen</artifactId>-->

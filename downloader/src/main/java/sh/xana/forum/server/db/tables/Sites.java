@@ -12,18 +12,20 @@ import org.jooq.Field;
 import org.jooq.ForeignKey;
 import org.jooq.Name;
 import org.jooq.Record;
-import org.jooq.Row3;
+import org.jooq.Row4;
 import org.jooq.Schema;
 import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.TableOptions;
 import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
+import org.jooq.impl.EnumConverter;
 import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
 import sh.xana.forum.server.db.DefaultSchema;
 import sh.xana.forum.server.db.Keys;
 import sh.xana.forum.server.db.tables.records.SitesRecord;
+import sh.xana.forum.server.dbutil.DatabaseStorage.ForumType;
 import sh.xana.forum.server.dbutil.JooqGenerator.UUIDConverter;
 import sh.xana.forum.server.dbutil.JooqGenerator.UriConverter;
 
@@ -54,6 +56,15 @@ public class Sites extends TableImpl<SitesRecord> {
   /** The column <code>Sites.updated</code>. */
   public final TableField<SitesRecord, LocalDateTime> UPDATED =
       createField(DSL.name("updated"), SQLDataType.LOCALDATETIME(0).nullable(false), this, "");
+
+  /** The column <code>Sites.ForumType</code>. */
+  public final TableField<SitesRecord, ForumType> FORUMTYPE =
+      createField(
+          DSL.name("ForumType"),
+          org.jooq.impl.DefaultDataType.getDefaultDataType("\"\"").nullable(false),
+          this,
+          "",
+          new EnumConverter<Object, ForumType>(Object.class, ForumType.class));
 
   private Sites(Name alias, Table<SitesRecord> aliased) {
     this(alias, aliased, null);
@@ -120,11 +131,11 @@ public class Sites extends TableImpl<SitesRecord> {
   }
 
   // -------------------------------------------------------------------------
-  // Row3 type methods
+  // Row4 type methods
   // -------------------------------------------------------------------------
 
   @Override
-  public Row3<UUID, URI, LocalDateTime> fieldsRow() {
-    return (Row3) super.fieldsRow();
+  public Row4<UUID, URI, LocalDateTime, ForumType> fieldsRow() {
+    return (Row4) super.fieldsRow();
   }
 }

@@ -250,6 +250,13 @@ public class DatabaseStorage {
     TopicPage,
   }
 
+  /** Sites.ForumType column */
+  public enum ForumType {
+    ForkBoard,
+    vBulletin,
+    phpBB,
+  }
+
   public record OverviewEntry(
       UUID siteId,
       URI siteUrl,

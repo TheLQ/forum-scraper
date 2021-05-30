@@ -9,13 +9,14 @@ import sh.xana.forum.common.Utils;
 /** Run jOOq CodeGen. Automatically handles removing old files too */
 public class JooqGenerator {
   //  public static void main(String[] args) throws Exception {
-  //    Configuration config =
-  //        new Configuration()
+  //    // Use full class paths to for easy import
+  //    org.jooq.meta.jaxb.Configuration config =
+  //        new org.jooq.meta.jaxb.Configuration()
   //            .withJdbc(new Jdbc().withDriver("org.sqlite.JDBC").withUrl("jdbc:sqlite:sample.db"))
   //            .withGenerator(
-  //                new Generator()
+  //                new org.jooq.meta.jaxb.Generator()
   //                    .withDatabase(
-  //                        new Database()
+  //                        new org.jooq.meta.jaxb.Database()
   //                            .withName("org.jooq.meta.sqlite.SQLiteDatabase")
   //                            .withIncludes(".*")
   //                            .withForcedTypes(
@@ -36,16 +37,21 @@ public class JooqGenerator {
   //                                    .withEnumConverter(true)
   //                                    .withIncludeExpression("dlstatus"),
   //                                new ForcedType()
+  //                                    .withUserType(
+  //                                        "sh.xana.forum.server.dbutil.DatabaseStorage.ForumType")
+  //                                    .withEnumConverter(true)
+  //                                    .withIncludeExpression("ForumType"),
+  //                                new ForcedType()
   //                                    .withUserType("java.net.URI")
   //                                    .withConverter(
   //
   // "sh.xana.forum.server.dbutil.JooqGenerator.UriConverter")
   //                                    .withIncludeExpression("url")))
   //                    .withTarget(
-  //                        new Target()
+  //                        new org.jooq.meta.jaxb.Target()
   //                            .withPackageName("sh.xana.forum.server.db")
   //                            .withDirectory("src/main/java")));
-  //    GenerationTool.generate(config);
+  //    org.jooq.codegen.GenerationTool.generate(config);
   //  }
 
   public static class UriConverter implements Converter<String, URI> {
