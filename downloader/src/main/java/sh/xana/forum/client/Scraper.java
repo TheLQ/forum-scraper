@@ -11,8 +11,8 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.Utils;
-import sh.xana.forum.common.ipc.ScraperRequest;
-import sh.xana.forum.common.ipc.ScraperResponse;
+import sh.xana.forum.common.ipc.ScraperDownload;
+import sh.xana.forum.common.ipc.ScraperUpload;
 import sh.xana.forum.server.WebServer;
 
 /**
@@ -33,9 +33,9 @@ public class Scraper {
   private static int INSTANCE_COUNTER = 0;
 
   private final String domain;
-  private final List<ScraperRequest.SiteEntry> scraperRequests = new ArrayList<>();
-  private final List<ScraperResponse.Success> responseSuccess = new ArrayList<>();
-  private final List<ScraperResponse.Error> responseError = new ArrayList<>();
+  private final List<ScraperDownload.SiteEntry> scraperRequests = new ArrayList<>();
+  private final List<ScraperUpload.Success> responseSuccess = new ArrayList<>();
+  private final List<ScraperUpload.Error> responseError = new ArrayList<>();
 
   private final Thread thread;
 
@@ -80,7 +80,7 @@ public class Scraper {
       log.warn("Queue is empty, not doing anything");
     } else {
       // pop request and fetch content
-      ScraperRequest.SiteEntry scraperRequest = scraperRequests.remove(0);
+      ScraperDownload.SiteEntry scraperRequest = scraperRequests.remove(0);
       try {
         log.debug("Requesting {} url {}", scraperRequest.siteId(), scraperRequest.url());
         URI uri = scraperRequest.url();
@@ -89,7 +89,7 @@ public class Scraper {
         HttpResponse<byte[]> response = Utils.httpClient.send(request, BodyHandlers.ofByteArray());
 
         responseSuccess.add(
-            new ScraperResponse.Success(
+            new ScraperUpload.Success(
                 scraperRequest.siteId(),
                 response.body(),
                 response.headers().map(),
@@ -97,7 +97,7 @@ public class Scraper {
       } catch (Exception e) {
         log.debug("exception during run", e);
         responseError.add(
-            new ScraperResponse.Error(scraperRequest.siteId(), ExceptionUtils.getStackTrace(e)));
+            new ScraperUpload.Error(scraperRequest.siteId(), ExceptionUtils.getStackTrace(e)));
       }
     }
 
@@ -115,16 +115,15 @@ public class Scraper {
         responseSuccess.size(),
         responseError.size());
     try {
-      ScraperResponse downloads =
-          new ScraperResponse(ClientMain.NODE_ID, responseSuccess, responseError);
+      ScraperUpload request = new ScraperUpload(ClientMain.NODE_ID, responseSuccess, responseError);
       String newRequestsJSON =
           Utils.serverPostBackend(
               WebServer.PAGE_CLIENT_BUFFER + "?domain=" + this.domain,
-              Utils.jsonMapper.writeValueAsString(downloads));
+              Utils.jsonMapper.writeValueAsString(request));
 
-      Collections.addAll(
-          scraperRequests,
-          Utils.jsonMapper.readValue(newRequestsJSON, ScraperRequest.SiteEntry[].class));
+      ScraperDownload response = Utils.jsonMapper.readValue(newRequestsJSON, ScraperDownload.class);
+      Collections.addAll(scraperRequests, response.entries());
+
       responseSuccess.clear();
       responseError.clear();
     } catch (Exception e) {

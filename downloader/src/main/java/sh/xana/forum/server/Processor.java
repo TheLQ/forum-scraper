@@ -15,7 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.Utils;
 import sh.xana.forum.common.ipc.ParserResult;
-import sh.xana.forum.common.ipc.ScraperResponse;
+import sh.xana.forum.common.ipc.ScraperUpload;
 import sh.xana.forum.server.db.tables.Pages;
 import sh.xana.forum.server.db.tables.records.PagesRecord;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
@@ -40,13 +40,13 @@ public class Processor {
   }
 
   /** Process responses the download scraper collected */
-  public void processResponses(ScraperResponse response) throws IOException, InterruptedException {
-    for (ScraperResponse.Error error : response.errors()) {
+  public void processResponses(ScraperUpload response) throws IOException, InterruptedException {
+    for (ScraperUpload.Error error : response.errors()) {
       log.debug("Found error for {} {}", error.id(), error.exception());
       dbStorage.setPageException(error.id(), error.exception());
     }
 
-    for (ScraperResponse.Success success : response.successes()) {
+    for (ScraperUpload.Success success : response.successes()) {
       log.debug("Writing " + success.id().toString() + " response and header");
       Files.write(fileCachePath.resolve(success.id() + ".response"), success.body());
       Files.writeString(

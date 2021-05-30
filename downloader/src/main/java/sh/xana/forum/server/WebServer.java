@@ -12,8 +12,8 @@ import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.Utils;
 import sh.xana.forum.common.ipc.NodeInitRequest;
 import sh.xana.forum.common.ipc.NodeResponse;
-import sh.xana.forum.common.ipc.ScraperRequest;
-import sh.xana.forum.common.ipc.ScraperResponse;
+import sh.xana.forum.common.ipc.ScraperDownload;
+import sh.xana.forum.common.ipc.ScraperUpload;
 import sh.xana.forum.server.db.tables.Pages;
 import sh.xana.forum.server.db.tables.records.PagesRecord;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
@@ -175,10 +175,10 @@ public class WebServer extends NanoHTTPD {
   String pageClientBuffer(NanoHTTPD.IHTTPSession session) throws IOException, InterruptedException {
     String domain = WebServer.getRequiredParameter(session, "domain");
     byte[] input = readPostInput(session);
-    ScraperResponse responses = Utils.jsonMapper.readValue(input, ScraperResponse.class);
+    ScraperUpload responses = Utils.jsonMapper.readValue(input, ScraperUpload.class);
     processor.processResponses(responses);
 
-    List<ScraperRequest.SiteEntry> requests = dbStorage.movePageQueuedToDownloadIPC(domain);
+    List<ScraperDownload.SiteEntry> requests = dbStorage.movePageQueuedToDownloadIPC(domain);
     log.info(
         "client {} downloaded {} download error {} sent",
         responses.successes().size(),

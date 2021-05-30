@@ -18,7 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sh.xana.forum.client.Scraper;
 import sh.xana.forum.common.ipc.NodeResponse.ScraperEntry;
-import sh.xana.forum.common.ipc.ScraperRequest;
+import sh.xana.forum.common.ipc.ScraperDownload;
 import sh.xana.forum.server.db.tables.Pages;
 import sh.xana.forum.server.db.tables.Sites;
 import sh.xana.forum.server.db.tables.records.PagesRecord;
@@ -43,8 +43,8 @@ public class DatabaseStorage {
   }
 
   /** Stage: Load pages to be downloaded by Scraper */
-  public List<ScraperRequest.SiteEntry> movePageQueuedToDownloadIPC(String domain) {
-    List<ScraperRequest.SiteEntry> pages =
+  public List<ScraperDownload.SiteEntry> movePageQueuedToDownloadIPC(String domain) {
+    List<ScraperDownload.SiteEntry> pages =
         context
             .select()
             .from(Pages.PAGES)
@@ -53,10 +53,10 @@ public class DatabaseStorage {
             .and(Pages.PAGES.EXCEPTION.isNull())
             .limit(Scraper.URL_QUEUE_REFILL_SIZE)
             .fetch()
-            .map(r -> new ScraperRequest.SiteEntry(r.get(Pages.PAGES.ID), r.get(Pages.PAGES.URL)));
+            .map(r -> new ScraperDownload.SiteEntry(r.get(Pages.PAGES.ID), r.get(Pages.PAGES.URL)));
 
     setPageStatus(
-        pages.stream().map(ScraperRequest.SiteEntry::siteId).collect(Collectors.toList()),
+        pages.stream().map(ScraperDownload.SiteEntry::siteId).collect(Collectors.toList()),
         DlStatus.Download);
 
     return pages;
