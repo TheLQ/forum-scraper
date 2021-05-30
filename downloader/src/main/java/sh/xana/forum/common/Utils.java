@@ -7,6 +7,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.helpers.MessageFormatter;
@@ -35,7 +36,7 @@ public class Utils {
 
   public static String serverGet(String urlRaw) {
     HttpRequest request = HttpRequest.newBuilder().uri(newUri(urlRaw)).build();
-    return serverRequest(request);
+    return serverRequest(request, BodyHandlers.ofString()).body();
   }
 
   public static String serverPostBackend(String path, String postData) {
@@ -48,25 +49,27 @@ public class Utils {
             .uri(newUri(urlRaw))
             .POST(BodyPublishers.ofString(postData))
             .build();
-    return serverRequest(request);
+    return serverRequest(request, BodyHandlers.ofString()).body();
   }
 
-  public static String serverRequest(HttpRequest request) {
+  public static <T> HttpResponse<T> serverRequest(
+      HttpRequest request, HttpResponse.BodyHandler<T> responseBodyHandler) {
     try {
-      HttpResponse<String> response =
-          httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+      HttpResponse<T> response = httpClient.send(request, responseBodyHandler);
 
       if (response.statusCode() != 200) {
-        throw new RuntimeException(
-            "Failing status code "
-                + response.statusCode()
-                + ". Response length "
-                + response.body().length()
-                + " '"
-                + response.body()
-                + "'");
+        String debug = "";
+        if (response.body() instanceof String) {
+          debug =
+              ". Response length "
+                  + ((String) response.body()).length()
+                  + " '"
+                  + response.body()
+                  + "'";
+        }
+        throw new RuntimeException("Failing status code " + response.statusCode() + debug);
       }
-      return response.body();
+      return response;
     } catch (Exception e) {
       throw new RuntimeException("Failure on " + request.uri(), e);
     }

@@ -1,12 +1,14 @@
 package sh.xana.forum.client;
 
-import java.net.URI;
+import java.io.Closeable;
+import java.io.IOException;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +26,7 @@ import sh.xana.forum.server.WebServer;
  *
  * <p>When buffer is below Y, refill so download queue can keep going
  */
-public class Scraper {
+public class Scraper implements Closeable {
   public static final Logger log = LoggerFactory.getLogger(Scraper.class);
   /** Number of URLs to request, and size when to do a request. Should be between SIZE - 2xSIZE */
   public static final int URL_QUEUE_REFILL_SIZE = 3;
@@ -38,6 +40,7 @@ public class Scraper {
   private final List<ScraperUpload.Error> responseError = new ArrayList<>();
 
   private final Thread thread;
+  private final CountDownLatch threadCloser = new CountDownLatch(1);
 
   public Scraper(String domain) {
     this.domain = domain;
@@ -73,7 +76,7 @@ public class Scraper {
    */
   private boolean mainLoopCycle() throws InterruptedException {
     if (scraperRequests.size() < URL_QUEUE_REFILL_SIZE) {
-      refillQueue();
+      refillQueue(true);
     }
 
     if (scraperRequests.size() == 0) {
@@ -83,9 +86,7 @@ public class Scraper {
       ScraperDownload.SiteEntry scraperRequest = scraperRequests.remove(0);
       try {
         log.debug("Requesting {} url {}", scraperRequest.siteId(), scraperRequest.url());
-        URI uri = scraperRequest.url();
-
-        HttpRequest request = HttpRequest.newBuilder().uri(uri).build();
+        HttpRequest request = HttpRequest.newBuilder().uri(scraperRequest.url()).build();
         HttpResponse<byte[]> response = Utils.httpClient.send(request, BodyHandlers.ofByteArray());
 
         responseSuccess.add(
@@ -103,31 +104,49 @@ public class Scraper {
 
     // sleep then continue for the next cycle
     log.debug("Queued {} urls, sleeping {} seconds", scraperRequests.size(), CYCLE_SECONDS);
-    Thread.sleep(1000L * CYCLE_SECONDS);
-    return true;
+    boolean isClosing = threadCloser.await(CYCLE_SECONDS, TimeUnit.SECONDS);
+    if (isClosing) {
+      // send what we have
+      refillQueue(false);
+
+      // stop next iteration
+      return false;
+    } else {
+      return true;
+    }
   }
 
   /** Fetch new batch of URLs to process, and submit completedBuffer */
-  private void refillQueue() {
+  private void refillQueue(boolean requestMore) {
     log.info(
-        "-- Refill, {} requests, {} response success, {} response error",
+        "-- Refill, {} requests, {} response success, {} response error {} request more",
         scraperRequests.size(),
         responseSuccess.size(),
-        responseError.size());
+        responseError.size(),
+        requestMore);
     try {
       ScraperUpload request =
-          new ScraperUpload(ClientMain.NODE_ID, this.domain, responseSuccess, responseError);
+          new ScraperUpload(
+              ClientMain.NODE_ID, this.domain, requestMore, responseSuccess, responseError);
       String newRequestsJSON =
           Utils.serverPostBackend(
               WebServer.PAGE_CLIENT_BUFFER, Utils.jsonMapper.writeValueAsString(request));
 
       ScraperDownload response = Utils.jsonMapper.readValue(newRequestsJSON, ScraperDownload.class);
-      Collections.addAll(scraperRequests, response.entries());
+      scraperRequests.addAll(response.entries());
 
       responseSuccess.clear();
       responseError.clear();
     } catch (Exception e) {
       throw new RuntimeException("failed to parse buffer json", e);
+    }
+  }
+
+  @Override
+  public void close() throws IOException {
+    log.info("close called, stopping thread");
+    if (thread.isAlive()) {
+      threadCloser.countDown();
     }
   }
 }

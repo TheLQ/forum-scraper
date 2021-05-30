@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.UUID;
 
 public record ScraperUpload(
-    UUID nodeId, String domain, List<Success> successes, List<Error> errors) {
+    UUID nodeId, String domain, boolean requestMore, List<Success> successes, List<Error> errors) {
   public record Success(
       UUID id, byte[] body, Map<String, List<String>> headers, int responseCode) {}
 

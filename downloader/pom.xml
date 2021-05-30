@@ -31,13 +31,6 @@
       <groupId>org.jooq</groupId>
       <artifactId>jooq</artifactId>
       <version>3.14.11</version>
-      <!-- Needed for jooq generator -->
-      <exclusions>
-        <exclusion>
-          <groupId>javax.xml.bind</groupId>
-          <artifactId>jaxb-api</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <!-- Needed for jooq generator -->
 <!--    <dependency>-->
@@ -67,6 +60,11 @@
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
       <version>2.8.0</version>
+    </dependency>
+    <dependency>
+      <groupId>commons-cli</groupId>
+      <artifactId>commons-cli</artifactId>
+      <version>1.4</version>
     </dependency>
   </dependencies>
 
@@ -324,6 +322,16 @@
                         <groupId>commons-io</groupId>
                         <artifactId>commons-io</artifactId>
                         <version>2.8.0</version>
+                      </artifact>
+                      <moduleInfo>
+                      </moduleInfo>
+                    </module>
+
+                    <module>
+                      <artifact>
+                        <groupId>commons-cli</groupId>
+                        <artifactId>commons-cli</artifactId>
+                        <version>1.4</version>
                       </artifact>
                       <moduleInfo>
                       </moduleInfo>

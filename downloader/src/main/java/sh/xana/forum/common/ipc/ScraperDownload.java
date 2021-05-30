@@ -1,8 +1,9 @@
 package sh.xana.forum.common.ipc;
 
 import java.net.URI;
+import java.util.List;
 import java.util.UUID;
 
-public record ScraperDownload(SiteEntry[] entries) {
+public record ScraperDownload(List<SiteEntry> entries) {
   public record SiteEntry(UUID siteId, URI url) {}
 }
