@@ -33,11 +33,11 @@
       <version>3.14.11</version>
     </dependency>
     <!-- Needed for jooq generator -->
-<!--    <dependency>-->
-<!--      <groupId>org.jooq</groupId>-->
-<!--      <artifactId>jooq-codegen</artifactId>-->
-<!--      <version>3.14.11</version>-->
-<!--    </dependency>-->
+    <!--    <dependency>-->
+    <!--      <groupId>org.jooq</groupId>-->
+    <!--      <artifactId>jooq-codegen</artifactId>-->
+    <!--      <version>3.14.11</version>-->
+    <!--    </dependency>-->
     <!-- SQL Lib -->
     <dependency>
       <groupId>org.xerial</groupId>
@@ -66,6 +66,11 @@
       <artifactId>commons-cli</artifactId>
       <version>1.4</version>
     </dependency>
+    <dependency>
+      <groupId>ca.pjer</groupId>
+      <artifactId>logback-awslogs-appender</artifactId>
+      <version>1.5.0</version>
+    </dependency>
   </dependencies>
 
   <dependencyManagement>
@@ -74,6 +79,11 @@
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-api</artifactId>
         <version>2.0.0-alpha1</version>
+      </dependency>
+      <dependency>
+        <groupId>software.amazon.awssdk</groupId>
+        <artifactId>cloudwatchlogs</artifactId>
+        <version>2.16.74</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -157,49 +167,6 @@
       <build>
         <plugins>
 
-          <!--
-
-          Package via uber jar
-
-          -->
-
-          <!--      <plugin>-->
-          <!--        <groupId>org.apache.maven.plugins</groupId>-->
-          <!--        <artifactId>maven-shade-plugin</artifactId>-->
-          <!--        <version>3.2.4</version>-->
-          <!--        <executions>-->
-          <!--          <execution>-->
-          <!--            <phase>package</phase>-->
-          <!--            <goals>-->
-          <!--              <goal>shade</goal>-->
-          <!--            </goals>-->
-          <!--          </execution>-->
-          <!--        </executions>-->
-          <!--      </plugin>-->
-          <!--      <plugin>-->
-          <!--        <groupId>org.panteleyev</groupId>-->
-          <!--        <artifactId>jpackage-maven-plugin</artifactId>-->
-          <!--        <version>1.5.1</version>-->
-          <!--        <configuration>-->
-          <!--          <name>forum-scrape</name>-->
-          <!--          <type>APP_IMAGE</type>-->
-          <!--          <verbose>true</verbose>-->
-          <!--          <destination>target/dist</destination>-->
-          <!--          <appVersion>1</appVersion>-->
-          <!--          <mainJar>${project.build.directory}/scrape-download-1.0-SNAPSHOT.jar</mainJar>-->
-          <!--          <mainClass>sh.xana.forum.common.JPackageMain</mainClass>-->
-          <!--          <input>src/main/resources</input>-->
-          <!--          <winConsole>true</winConsole>-->
-          <!--        </configuration>-->
-          <!--        <executions>-->
-          <!--          <execution>-->
-          <!--            <phase>package</phase>-->
-          <!--            <goals>-->
-          <!--              <goal>jpackage</goal>-->
-          <!--            </goals>-->
-          <!--          </execution>-->
-          <!--        </executions>-->
-          <!--      </plugin>-->
 
           <!--
 
@@ -336,6 +303,51 @@
                       <moduleInfo>
                       </moduleInfo>
                     </module>
+
+                    <!--
+                    AWS Shit
+                    -->
+                    <module>
+                      <artifact>
+                        <groupId>ca.pjer</groupId>
+                        <artifactId>logback-awslogs-appender</artifactId>
+                      </artifact>
+                      <moduleInfo>
+                      </moduleInfo>
+                    </module>
+                    <module>
+                      <artifact>
+                        <groupId>software.amazon.awssdk</groupId>
+                        <artifactId>annotations</artifactId>
+                      </artifact>
+                      <moduleInfo>
+                      </moduleInfo>
+                    </module>
+                    <module>
+                      <artifact>
+                        <groupId>software.amazon.awssdk</groupId>
+                        <artifactId>profiles</artifactId>
+                      </artifact>
+                      <moduleInfo>
+                      </moduleInfo>
+                    </module>
+                    <module>
+                      <artifact>
+                        <groupId>software.amazon.awssdk</groupId>
+                        <artifactId>profiles</artifactId>
+                      </artifact>
+                      <moduleInfo>
+                      </moduleInfo>
+                    </module>
+                    <module>
+                      <artifact>
+                        <groupId>io.netty</groupId>
+                        <artifactId>netty-codec-http2</artifactId>
+                      </artifact>
+                      <moduleInfo>
+                      </moduleInfo>
+                    </module>
+
                   </modules>
                   <jdepsExtraArgs>
                     <arg>--multi-release</arg>
@@ -378,6 +390,59 @@
               <outputDirectory>${project.build.directory}/modules</outputDirectory>
             </configuration>
           </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <!-- lazy workaround since the enormous aws sdk dependency tree isn't modularized -->
+    <profile>
+      <id>uberdeploy</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-shade-plugin</artifactId>
+            <version>3.2.4</version>
+            <executions>
+              <execution>
+                <phase>package</phase>
+                <goals>
+                  <goal>shade</goal>
+                </goals>
+                <configuration>
+                  <artifactSet>
+                    <excludes>
+                      <exclude>*:scrape-download</exclude>
+                    </excludes>
+                  </artifactSet>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <!--            <plugin>-->
+          <!--              <groupId>org.panteleyev</groupId>-->
+          <!--              <artifactId>jpackage-maven-plugin</artifactId>-->
+          <!--              <version>1.5.1</version>-->
+          <!--              <configuration>-->
+          <!--                <name>forum-scrape</name>-->
+          <!--                <type>APP_IMAGE</type>-->
+          <!--                <verbose>true</verbose>-->
+          <!--                <destination>target/dist</destination>-->
+          <!--                <appVersion>1</appVersion>-->
+          <!--                <mainJar>${project.build.directory}/scrape-download-1.0-SNAPSHOT.jar</mainJar>-->
+          <!--                <mainClass>sh.xana.forum.common.JPackageMain</mainClass>-->
+          <!--                <input>src/main/resources</input>-->
+          <!--                <winConsole>true</winConsole>-->
+          <!--              </configuration>-->
+          <!--              <executions>-->
+          <!--                <execution>-->
+          <!--                  <phase>package</phase>-->
+          <!--                  <goals>-->
+          <!--                    <goal>jpackage</goal>-->
+          <!--                  </goals>-->
+          <!--                </execution>-->
+          <!--              </executions>-->
+          <!--            </plugin>-->
         </plugins>
       </build>
     </profile>
