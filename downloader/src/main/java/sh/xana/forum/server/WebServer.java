@@ -50,9 +50,9 @@ public class WebServer extends NanoHTTPD {
   @Override
   public Response serve(IHTTPSession session) {
     // Get page, stripping the initial /
-    String page = session.getUri().substring(1);
+    String page = session.getUri();
 
-    log.info("Processing page {}", session.getUri());
+    log.info("Processing page {}", page);
     try {
       if (page.startsWith(PAGE_FILE)) {
         return pageFile(session);
@@ -73,6 +73,8 @@ public class WebServer extends NanoHTTPD {
           return newFixedLengthResponse(pageOverviewErrors());
         case PAGE_OVERVIEW_ERRORS_CLEAR:
           return newFixedLengthResponse(pageOverviewErrorsClear(session));
+        case PAGE_OVERVIEW_ERRORS_CLEARALL:
+          return newFixedLengthResponse(pageOverviewErrorsClearAll(session));
         default:
           return newFixedLengthResponse(
               Response.Status.NOT_FOUND, NanoHTTPD.MIME_PLAINTEXT, "Not Found");
@@ -84,7 +86,7 @@ public class WebServer extends NanoHTTPD {
     }
   }
 
-  public static final String PAGE_SITE_ADD = "site/add";
+  public static final String PAGE_SITE_ADD = "/site/add";
 
   String pageAddSite(NanoHTTPD.IHTTPSession session) {
     assertAuth(session);
@@ -97,7 +99,7 @@ public class WebServer extends NanoHTTPD {
     return siteId.toString();
   }
 
-  public static final String PAGE_OVERVIEW = "overview";
+  public static final String PAGE_OVERVIEW = "/overview";
 
   String pageOverview() {
     StringBuilder result = new StringBuilder();
@@ -107,11 +109,12 @@ public class WebServer extends NanoHTTPD {
     return result.toString();
   }
 
-  public static final String PAGE_OVERVIEW_ERRORS = "overview/errors";
+  public static final String PAGE_OVERVIEW_ERRORS = "/overview/errors";
 
   private String pageOverviewErrors() {
     StringBuilder result = new StringBuilder();
     result.append("<style>th, td { border: 1px solid; }</style>");
+    result.append("<a href='").append(PAGE_OVERVIEW_ERRORS_CLEARALL).append("'>Clear All</a>");
     result.append("<table border=1>");
 
     result.append("<thead><tr>");
@@ -136,7 +139,7 @@ public class WebServer extends NanoHTTPD {
       result
           .append("<tr><td colspan=5><pre>")
           // need slash for base url
-          .append("<a href='/")
+          .append("<a href='")
           .append(PAGE_OVERVIEW_ERRORS_CLEAR)
           .append("?pageId=")
           .append(page.getId())
@@ -150,12 +153,29 @@ public class WebServer extends NanoHTTPD {
     return result.toString();
   }
 
-  public static final String PAGE_OVERVIEW_ERRORS_CLEAR = "overview/errors/clear";
+  public static final String PAGE_OVERVIEW_ERRORS_CLEAR = "/overview/errors/clear";
 
   private String pageOverviewErrorsClear(NanoHTTPD.IHTTPSession session)
       throws InterruptedException {
     UUID pageId = UUID.fromString(getRequiredParameter(session, "pageId"));
+    return pageOverviewErrorsClear_util(pageId);
+  }
 
+  public static final String PAGE_OVERVIEW_ERRORS_CLEARALL = "/overview/errors/clearAll";
+
+  private String pageOverviewErrorsClearAll(NanoHTTPD.IHTTPSession session)
+      throws InterruptedException {
+    List<PagesRecord> pages = dbStorage.getPages(Pages.PAGES.EXCEPTION.isNotNull());
+    StringBuilder result = new StringBuilder("<pre>");
+    for (PagesRecord page : pages) {
+      String clearResult = pageOverviewErrorsClear_util(page.getId());
+      result.append(clearResult).append("\r\n");
+    }
+    result.append("</pre>");
+    return result.toString();
+  }
+
+  private String pageOverviewErrorsClear_util(UUID pageId) throws InterruptedException {
     dbStorage.setPageExceptionNull(pageId);
 
     PagesRecord page = dbStorage.getPage(pageId);
@@ -166,7 +186,7 @@ public class WebServer extends NanoHTTPD {
     return "ok";
   }
 
-  public static final String PAGE_CLIENT_NODEINIT = "client/nodeinit";
+  public static final String PAGE_CLIENT_NODEINIT = "/client/nodeinit";
 
   String pageClientNodeInit(NanoHTTPD.IHTTPSession session) throws IOException {
     assertAuth(session);
@@ -181,7 +201,7 @@ public class WebServer extends NanoHTTPD {
     return Utils.jsonMapper.writeValueAsString(response);
   }
 
-  public static final String PAGE_CLIENT_BUFFER = "client/buffer";
+  public static final String PAGE_CLIENT_BUFFER = "/client/buffer";
 
   String pageClientBuffer(NanoHTTPD.IHTTPSession session) throws IOException, InterruptedException {
     assertAuth(session);
@@ -206,7 +226,7 @@ public class WebServer extends NanoHTTPD {
     return Utils.jsonMapper.writeValueAsString(download);
   }
 
-  public static final String PAGE_FILE = "file";
+  public static final String PAGE_FILE = "/file";
 
   private Response pageFile(NanoHTTPD.IHTTPSession session) throws IOException {
     assertAuth(session);
@@ -215,8 +235,7 @@ public class WebServer extends NanoHTTPD {
       mimeType = MIME_PLAINTEXT;
     }
 
-    String filenameStr =
-        session.getUri().substring(/*first slash*/ 1 + PAGE_FILE.length() + /*dir sep slash*/ 1);
+    String filenameStr = session.getUri().substring(PAGE_FILE.length() + /*dir sep slash*/ 1);
     Path filename = Path.of(filenameStr);
     if (!Files.exists(filename)) {
       log.debug("Cannot find path {} full {}", filename, filename.toAbsolutePath());

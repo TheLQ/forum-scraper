@@ -130,11 +130,12 @@ public class DatabaseStorage {
   }
 
   public PagesRecord getPage(UUID pageId) {
-    return context
-        .selectOne()
-        .from(Pages.PAGES)
-        .where(Pages.PAGES.ID.eq(pageId))
-        .fetchOneInto(PagesRecord.class);
+    List<PagesRecord> pages = getPages(Pages.PAGES.ID.eq(pageId));
+    if (pages.size() != 1) {
+      throw new RuntimeException(
+          "Expected 1 row, got " + pages.size() + " for id " + pageId + "\r\n" + pages);
+    }
+    return pages.get(0);
   }
 
   /**
