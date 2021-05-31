@@ -410,6 +410,8 @@
                   <goal>shade</goal>
                 </goals>
                 <configuration>
+                  <createDependencyReducedPom>false</createDependencyReducedPom>
+                  <finalName>dependencies</finalName>
                   <artifactSet>
                     <excludes>
                       <exclude>*:scrape-download</exclude>

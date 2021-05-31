@@ -1,0 +1,20 @@
+# unit file based on Amazon Linux nginx file
+
+[Unit]
+Description=Xana forum client
+After=network-online.target remote-fs.target nss-lookup.target
+Wants=network-online.target
+
+[Service]
+PIDFile=/run/forum-client.pid
+WorkingDirectory=/opt/app
+ExecStart=/usr/bin/java -cp dependencies.jar:scrape-download-1.0-SNAPSHOT.jar sh.xana.forum.server.ServerMain
+
+#Type=forking
+#KillSignal=SIGQUIT
+#TimeoutStopSec=5
+#KillMode=mixed
+#PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
