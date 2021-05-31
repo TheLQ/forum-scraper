@@ -50,7 +50,7 @@ public class ServerMain {
     String output = IOUtils.toString(process.getInputStream(), StandardCharsets.UTF_8);
     log.info("Node version " + output.trim());
 
-    String parserScript = "../parser/parser.js";
+    String parserScript = "../parser/dist/parser.js";
     if (cmd.hasOption(ARG_PARSER_SCRIPT)) {
       parserScript = cmd.getOptionValue(ARG_PARSER_SCRIPT);
     }

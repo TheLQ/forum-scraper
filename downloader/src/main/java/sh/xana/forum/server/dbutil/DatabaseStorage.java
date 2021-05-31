@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import org.jooq.CloseableDSLContext;
 import org.jooq.Condition;
@@ -83,36 +82,41 @@ public class DatabaseStorage {
   /** Stage: reporting monitor */
   public List<OverviewEntry> getOverviewSites() {
     // TODO: SLOW!!! But easy to write version
-    List<SitesRecord> sites = getSites();
-    Map<UUID, OverviewEntry> result = new HashMap<>();
-    for (PagesRecord page : getPages()) {
-      result.compute(
-          page.getSiteid(),
-          (k, v) -> {
-            if (v == null) {
-              SitesRecord site =
-                  sites.stream()
-                      .filter(r -> r.getId().equals(page.getSiteid()))
-                      .findFirst()
-                      .orElseThrow();
-              v =
-                  new OverviewEntry(
-                      k,
-                      site.getUrl(),
-                      new AtomicInteger(),
-                      new AtomicInteger(),
-                      new AtomicInteger());
-            }
-            switch (page.getDlstatus()) {
-              case Done -> v.totalDone.incrementAndGet();
-              case Download -> v.totalDownload.incrementAndGet();
-              case Queued -> v.totalQueued.incrementAndGet();
-              default -> throw new RuntimeException("unknown status");
-            }
-            return v;
-          });
+    var pages =
+        context
+            .select(
+                DSL.count(Pages.PAGES.ID),
+                Pages.PAGES.DLSTATUS,
+                Pages.PAGES.SITEID,
+                Sites.SITES.URL)
+            .from(Pages.PAGES)
+            .join(Sites.SITES)
+            .on(Pages.PAGES.SITEID.eq(Sites.SITES.ID))
+            .groupBy(Pages.PAGES.DLSTATUS)
+            .fetch();
+
+    List<OverviewEntry> result = new ArrayList<>();
+    while (!pages.isEmpty()) {
+      Map<DlStatus, Integer> counter = new HashMap<>();
+
+      var pageIterator = pages.iterator();
+      URI siteUrl = null;
+      UUID siteId = null;
+      do {
+        var curPage = pageIterator.next();
+        if (siteId == null) {
+          siteId = curPage.get(Pages.PAGES.SITEID);
+          siteUrl = curPage.get(Sites.SITES.URL);
+        } else if (!curPage.get(Pages.PAGES.SITEID).equals(siteId)) {
+          continue;
+        }
+        counter.put(curPage.get(Pages.PAGES.DLSTATUS), curPage.value1());
+        pageIterator.remove();
+      } while (pageIterator.hasNext());
+
+      result.add(new OverviewEntry(siteId, siteUrl, counter));
     }
-    return List.copyOf(result.values());
+    return result;
   }
 
   // **************************** Utils ******************
@@ -222,7 +226,12 @@ public class DatabaseStorage {
     int numRowsInserted = query.execute();
     if (numRowsInserted != expectedRows) {
       throw new RuntimeException(
-          "Expected result of " + expectedRows + " row, got " + numRowsInserted + ". Query " + query);
+          "Expected result of "
+              + expectedRows
+              + " row, got "
+              + numRowsInserted
+              + ". Query "
+              + query);
     }
   }
 
@@ -249,10 +258,5 @@ public class DatabaseStorage {
     phpBB,
   }
 
-  public record OverviewEntry(
-      UUID siteId,
-      URI siteUrl,
-      AtomicInteger totalQueued,
-      AtomicInteger totalDownload,
-      AtomicInteger totalDone) {}
+  public record OverviewEntry(UUID siteId, URI siteUrl, Map<DlStatus, Integer> dlStatusCount) {}
 }

@@ -75,7 +75,7 @@ public class AwsClientManager {
       case 200:
         log.warn("AWS Requesting shutdown " + response);
         for (Scraper scraper : ClientMain.scrapers) {
-            scraper.close();
+          scraper.close();
         }
         return false;
       default:
