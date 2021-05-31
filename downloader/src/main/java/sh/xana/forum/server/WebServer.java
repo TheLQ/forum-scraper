@@ -26,6 +26,8 @@ public class WebServer extends NanoHTTPD {
   private static final Date start = new Date();
   public static final int PORT = 8080;
   private static final String MIME_BLOB = "application/octet-stream";
+  public static final String NODE_AUTH_KEY = "X-Xana-Auth";
+  public static final String NODE_AUTH_VALUE = "eSJ9qYpZnHAKPxyTDJv9";
 
   private final DatabaseStorage dbStorage;
   private final Processor processor;
@@ -85,6 +87,7 @@ public class WebServer extends NanoHTTPD {
   public static final String PAGE_SITE_ADD = "site/add";
 
   String pageAddSite(NanoHTTPD.IHTTPSession session) {
+    assertAuth(session);
     URI siteUrl = Utils.toURI(WebServer.getRequiredParameter(session, "siteurl"));
 
     UUID siteId = dbStorage.insertSite(siteUrl);
@@ -151,6 +154,7 @@ public class WebServer extends NanoHTTPD {
 
   private String pageOverviewErrorsClear(NanoHTTPD.IHTTPSession session)
       throws InterruptedException {
+    assertAuth(session);
     UUID pageId = UUID.fromString(getRequiredParameter(session, "pageId"));
 
     dbStorage.setPageExceptionNull(pageId);
@@ -166,6 +170,7 @@ public class WebServer extends NanoHTTPD {
   public static final String PAGE_CLIENT_NODEINIT = "client/nodeinit";
 
   String pageClientNodeInit(NanoHTTPD.IHTTPSession session) throws IOException {
+    assertAuth(session);
     byte[] input = readPostInput(session);
     NodeInitRequest request = Utils.jsonMapper.readValue(input, NodeInitRequest.class);
     UUID nodeId = nodeManager.registerNode(request.ip(), request.hostname());
@@ -180,6 +185,7 @@ public class WebServer extends NanoHTTPD {
   public static final String PAGE_CLIENT_BUFFER = "client/buffer";
 
   String pageClientBuffer(NanoHTTPD.IHTTPSession session) throws IOException, InterruptedException {
+    assertAuth(session);
     byte[] input = readPostInput(session);
     ScraperUpload scraperUpload = Utils.jsonMapper.readValue(input, ScraperUpload.class);
     processor.processResponses(scraperUpload);
@@ -204,6 +210,7 @@ public class WebServer extends NanoHTTPD {
   public static final String PAGE_FILE = "file";
 
   private Response pageFile(NanoHTTPD.IHTTPSession session) throws IOException {
+    assertAuth(session);
     String mimeType = MIME_BLOB;
     if (session.getUri().endsWith(".service")) {
       mimeType = MIME_PLAINTEXT;
@@ -259,5 +266,12 @@ public class WebServer extends NanoHTTPD {
       currentLength += session.getInputStream().read(data, currentLength, length - currentLength);
     }
     return data;
+  }
+
+  private static void assertAuth(IHTTPSession session) {
+    String key = session.getHeaders().get(NODE_AUTH_KEY);
+    if (key == null || !key.equals(NODE_AUTH_VALUE)) {
+      throw new RuntimeException("Protected endpoint");
+    }
   }
 }

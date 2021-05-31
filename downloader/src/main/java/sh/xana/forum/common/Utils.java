@@ -11,6 +11,7 @@ import java.net.http.HttpResponse.BodyHandlers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.helpers.MessageFormatter;
+import sh.xana.forum.server.WebServer;
 
 public class Utils {
   private Utils() {}
@@ -30,8 +31,8 @@ public class Utils {
   }
 
   public static String serverGetBackend(String path) {
-    String urlRaw = BACKEND_SERVER + path;
-    return serverGet(urlRaw);
+    HttpRequest request = HttpRequest.newBuilder().uri(newUri(BACKEND_SERVER + path)).GET().build();
+    return serverRequest(request, BodyHandlers.ofString()).body();
   }
 
   public static String serverGet(String urlRaw) {
@@ -40,7 +41,13 @@ public class Utils {
   }
 
   public static String serverPostBackend(String path, String postData) {
-    return serverPost(BACKEND_SERVER + path, postData);
+    HttpRequest request =
+        HttpRequest.newBuilder()
+            .uri(newUri(BACKEND_SERVER + path))
+            .POST(BodyPublishers.ofString(postData))
+            .header(WebServer.NODE_AUTH_KEY, WebServer.NODE_AUTH_VALUE)
+            .build();
+    return serverRequest(request, BodyHandlers.ofString()).body();
   }
 
   public static String serverPost(String urlRaw, String postData) {
