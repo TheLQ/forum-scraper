@@ -149,4 +149,8 @@ public class Scraper implements Closeable {
       threadCloser.countDown();
     }
   }
+
+  public void waitForThreadDeath() throws InterruptedException {
+    thread.join();
+  }
 }

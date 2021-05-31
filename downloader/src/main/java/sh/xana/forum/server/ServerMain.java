@@ -1,5 +1,6 @@
 package sh.xana.forum.server;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -18,6 +19,8 @@ public class ServerMain {
   private static final String ARG_FILE_CACHE = "fileCache";
   private static final String ARG_NODE_CMD = "nodeCmd";
   private static final String ARG_PARSER_SCRIPT = "parserScript";
+
+  private static Processor processor;
 
   public static void main(String[] args) throws Exception {
     Options options = new Options();
@@ -58,15 +61,28 @@ public class ServerMain {
       throw new RuntimeException(ARG_PARSER_SCRIPT + " does not exist " + parserScript);
     }
 
+    Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+      try {
+        close();
+      } catch (Exception e) {
+        throw new RuntimeException("Failed to close");
+      }
+    }));
+
     // Hide giant logo it writes to logs on first load
     System.setProperty("org.jooq.no-logo", "true");
 
     DatabaseStorage dbStorage = new DatabaseStorage();
-    Processor processor = new Processor(dbStorage, fileCachePath, nodeCmd, parserScript);
+    processor = new Processor(dbStorage, fileCachePath, nodeCmd, parserScript);
     NodeManager nodeManager = new NodeManager();
 
     WebServer server = new WebServer(dbStorage, processor, nodeManager);
     server.start();
     processor.startSpiderThread();
+  }
+
+  public static void close() throws InterruptedException, IOException {
+    processor.close();
+    processor.waitForThreadDeath();
   }
 }

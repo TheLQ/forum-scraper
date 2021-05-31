@@ -1,5 +1,6 @@
 package sh.xana.forum.client;
 
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -43,10 +44,20 @@ public class ClientMain {
       String server = cmd.getOptionValue("server");
       log.info("Setting custom server {}", server);
       Utils.BACKEND_SERVER = server;
+    } else {
+      Utils.BACKEND_SERVER = "http://127.0.0.1";
     }
     if (cmd.hasOption("aws")) {
       new AwsClientManager().start();
     }
+
+    Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+      try {
+        close();
+      } catch (Exception e) {
+        throw new RuntimeException("Failed to close");
+      }
+    }));
 
     PUBLIC_ADDRESS = Utils.serverGet("https://xana.sh/myip");
     log.info("Running on IP {} hostname {}", PUBLIC_ADDRESS, HOSTNAME);
@@ -73,6 +84,15 @@ public class ClientMain {
       scrapers.add(downloader);
 
       downloader.startThread();
+    }
+  }
+
+  public static void close() throws IOException, InterruptedException {
+    for (Scraper scraper : ClientMain.scrapers) {
+      scraper.close();
+    }
+    for (Scraper scraper : ClientMain.scrapers) {
+      scraper.waitForThreadDeath();
     }
   }
 }

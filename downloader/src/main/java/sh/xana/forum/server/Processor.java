@@ -1,5 +1,6 @@
 package sh.xana.forum.server;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -24,7 +25,7 @@ import sh.xana.forum.server.dbutil.DatabaseStorage;
 import sh.xana.forum.server.dbutil.DatabaseStorage.DlStatus;
 
 /** Parse stage. Extract further URLs for downloading */
-public class Processor {
+public class Processor implements Closeable {
   private static final Logger log = LoggerFactory.getLogger(Processor.class);
 
   private final DatabaseStorage dbStorage;
@@ -176,5 +177,17 @@ public class Processor {
     }
 
     return true;
+  }
+
+  @Override
+  public void close() throws IOException {
+    log.info("close called, stopping thread");
+    if (spiderThread.isAlive()) {
+      spiderThread.interrupt();
+    }
+  }
+
+  public void waitForThreadDeath() throws InterruptedException {
+    spiderThread.join();
   }
 }
