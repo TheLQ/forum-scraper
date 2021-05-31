@@ -3,6 +3,8 @@ package sh.xana.forum.server;
 import fi.iki.elonen.NanoHTTPD;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Date;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -23,6 +25,7 @@ public class WebServer extends NanoHTTPD {
   public static final Logger log = LoggerFactory.getLogger(WebServer.class);
   private static final Date start = new Date();
   public static final int PORT = 8080;
+  private static final String MIME_BLOB = "application/octet-stream";
 
   private final DatabaseStorage dbStorage;
   private final Processor processor;
@@ -48,6 +51,9 @@ public class WebServer extends NanoHTTPD {
 
     log.info("Processing page {}", session.getUri());
     try {
+      if (page.startsWith("file")) {
+        return pageFile(session);
+      }
       switch (page) {
         case "":
           return newFixedLengthResponse(
@@ -192,6 +198,27 @@ public class WebServer extends NanoHTTPD {
         requests.size(),
         scraperUpload.requestMore());
     return Utils.jsonMapper.writeValueAsString(download);
+  }
+
+  public static final String PAGE_FILE = "file";
+
+  private Response pageFile(NanoHTTPD.IHTTPSession session) throws IOException {
+    String mimeType = MIME_BLOB;
+    if (session.getUri().endsWith(".service")) {
+      mimeType = MIME_PLAINTEXT;
+    }
+
+    String filenameStr =
+        session.getUri().substring(/*first slash*/ 1 + PAGE_FILE.length() + /*dir sep slash*/ 1);
+    Path filename = Path.of(filenameStr);
+    if (!Files.exists(filename)) {
+      return newFixedLengthResponse(
+          Response.Status.NOT_FOUND, NanoHTTPD.MIME_HTML, "file not found " + filenameStr);
+    }
+    long length = Files.size(filename);
+
+    return newFixedLengthResponse(
+        Response.Status.OK, mimeType, Files.newInputStream(filename), length);
   }
 
   private static String getRequiredParameter(IHTTPSession session, String key) {
