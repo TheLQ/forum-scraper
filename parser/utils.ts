@@ -14,14 +14,14 @@ interface Subpage {
 
 // Copied from downloader/src/main/java/sh/xana/forum/server/dbutil/DatabaseStorage.java
 export enum PageType {
-    ForumList,
-    TopicPage,
+    ForumList = "ForumList",
+    TopicPage = "TopicPage",
 }
 
 export enum ForumType {
-    ForkBoard,
-    vBulletin,
-    phpBB,
+    ForkBoard = "ForkBoard",
+    vBulletin = "vBulletin",
+    phpBB = "phpBB",
 }
 
 export function getTextChild(elem: Element): Text {

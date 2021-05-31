@@ -154,7 +154,6 @@ public class WebServer extends NanoHTTPD {
 
   private String pageOverviewErrorsClear(NanoHTTPD.IHTTPSession session)
       throws InterruptedException {
-    assertAuth(session);
     UUID pageId = UUID.fromString(getRequiredParameter(session, "pageId"));
 
     dbStorage.setPageExceptionNull(pageId);

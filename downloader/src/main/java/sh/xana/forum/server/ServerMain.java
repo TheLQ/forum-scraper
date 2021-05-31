@@ -1,11 +1,13 @@
 package sh.xana.forum.server;
 
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sh.xana.forum.client.ClientMain;
@@ -36,17 +38,24 @@ public class ServerMain {
       fileCachePath = Path.of(server);
     }
     if (!Files.exists(fileCachePath)) {
-      throw new RuntimeException("fileCachePath does not exist " + fileCachePath);
+      throw new RuntimeException(ARG_FILE_CACHE + " does not exist " + fileCachePath);
     }
 
     String nodeCmd = "node";
     if (cmd.hasOption(ARG_NODE_CMD)) {
       nodeCmd = cmd.getOptionValue(ARG_NODE_CMD);
     }
+    // start() will throw if the node cmd doesn't exist
+    Process process = new ProcessBuilder(nodeCmd, "-v").redirectErrorStream(true).start();
+    String output = IOUtils.toString(process.getInputStream(), StandardCharsets.UTF_8);
+    log.info("Node version " + output.trim());
 
     String parserScript = "../parser/parser.js";
     if (cmd.hasOption(ARG_PARSER_SCRIPT)) {
       parserScript = cmd.getOptionValue(ARG_PARSER_SCRIPT);
+    }
+    if (!Files.exists(Path.of(parserScript))) {
+      throw new RuntimeException(ARG_PARSER_SCRIPT + " does not exist " + parserScript);
     }
 
     // Hide giant logo it writes to logs on first load

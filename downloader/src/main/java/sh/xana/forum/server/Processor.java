@@ -10,6 +10,7 @@ import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -108,17 +109,25 @@ public class Processor {
     PagesRecord page = pages.get(0);
     log.info("processing page " + page.getUrl());
 
+    String[] cmd =
+        new String[] {
+          nodeCmd,
+          // needed for es6 modules
+          "--es-module-specifier-resolution=node",
+          parserScript,
+          fileCachePath.resolve(pageId + ".response").toString()
+        };
     try {
-      String pageIdStr = pageId.toString();
-      ProcessBuilder pb =
-          new ProcessBuilder(
-                  nodeCmd, parserScript, fileCachePath.resolve(pageIdStr + ".response").toString())
-              .redirectErrorStream(true);
+      ProcessBuilder pb = new ProcessBuilder(cmd).redirectErrorStream(true);
       Process process = pb.start();
-      String output = IOUtils.toString(process.getInputStream(), StandardCharsets.UTF_8);
+      String output = IOUtils.toString(process.getInputStream(), StandardCharsets.UTF_8).trim();
 
-      if (process.exitValue() != 0) {
+      // suspicous....
+      if (process.waitFor() != 0) {
         throw new RuntimeException("node parser exit " + process.exitValue() + "\r\n" + output);
+      }
+      if (output.equals("")) {
+        throw new RuntimeException("Output is empty");
       }
 
       ParserResult results = Utils.jsonMapper.readValue(output, ParserResult.class);
@@ -155,7 +164,7 @@ public class Processor {
 
       dbStorage.setPageStatus(List.of(pageId), DlStatus.Done);
     } catch (Exception e) {
-      log.warn("Failed in parser", e);
+      log.warn("Failed in parser, command " + StringUtils.join(cmd, " "), e);
       dbStorage.setPageException(page.getId(), ExceptionUtils.getStackTrace(e));
     }
 
