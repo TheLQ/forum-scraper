@@ -26,7 +26,7 @@ public class WebServer extends NanoHTTPD {
   private static final Date start = new Date();
   public static final int PORT = 8080;
   private static final String MIME_BLOB = "application/octet-stream";
-  public static final String NODE_AUTH_KEY = "X-Xana-Auth";
+  public static final String NODE_AUTH_KEY = "x-xana-auth";
   public static final String NODE_AUTH_VALUE = "eSJ9qYpZnHAKPxyTDJv9";
 
   private final DatabaseStorage dbStorage;
@@ -35,7 +35,7 @@ public class WebServer extends NanoHTTPD {
 
   public WebServer(DatabaseStorage dbStorage, Processor processor, NodeManager nodeManager) {
     // Bind to localhost since on aws we are proxied
-    super("127.0.0.1", PORT);
+    super(PORT);
     this.dbStorage = dbStorage;
     this.processor = processor;
     this.nodeManager = nodeManager;
@@ -54,7 +54,7 @@ public class WebServer extends NanoHTTPD {
 
     log.info("Processing page {}", session.getUri());
     try {
-      if (page.startsWith("file")) {
+      if (page.startsWith(PAGE_FILE)) {
         return pageFile(session);
       }
       switch (page) {
@@ -220,6 +220,8 @@ public class WebServer extends NanoHTTPD {
         session.getUri().substring(/*first slash*/ 1 + PAGE_FILE.length() + /*dir sep slash*/ 1);
     Path filename = Path.of(filenameStr);
     if (!Files.exists(filename)) {
+      log.debug("Cannot find path {} full {}", filename, filename.toAbsolutePath());
+      log.trace("Cannot find path {} full {}", filename, filename.toAbsolutePath());
       return newFixedLengthResponse(
           Response.Status.NOT_FOUND, NanoHTTPD.MIME_HTML, "file not found " + filenameStr);
     }
@@ -269,9 +271,9 @@ public class WebServer extends NanoHTTPD {
   }
 
   private static void assertAuth(IHTTPSession session) {
-    String key = session.getHeaders().get(NODE_AUTH_KEY);
-    if (key == null || !key.equals(NODE_AUTH_VALUE)) {
-      throw new RuntimeException("Protected endpoint");
+    String value = session.getHeaders().get(NODE_AUTH_KEY);
+    if (value == null || !value.equals(NODE_AUTH_VALUE)) {
+      throw new RuntimeException("Protected endpoint " + session.getHeaders());
     }
   }
 }

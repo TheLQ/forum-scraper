@@ -24,7 +24,6 @@ import sh.xana.forum.server.dbutil.DatabaseStorage.DlStatus;
 /** Parse stage. Extract further URLs for downloading */
 public class Processor {
   private static final Logger log = LoggerFactory.getLogger(Processor.class);
-  private static final Path fileCachePath = Path.of("..", "filecache");
 
   private final DatabaseStorage dbStorage;
   private final Thread spiderThread;
@@ -33,9 +32,15 @@ public class Processor {
    * deadlock itself on init/load
    */
   private final BlockingQueue<UUID> spiderQueue = new ArrayBlockingQueue<>(10000);
+  /**
+   * storage of downloaded content
+   */
+  private final Path fileCachePath;
 
-  public Processor(DatabaseStorage dbStorage) {
+  public Processor(DatabaseStorage dbStorage, Path fileCachePath) {
     this.dbStorage = dbStorage;
+    this.fileCachePath = fileCachePath;
+
     this.spiderThread = new Thread(this::pageSpiderThread);
     this.spiderThread.setName("ProcessorSpider");
   }

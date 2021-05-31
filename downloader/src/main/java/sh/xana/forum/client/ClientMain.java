@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.UUID;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
@@ -31,7 +32,13 @@ public class ClientMain {
     Options options = new Options();
     options.addOption("server", true, "central server");
     options.addOption("aws", false, "is running on aws");
+    options.addOption("h", false, "help");
     CommandLine cmd = new DefaultParser().parse(options, args);
+    if (cmd.hasOption("h")) {
+      HelpFormatter formatter = new HelpFormatter();
+      formatter.printHelp("myapp", "server", options, "", true);
+      System.exit(1);
+    }
     if (cmd.hasOption("server")) {
       String server = cmd.getOptionValue("server");
       log.info("Setting custom server {}", server);
@@ -41,7 +48,7 @@ public class ClientMain {
       new AwsClientManager().start();
     }
 
-    PUBLIC_ADDRESS = Utils.serverGet("https://replika.xana.sh/myip");
+    PUBLIC_ADDRESS = Utils.serverGet("https://xana.sh/myip");
     log.info("Running on IP {} hostname {}", PUBLIC_ADDRESS, HOSTNAME);
 
     // Init scrapers

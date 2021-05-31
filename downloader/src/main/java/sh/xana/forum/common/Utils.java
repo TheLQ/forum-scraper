@@ -20,7 +20,7 @@ public class Utils {
   public static final HttpClient httpClient = HttpClient.newHttpClient();
   public static final ObjectMapper jsonMapper = new ObjectMapper();
 
-  public static String BACKEND_SERVER = "http://127.0.0.1:8080/";
+  public static String BACKEND_SERVER;
 
   public static URI toURI(String raw) {
     try {
