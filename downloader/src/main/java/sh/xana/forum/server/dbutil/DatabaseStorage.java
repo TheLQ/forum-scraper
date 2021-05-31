@@ -222,7 +222,7 @@ public class DatabaseStorage {
     int numRowsInserted = query.execute();
     if (numRowsInserted != expectedRows) {
       throw new RuntimeException(
-          "Expected result of " + expectedRows + " row, got " + numRowsInserted);
+          "Expected result of " + expectedRows + " row, got " + numRowsInserted + ". Query " + query);
     }
   }
 

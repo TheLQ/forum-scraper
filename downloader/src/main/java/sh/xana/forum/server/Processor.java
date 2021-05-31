@@ -32,14 +32,18 @@ public class Processor {
    * deadlock itself on init/load
    */
   private final BlockingQueue<UUID> spiderQueue = new ArrayBlockingQueue<>(10000);
-  /**
-   * storage of downloaded content
-   */
+  /** storage of downloaded content */
   private final Path fileCachePath;
 
-  public Processor(DatabaseStorage dbStorage, Path fileCachePath) {
+  private final String nodeCmd;
+  private final String parserScript;
+
+  public Processor(
+      DatabaseStorage dbStorage, Path fileCachePath, String nodeCmd, String parserScript) {
     this.dbStorage = dbStorage;
     this.fileCachePath = fileCachePath;
+    this.nodeCmd = nodeCmd;
+    this.parserScript = parserScript;
 
     this.spiderThread = new Thread(this::pageSpiderThread);
     this.spiderThread.setName("ProcessorSpider");
@@ -108,7 +112,7 @@ public class Processor {
       String pageIdStr = pageId.toString();
       ProcessBuilder pb =
           new ProcessBuilder(
-                  "node", "../parser/parser.js", "../filecache/" + pageIdStr + ".response")
+                  nodeCmd, parserScript, fileCachePath.resolve(pageIdStr + ".response").toString())
               .redirectErrorStream(true);
       Process process = pb.start();
       String output = IOUtils.toString(process.getInputStream(), StandardCharsets.UTF_8);
