@@ -121,8 +121,17 @@ public class DatabaseStorage {
 
   // **************************** Utils ******************
 
-  private List<SitesRecord> getSites() {
-    return context.select().from(Sites.SITES).fetchInto(SitesRecord.class);
+  private List<SitesRecord> getSites(Condition... conditions) {
+    return context.select().from(Sites.SITES).where(conditions).fetchInto(SitesRecord.class);
+  }
+
+  public SitesRecord getSite(UUID siteId) {
+    List<SitesRecord> sites = getSites(Sites.SITES.ID.eq(siteId));
+    if (sites.size() != 1) {
+      throw new RuntimeException(
+          "Expected 1 row, got " + sites.size() + " for id " + siteId + "\r\n" + sites);
+    }
+    return sites.get(0);
   }
 
   public List<PagesRecord> getPages(Condition... conditions) {

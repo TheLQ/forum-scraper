@@ -18,7 +18,7 @@ const $ = cheerio.load(rawHTML, {
 
 const results: Result = {
     // placeholders
-    type: PageType.ForumList,
+    pageType: PageType.ForumList,
     forumType: null,
     //
     subpages: []
@@ -38,7 +38,7 @@ if (results.forumType == null) {
 // Pages
 if (results.forumType == ForumType.ForkBoard) {
     if ($("div > .post_header").length == 0) {
-        results.type = PageType.ForumList
+        results.pageType = PageType.ForumList
     
         // forum list
         $(".child_section .child_section_title a").each((i, elem) => {
@@ -46,7 +46,7 @@ if (results.forumType == ForumType.ForkBoard) {
             results.subpages.push({
                 name: innerText.data,
                 url: elem.attribs.href,
-                type: PageType.ForumList,
+                pageType: PageType.ForumList,
             })
         })
     
@@ -56,19 +56,20 @@ if (results.forumType == ForumType.ForkBoard) {
             results.subpages.push({
                 name: innerText.data,
                 url: elem.attribs.href,
-                type: PageType.TopicPage,
+                pageType: PageType.TopicPage,
             })
         })
     } else {
-        results.type = PageType.TopicPage
+        results.pageType = PageType.TopicPage
     }
     
+    // Process pages
     $(".page_skip").each((i, elem) => {
         const innerText = getTextChild(elem);
         results.subpages.push({
             name: innerText.data,
             url: elem.attribs.href,
-            type: results.type,
+            pageType: results.pageType,
         })
     })
 } else {

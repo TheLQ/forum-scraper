@@ -1,7 +1,7 @@
 import { Element, Text } from "domhandler";
 
 export interface Result {
-    type: PageType,
+    pageType: PageType,
     forumType: ForumType | null,
     subpages: Subpage[],
 }
@@ -9,7 +9,7 @@ export interface Result {
 interface Subpage {
     name: String,
     url: String,
-    type: PageType,
+    pageType: PageType,
 }
 
 // Copied from downloader/src/main/java/sh/xana/forum/server/dbutil/DatabaseStorage.java

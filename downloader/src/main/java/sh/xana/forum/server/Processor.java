@@ -19,6 +19,7 @@ import sh.xana.forum.common.ipc.ParserResult;
 import sh.xana.forum.common.ipc.ScraperUpload;
 import sh.xana.forum.server.db.tables.Pages;
 import sh.xana.forum.server.db.tables.records.PagesRecord;
+import sh.xana.forum.server.db.tables.records.SitesRecord;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
 import sh.xana.forum.server.dbutil.DatabaseStorage.DlStatus;
 
@@ -131,10 +132,16 @@ public class Processor {
       }
 
       ParserResult results = Utils.jsonMapper.readValue(output, ParserResult.class);
-      if (!results.type().equals(page.getPagetype())) {
+      if (!results.pageType().equals(page.getPagetype())) {
         throw new RuntimeException(
-            "Unexpected pageType " + results.type() + " expected " + page.getPagetype());
+            "Expected pageType " + page.getPagetype() + " got " + results.pageType());
       }
+      SitesRecord site = dbStorage.getSite(page.getSiteid());
+      if (!results.forumType().equals(site.getForumtype())) {
+        throw new RuntimeException(
+            "Expected forumType " + site.getForumtype() + " got " + results.forumType());
+      }
+
       for (ParserResult.ParserEntry result : results.subpages()) {
         URI url = new URI(result.url());
         if (url.getHost() == null) {
@@ -156,7 +163,7 @@ public class Processor {
 
         if (dbStorage.getPages(Pages.PAGES.URL.eq(url)).size() == 0) {
           log.info("New page {}", url);
-          dbStorage.insertPageQueued(page.getSiteid(), List.of(url), result.type(), pageId);
+          dbStorage.insertPageQueued(page.getSiteid(), List.of(url), result.pageType(), pageId);
         } else {
           log.info("Ignoring duplicate page " + url);
         }
