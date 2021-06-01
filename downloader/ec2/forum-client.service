@@ -1,3 +1,4 @@
+# This script is hardcoded into the AMI image
 # unit file based on Amazon Linux nginx file
 
 [Unit]
@@ -8,7 +9,7 @@ Wants=network-online.target
 [Service]
 PIDFile=/run/forum-client.pid
 WorkingDirectory=/opt/app
-ExecStart=/usr/bin/java -cp dependencies.jar:scrape-download-1.0-SNAPSHOT.jar -DlogbackType=client sh.xana.forum.client.ClientMain -aws -server http://172.31.39.212:8080
+ExecStart=/opt/app/client-init.sh
 
 #Type=forking
 #KillSignal=SIGQUIT

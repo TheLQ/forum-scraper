@@ -1,0 +1,26 @@
+{
+    "IamFleetRole": "arn:aws:iam::348467003941:role/cloudwatch-write2",
+    "AllocationStrategy": "capacityOptimized",
+    "TargetCapacity": 2,
+    "ValidFrom": "2021-06-01T19:44:59Z",
+    "ValidUntil": "2022-06-01T19:44:59Z",
+    "TerminateInstancesWithExpiration": true,
+    "LaunchSpecifications": [],
+    "Type": "request",
+    "LaunchTemplateConfigs": [
+        {
+            "LaunchTemplateSpecification": {
+                "LaunchTemplateId": "lt-040ae322676b93ab3",
+                "Version": "2"
+            },
+            "Overrides": [
+                {
+                    "InstanceType": "t4g.nano",
+                    "WeightedCapacity": 1,
+                    "SubnetId": "subnet-1aa1fb56"
+                }
+            ]
+        }
+    ],
+    "SpotMaxTotalPrice": "0.003"
+}

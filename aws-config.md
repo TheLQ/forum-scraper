@@ -8,6 +8,8 @@ server needs to be a regular long lived instance
 
 client
 
+see downloader\aws for some config
+
 needs to be automatically built in a auto-boot ami
 
 * Setup
