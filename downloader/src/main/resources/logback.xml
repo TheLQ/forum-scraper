@@ -25,7 +25,7 @@
     <logGroupName>forum-scrape</logGroupName>
 
     <!-- Log Stream Name UUID Prefix -->
-    <logStreamUuidPrefix>server/</logStreamUuidPrefix>
+    <logStreamUuidPrefix>forum/${logbackType}/</logStreamUuidPrefix>
 
     <!-- Hardcoded AWS region -->
     <!-- So even when running inside an AWS instance in us-west-1, logs will go to us-west-2 -->

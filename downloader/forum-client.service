@@ -8,7 +8,7 @@ Wants=network-online.target
 [Service]
 PIDFile=/run/forum-client.pid
 WorkingDirectory=/opt/app
-ExecStart=/usr/bin/java -cp dependencies.jar:scrape-download-1.0-SNAPSHOT.jar sh.xana.forum.server.ServerMain
+ExecStart=/usr/bin/java -cp dependencies.jar:scrape-download-1.0-SNAPSHOT.jar -DlogbackType=client sh.xana.forum.client.ClientMain -aws -server http://172.31.39.212:8080
 
 #Type=forking
 #KillSignal=SIGQUIT
