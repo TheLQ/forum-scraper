@@ -2,6 +2,8 @@ package sh.xana.forum.client;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -27,7 +29,7 @@ public class ClientMain {
   private static final String HOSTNAME = System.getenv("HOSTNAME");
   public static UUID NODE_ID;
 
-  public static void main(String[] args) throws ParseException, URISyntaxException {
+  public static void main(String[] args) throws ParseException, URISyntaxException, IOException {
     log.info("Client start");
 
     Options options = new Options();
@@ -50,6 +52,9 @@ public class ClientMain {
     if (cmd.hasOption("aws")) {
       new AwsClientManager().start();
     }
+
+    // load webserver secret key
+    Utils.BACKEND_KEY = Files.readString(Path.of(WebServer.NODE_AUTH_FILENAME));
 
     Runtime.getRuntime().addShutdownHook(new Thread(() -> {
       try {

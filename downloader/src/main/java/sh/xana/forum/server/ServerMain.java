@@ -61,6 +61,9 @@ public class ServerMain {
       throw new RuntimeException(ARG_PARSER_SCRIPT + " does not exist " + parserScript);
     }
 
+    // load webserver secret key
+    String nodeAuthValue = Files.readString(Path.of(WebServer.NODE_AUTH_FILENAME));
+
     Runtime.getRuntime().addShutdownHook(new Thread(() -> {
       try {
         close();
@@ -76,7 +79,7 @@ public class ServerMain {
     processor = new Processor(dbStorage, fileCachePath, nodeCmd, parserScript);
     NodeManager nodeManager = new NodeManager();
 
-    WebServer server = new WebServer(dbStorage, processor, nodeManager);
+    WebServer server = new WebServer(dbStorage, processor, nodeManager, nodeAuthValue);
     server.start();
     processor.startSpiderThread();
   }

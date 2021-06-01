@@ -21,6 +21,7 @@ public class Utils {
   public static final ObjectMapper jsonMapper = new ObjectMapper();
 
   public static String BACKEND_SERVER;
+  public static String BACKEND_KEY;
 
   public static URI toURI(String raw) {
     try {
@@ -30,10 +31,10 @@ public class Utils {
     }
   }
 
-  public static String serverGetBackend(String path) {
-    HttpRequest request = HttpRequest.newBuilder().uri(newUri(BACKEND_SERVER + path)).GET().build();
-    return serverRequest(request, BodyHandlers.ofString()).body();
-  }
+//  public static String serverGetBackend(String path) {
+//    HttpRequest request = HttpRequest.newBuilder().uri(newUri(BACKEND_SERVER + path)).GET().build();
+//    return serverRequest(request, BodyHandlers.ofString()).body();
+//  }
 
   public static String serverGet(String urlRaw) {
     HttpRequest request = HttpRequest.newBuilder().uri(newUri(urlRaw)).build();
@@ -45,7 +46,7 @@ public class Utils {
         HttpRequest.newBuilder()
             .uri(newUri(BACKEND_SERVER + path))
             .POST(BodyPublishers.ofString(postData))
-            .header(WebServer.NODE_AUTH_KEY, WebServer.NODE_AUTH_VALUE)
+            .header(WebServer.NODE_AUTH_KEY, BACKEND_KEY)
             .build();
     return serverRequest(request, BodyHandlers.ofString()).body();
   }

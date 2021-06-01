@@ -129,7 +129,7 @@ public class Scraper implements Closeable {
           new ScraperUpload(
               ClientMain.NODE_ID, this.domain, requestMore, responseSuccess, responseError);
       String newRequestsJSON = null;
-      for (int i = 0; i < 5; i++) {
+      for (int i = 0; i < 30; i++) {
         try {
           newRequestsJSON =
               Utils.serverPostBackend(
