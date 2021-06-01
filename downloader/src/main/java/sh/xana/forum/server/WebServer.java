@@ -58,7 +58,7 @@ public class WebServer extends NanoHTTPD {
         return pageFile(session);
       }
       switch (page) {
-        case "":
+        case "/":
           return newFixedLengthResponse(
               "Xana Forum Downloader started " + start + " currently " + new Date());
         case PAGE_SITE_ADD:
