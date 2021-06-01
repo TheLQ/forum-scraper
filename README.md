@@ -5,8 +5,8 @@ This is a distributed scraper/spider to preserve forums like phpBB or vBulliten 
 disappear from the internet. This tries to solve the following problems
 
 * The [Internet Archive](https://web.archive.org) has large gaps in content. This will ideally grab
-  every page of every topic. Maybe we can assist them with this.
-* Many users linked to 3rd party image hosts that have purged content. This will map images gathered
+  every page of every topic. Hopefully we can upload our dataset there.
+* Many users linked to 3rd party image hosts that have purged content. This will map to images gathered
   from other imghost backups.
 * Naive recursive wget or httrack backups grab too much data and are too slow. This focuses on
   fetching topic content quickly using distributed scrapers.

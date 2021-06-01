@@ -2,6 +2,7 @@ package sh.xana.forum.client;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.net.ConnectException;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
@@ -54,15 +55,15 @@ public class Scraper implements Closeable {
 
   private void downloadThread() {
     while (true) {
-      boolean result;
+      boolean isClosing;
       try {
-        result = mainLoopCycle();
+        isClosing = mainLoopCycle();
       } catch (Exception e) {
         log.error("Caught exception in mainLoop, stopping", e);
         break;
       }
-      if (!result) {
-        log.warn("mainLoop returned false, stopping");
+      if (isClosing) {
+        log.warn("mainLoop closing, stopping");
         break;
       }
     }
@@ -72,11 +73,14 @@ public class Scraper implements Closeable {
   /**
    * Main execution loop
    *
-   * @return true to continue to next loop
+   * @return isClosing should stop thread
    */
   private boolean mainLoopCycle() throws InterruptedException {
     if (scraperRequests.size() < URL_QUEUE_REFILL_SIZE) {
-      refillQueue(true);
+      boolean isClosing = refillQueue(true);
+      if (isClosing) {
+        return true;
+      }
     }
 
     if (scraperRequests.size() == 0) {
@@ -108,16 +112,12 @@ public class Scraper implements Closeable {
     if (isClosing) {
       // send what we have
       refillQueue(false);
-
-      // stop next iteration
-      return false;
-    } else {
-      return true;
     }
+    return isClosing;
   }
 
   /** Fetch new batch of URLs to process, and submit completedBuffer */
-  private void refillQueue(boolean requestMore) {
+  private boolean refillQueue(boolean requestMore) {
     log.info(
         "-- Refill, {} requests, {} response success, {} response error {} request more",
         scraperRequests.size(),
@@ -128,9 +128,28 @@ public class Scraper implements Closeable {
       ScraperUpload request =
           new ScraperUpload(
               ClientMain.NODE_ID, this.domain, requestMore, responseSuccess, responseError);
-      String newRequestsJSON =
-          Utils.serverPostBackend(
-              WebServer.PAGE_CLIENT_BUFFER, Utils.jsonMapper.writeValueAsString(request));
+      String newRequestsJSON = null;
+      for (int i = 0; i < 5; i++) {
+        try {
+          newRequestsJSON =
+              Utils.serverPostBackend(
+                  WebServer.PAGE_CLIENT_BUFFER, Utils.jsonMapper.writeValueAsString(request));
+          break;
+        } catch (Exception e) {
+          if (e.getCause() instanceof ConnectException) {
+            int waitMinutes = i + /*0-base*/ 1;
+            log.warn("Failed to connect, waiting for {} minutes", waitMinutes, e);
+            boolean isClosing = threadCloser.await(waitMinutes, TimeUnit.MINUTES);
+            if (isClosing) {
+              // close early
+              return true;
+            }
+            continue;
+          } else {
+            throw e;
+          }
+        }
+      }
 
       ScraperDownload response = Utils.jsonMapper.readValue(newRequestsJSON, ScraperDownload.class);
       scraperRequests.addAll(response.entries());
@@ -140,6 +159,7 @@ public class Scraper implements Closeable {
     } catch (Exception e) {
       throw new RuntimeException("failed to parse buffer json", e);
     }
+    return false;
   }
 
   @Override
