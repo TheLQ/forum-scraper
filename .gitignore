@@ -1,6 +1,10 @@
 downloader/target
 downloader/sample.db
 downloader/.idea
-filecache
+downloader/config-client.properties
+downloader/config-server.properties
+
 parser/node_modules
 parser/dist
+
+filecache

@@ -2,17 +2,10 @@ package sh.xana.forum.client;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.Utils;
@@ -29,40 +22,31 @@ public class ClientMain {
   private static final String HOSTNAME = System.getenv("HOSTNAME");
   public static UUID NODE_ID;
 
-  public static void main(String[] args) throws ParseException, URISyntaxException, IOException {
+  public static void main(String[] args) throws URISyntaxException, IOException {
     log.info("Client start");
 
-    Options options = new Options();
-    options.addOption("server", true, "central server");
-    options.addOption("aws", false, "is running on aws");
-    options.addOption("h", false, "help");
-    CommandLine cmd = new DefaultParser().parse(options, args);
-    if (cmd.hasOption("h")) {
-      HelpFormatter formatter = new HelpFormatter();
-      formatter.printHelp("myapp", "server", options, "", true);
-      System.exit(1);
-    }
-    if (cmd.hasOption("server")) {
-      String server = cmd.getOptionValue("server");
-      log.info("Setting custom server {}", server);
-      Utils.BACKEND_SERVER = server;
-    } else {
-      Utils.BACKEND_SERVER = "http://127.0.0.1";
-    }
-    if (cmd.hasOption("aws")) {
+    ClientConfig config = new ClientConfig();
+
+    Utils.BACKEND_SERVER = config.getRequiredArg(config.ARG_SERVER_ADDRESS);
+    log.info("Setting custom server {}", Utils.BACKEND_SERVER);
+
+    if (config.getOrDefault(config.ARG_ISAWS, "false").equals("true")) {
       new AwsClientManager().start();
     }
 
     // load webserver secret key
-    Utils.BACKEND_KEY = Files.readString(Path.of(WebServer.NODE_AUTH_FILENAME));
+    Utils.BACKEND_KEY = config.getRequiredArg(config.ARG_SERVER_AUTH);
 
-    Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-      try {
-        close();
-      } catch (Exception e) {
-        throw new RuntimeException("Failed to close");
-      }
-    }));
+    Runtime.getRuntime()
+        .addShutdownHook(
+            new Thread(
+                () -> {
+                  try {
+                    close();
+                  } catch (Exception e) {
+                    throw new RuntimeException("Failed to close");
+                  }
+                }));
 
     PUBLIC_ADDRESS = Utils.serverGet("https://xana.sh/myip");
     log.info("Running on IP {} hostname {}", PUBLIC_ADDRESS, HOSTNAME);

@@ -27,20 +27,23 @@ public class WebServer extends NanoHTTPD {
   public static final int PORT = 8080;
   private static final String MIME_BLOB = "application/octet-stream";
   public static final String NODE_AUTH_KEY = "x-xana-auth";
-  public static final String NODE_AUTH_FILENAME = "server-auth.txt";
-  private String nodeAuthValue;
+  private final String nodeAuthValue;
 
   private final DatabaseStorage dbStorage;
   private final Processor processor;
   private final NodeManager nodeManager;
 
-  public WebServer(DatabaseStorage dbStorage, Processor processor, NodeManager nodeManager, String nodeAuthValue) {
+  public WebServer(
+      DatabaseStorage dbStorage,
+      Processor processor,
+      NodeManager nodeManager,
+      ServerConfig config) {
     // Bind to localhost since on aws we are proxied
     super(PORT);
     this.dbStorage = dbStorage;
     this.processor = processor;
     this.nodeManager = nodeManager;
-    this.nodeAuthValue = nodeAuthValue;
+    this.nodeAuthValue = config.get(config.ARG_SERVER_AUTH);
   }
 
   public void start() throws IOException {

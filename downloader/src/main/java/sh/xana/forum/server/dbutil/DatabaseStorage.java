@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import sh.xana.forum.client.Scraper;
 import sh.xana.forum.common.ipc.NodeResponse.ScraperEntry;
 import sh.xana.forum.common.ipc.ScraperDownload;
+import sh.xana.forum.server.ServerConfig;
 import sh.xana.forum.server.db.tables.Pages;
 import sh.xana.forum.server.db.tables.Sites;
 import sh.xana.forum.server.db.tables.records.PagesRecord;
@@ -26,7 +27,17 @@ import sh.xana.forum.server.db.tables.records.SitesRecord;
 public class DatabaseStorage {
   private static final Logger log = LoggerFactory.getLogger(DatabaseStorage.class);
 
-  private final CloseableDSLContext context = DSL.using("jdbc:sqlite:sample.db");
+  private final CloseableDSLContext context;
+
+  public DatabaseStorage(ServerConfig config) {
+    String connectionString = config.getRequiredArg(config.ARG_DB_CONNECTIONSTRING);
+    String user = config.get(config.ARG_DB_USER);
+    if (user != null) {
+      context = DSL.using(connectionString, user, config.get(config.ARG_DB_PASS));
+    } else {
+      context = DSL.using(connectionString);
+    }
+  }
 
   /** Stage: init client */
   public List<ScraperEntry> getScraperDomainsIPC() {

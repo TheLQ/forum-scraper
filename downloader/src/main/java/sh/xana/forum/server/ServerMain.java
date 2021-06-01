@@ -4,10 +4,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Options;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,70 +12,51 @@ import sh.xana.forum.server.dbutil.DatabaseStorage;
 
 public class ServerMain {
   public static final Logger log = LoggerFactory.getLogger(ClientMain.class);
-  private static final String ARG_FILE_CACHE = "fileCache";
-  private static final String ARG_NODE_CMD = "nodeCmd";
-  private static final String ARG_PARSER_SCRIPT = "parserScript";
 
   private static Processor processor;
 
   public static void main(String[] args) throws Exception {
-    Options options = new Options();
-    options.addOption(ARG_FILE_CACHE, true, "filecache directory");
-    options.addOption(ARG_NODE_CMD, true, "node command path");
-    options.addOption(ARG_PARSER_SCRIPT, true, "parser script path");
-    options.addOption("h", false, "help");
-    CommandLine cmd = new DefaultParser().parse(options, args);
-    if (cmd.hasOption("h")) {
-      HelpFormatter formatter = new HelpFormatter();
-      formatter.printHelp("myapp", "server", options, "", true);
-      System.exit(1);
-    }
+    ServerConfig config = new ServerConfig();
 
     Path fileCachePath = Path.of("..", "filecache");
-    if (cmd.hasOption(ARG_FILE_CACHE)) {
-      String server = cmd.getOptionValue(ARG_FILE_CACHE);
+    if (config.hasArg(config.ARG_FILE_CACHE)) {
+      String server = config.get(config.ARG_FILE_CACHE);
       fileCachePath = Path.of(server);
     }
     if (!Files.exists(fileCachePath)) {
-      throw new RuntimeException(ARG_FILE_CACHE + " does not exist " + fileCachePath);
+      throw new RuntimeException(config.ARG_FILE_CACHE + " does not exist " + fileCachePath);
     }
 
-    String nodeCmd = "node";
-    if (cmd.hasOption(ARG_NODE_CMD)) {
-      nodeCmd = cmd.getOptionValue(ARG_NODE_CMD);
-    }
+    String nodeCmd = config.getOrDefault(config.ARG_NODE_CMD, "node");
     // start() will throw if the node cmd doesn't exist
     Process process = new ProcessBuilder(nodeCmd, "-v").redirectErrorStream(true).start();
     String output = IOUtils.toString(process.getInputStream(), StandardCharsets.UTF_8);
     log.info("Node version " + output.trim());
 
-    String parserScript = "../parser/dist/parser.js";
-    if (cmd.hasOption(ARG_PARSER_SCRIPT)) {
-      parserScript = cmd.getOptionValue(ARG_PARSER_SCRIPT);
-    }
+    String parserScript = config.getOrDefault(config.ARG_PARSER_SCRIPT, "../parser/dist/parser.js");
     if (!Files.exists(Path.of(parserScript))) {
-      throw new RuntimeException(ARG_PARSER_SCRIPT + " does not exist " + parserScript);
+      throw new RuntimeException(config.ARG_PARSER_SCRIPT + " does not exist " + parserScript);
     }
 
-    // load webserver secret key
-    String nodeAuthValue = Files.readString(Path.of(WebServer.NODE_AUTH_FILENAME));
-
-    Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-      try {
-        close();
-      } catch (Exception e) {
-        throw new RuntimeException("Failed to close");
-      }
-    }));
+    Runtime.getRuntime()
+        .addShutdownHook(
+            new Thread(
+                () -> {
+                  try {
+                    close();
+                  } catch (Exception e) {
+                    throw new RuntimeException("Failed to close");
+                  }
+                }));
 
     // Hide giant logo it writes to logs on first load
     System.setProperty("org.jooq.no-logo", "true");
 
-    DatabaseStorage dbStorage = new DatabaseStorage();
+    DatabaseStorage dbStorage = new DatabaseStorage(config);
     processor = new Processor(dbStorage, fileCachePath, nodeCmd, parserScript);
     NodeManager nodeManager = new NodeManager();
 
-    WebServer server = new WebServer(dbStorage, processor, nodeManager, nodeAuthValue);
+    WebServer server = new WebServer(dbStorage, processor, nodeManager, config);
     server.start();
     processor.startSpiderThread();
   }

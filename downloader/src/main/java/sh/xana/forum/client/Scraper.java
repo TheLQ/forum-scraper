@@ -144,7 +144,7 @@ public class Scraper implements Closeable {
               // close early
               return true;
             }
-            continue;
+            // continue onto next loop
           } else {
             throw e;
           }
