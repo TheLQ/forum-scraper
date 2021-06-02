@@ -21,42 +21,42 @@ public class SitesRecord extends UpdatableRecordImpl<SitesRecord>
 
   private static final long serialVersionUID = 1L;
 
-  /** Setter for <code>Sites.id</code>. */
+  /** Setter for <code>forum-scrape.Sites.id</code>. */
   public void setId(UUID value) {
     set(0, value);
   }
 
-  /** Getter for <code>Sites.id</code>. */
+  /** Getter for <code>forum-scrape.Sites.id</code>. */
   public UUID getId() {
     return (UUID) get(0);
   }
 
-  /** Setter for <code>Sites.url</code>. */
+  /** Setter for <code>forum-scrape.Sites.url</code>. */
   public void setUrl(URI value) {
     set(1, value);
   }
 
-  /** Getter for <code>Sites.url</code>. */
+  /** Getter for <code>forum-scrape.Sites.url</code>. */
   public URI getUrl() {
     return (URI) get(1);
   }
 
-  /** Setter for <code>Sites.updated</code>. */
+  /** Setter for <code>forum-scrape.Sites.updated</code>. */
   public void setUpdated(LocalDateTime value) {
     set(2, value);
   }
 
-  /** Getter for <code>Sites.updated</code>. */
+  /** Getter for <code>forum-scrape.Sites.updated</code>. */
   public LocalDateTime getUpdated() {
     return (LocalDateTime) get(2);
   }
 
-  /** Setter for <code>Sites.ForumType</code>. */
+  /** Setter for <code>forum-scrape.Sites.ForumType</code>. */
   public void setForumtype(ForumType value) {
     set(3, value);
   }
 
-  /** Getter for <code>Sites.ForumType</code>. */
+  /** Getter for <code>forum-scrape.Sites.ForumType</code>. */
   public ForumType getForumtype() {
     return (ForumType) get(3);
   }

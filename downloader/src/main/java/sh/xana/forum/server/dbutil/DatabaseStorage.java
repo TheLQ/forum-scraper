@@ -30,6 +30,13 @@ public class DatabaseStorage {
   private final CloseableDSLContext context;
 
   public DatabaseStorage(ServerConfig config) {
+    log.info("Connecting to database");
+    try {
+      // need to load this since at runtime DriverManager isn't finding it
+      Class.forName("org.mariadb.jdbc.Driver");
+    } catch (Exception e) {
+      throw new RuntimeException("failed to load class", e);
+    }
     String connectionString = config.getRequiredArg(config.ARG_DB_CONNECTIONSTRING);
     String user = config.get(config.ARG_DB_USER);
     if (user != null) {
@@ -37,6 +44,7 @@ public class DatabaseStorage {
     } else {
       context = DSL.using(connectionString);
     }
+    log.info("Connected to database");
   }
 
   /** Stage: init client */

@@ -6,13 +6,13 @@ package sh.xana.forum.server.db;
 import sh.xana.forum.server.db.tables.Pages;
 import sh.xana.forum.server.db.tables.Sites;
 
-/** Convenience access to all tables in the default schema. */
+/** Convenience access to all tables in forum-scrape. */
 @SuppressWarnings({"all", "unchecked", "rawtypes"})
 public class Tables {
 
-  /** The table <code>Pages</code>. */
+  /** The table <code>forum-scrape.Pages</code>. */
   public static final Pages PAGES = Pages.PAGES;
 
-  /** The table <code>Sites</code>. */
+  /** The table <code>forum-scrape.Sites</code>. */
   public static final Sites SITES = Sites.SITES;
 }

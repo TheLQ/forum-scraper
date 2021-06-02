@@ -22,7 +22,7 @@ import org.jooq.impl.DSL;
 import org.jooq.impl.EnumConverter;
 import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
-import sh.xana.forum.server.db.DefaultSchema;
+import sh.xana.forum.server.db.ForumScrape;
 import sh.xana.forum.server.db.Keys;
 import sh.xana.forum.server.db.tables.records.PagesRecord;
 import sh.xana.forum.server.dbutil.DatabaseStorage.DlStatus;
@@ -36,7 +36,7 @@ public class Pages extends TableImpl<PagesRecord> {
 
   private static final long serialVersionUID = 1L;
 
-  /** The reference instance of <code>Pages</code> */
+  /** The reference instance of <code>forum-scrape.Pages</code> */
   public static final Pages PAGES = new Pages();
 
   /** The class holding records for this type */
@@ -45,56 +45,75 @@ public class Pages extends TableImpl<PagesRecord> {
     return PagesRecord.class;
   }
 
-  /** The column <code>Pages.id</code>. */
+  /** The column <code>forum-scrape.Pages.id</code>. */
   public final TableField<PagesRecord, UUID> ID =
-      createField(DSL.name("id"), SQLDataType.BLOB.nullable(false), this, "", new UUIDConverter());
+      createField(
+          DSL.name("id"), SQLDataType.BINARY(16).nullable(false), this, "", new UUIDConverter());
 
-  /** The column <code>Pages.sourceId</code>. */
+  /** The column <code>forum-scrape.Pages.sourceId</code>. */
   public final TableField<PagesRecord, UUID> SOURCEID =
-      createField(DSL.name("sourceId"), SQLDataType.BLOB, this, "", new UUIDConverter());
+      createField(
+          DSL.name("sourceId"),
+          SQLDataType.BINARY(16).defaultValue(DSL.field("NULL", SQLDataType.BINARY)),
+          this,
+          "",
+          new UUIDConverter());
 
-  /** The column <code>Pages.siteid</code>. */
+  /** The column <code>forum-scrape.Pages.siteid</code>. */
   public final TableField<PagesRecord, UUID> SITEID =
       createField(
-          DSL.name("siteid"), SQLDataType.BLOB.nullable(false), this, "", new UUIDConverter());
+          DSL.name("siteid"),
+          SQLDataType.BINARY(16).nullable(false),
+          this,
+          "",
+          new UUIDConverter());
 
-  /** The column <code>Pages.url</code>. */
+  /** The column <code>forum-scrape.Pages.url</code>. */
   public final TableField<PagesRecord, URI> URL =
-      createField(DSL.name("url"), SQLDataType.CLOB.nullable(false), this, "", new UriConverter());
+      createField(
+          DSL.name("url"), SQLDataType.VARCHAR(2048).nullable(false), this, "", new UriConverter());
 
-  /** The column <code>Pages.pageType</code>. */
+  /** The column <code>forum-scrape.Pages.pageType</code>. */
   public final TableField<PagesRecord, PageType> PAGETYPE =
       createField(
           DSL.name("pageType"),
-          SQLDataType.VARCHAR(10).nullable(false),
+          SQLDataType.VARCHAR(9).nullable(false),
           this,
           "",
           new EnumConverter<String, PageType>(String.class, PageType.class));
 
-  /** The column <code>Pages.dlstatus</code>. */
+  /** The column <code>forum-scrape.Pages.dlstatus</code>. */
   public final TableField<PagesRecord, DlStatus> DLSTATUS =
       createField(
           DSL.name("dlstatus"),
-          SQLDataType.VARCHAR(10).nullable(false),
+          SQLDataType.VARCHAR(9).nullable(false),
           this,
           "",
           new EnumConverter<String, DlStatus>(String.class, DlStatus.class));
 
-  /** The column <code>Pages.updated</code>. */
+  /** The column <code>forum-scrape.Pages.updated</code>. */
   public final TableField<PagesRecord, LocalDateTime> UPDATED =
       createField(DSL.name("updated"), SQLDataType.LOCALDATETIME(0).nullable(false), this, "");
 
-  /** The column <code>Pages.domain</code>. */
+  /** The column <code>forum-scrape.Pages.domain</code>. */
   public final TableField<PagesRecord, String> DOMAIN =
-      createField(DSL.name("domain"), SQLDataType.VARCHAR(50).nullable(false), this, "");
+      createField(DSL.name("domain"), SQLDataType.VARCHAR(255).nullable(false), this, "");
 
-  /** The column <code>Pages.dlStatusCode</code>. */
+  /** The column <code>forum-scrape.Pages.dlStatusCode</code>. */
   public final TableField<PagesRecord, Integer> DLSTATUSCODE =
-      createField(DSL.name("dlStatusCode"), SQLDataType.INTEGER, this, "");
+      createField(
+          DSL.name("dlStatusCode"),
+          SQLDataType.INTEGER.defaultValue(DSL.field("NULL", SQLDataType.INTEGER)),
+          this,
+          "");
 
-  /** The column <code>Pages.exception</code>. */
+  /** The column <code>forum-scrape.Pages.exception</code>. */
   public final TableField<PagesRecord, String> EXCEPTION =
-      createField(DSL.name("exception"), SQLDataType.CLOB, this, "");
+      createField(
+          DSL.name("exception"),
+          SQLDataType.CLOB.defaultValue(DSL.field("NULL", SQLDataType.CLOB)),
+          this,
+          "");
 
   private Pages(Name alias, Table<PagesRecord> aliased) {
     this(alias, aliased, null);
@@ -104,17 +123,17 @@ public class Pages extends TableImpl<PagesRecord> {
     super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table());
   }
 
-  /** Create an aliased <code>Pages</code> table reference */
+  /** Create an aliased <code>forum-scrape.Pages</code> table reference */
   public Pages(String alias) {
     this(DSL.name(alias), PAGES);
   }
 
-  /** Create an aliased <code>Pages</code> table reference */
+  /** Create an aliased <code>forum-scrape.Pages</code> table reference */
   public Pages(Name alias) {
     this(alias, PAGES);
   }
 
-  /** Create a <code>Pages</code> table reference */
+  /** Create a <code>forum-scrape.Pages</code> table reference */
   public Pages() {
     this(DSL.name("Pages"), null);
   }
@@ -125,17 +144,17 @@ public class Pages extends TableImpl<PagesRecord> {
 
   @Override
   public Schema getSchema() {
-    return DefaultSchema.DEFAULT_SCHEMA;
+    return ForumScrape.FORUM_SCRAPE;
   }
 
   @Override
   public UniqueKey<PagesRecord> getPrimaryKey() {
-    return Keys.PK_PAGES;
+    return Keys.KEY_PAGES_PRIMARY;
   }
 
   @Override
   public List<UniqueKey<PagesRecord>> getKeys() {
-    return Arrays.<UniqueKey<PagesRecord>>asList(Keys.PK_PAGES, Keys.SQLITE_AUTOINDEX_PAGES_2);
+    return Arrays.<UniqueKey<PagesRecord>>asList(Keys.KEY_PAGES_PRIMARY, Keys.KEY_PAGES_URL);
   }
 
   @Override

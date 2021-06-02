@@ -12,7 +12,7 @@ import sh.xana.forum.server.db.tables.Sites;
 import sh.xana.forum.server.db.tables.records.PagesRecord;
 import sh.xana.forum.server.db.tables.records.SitesRecord;
 
-/** A class modelling foreign key relationships and constraints of tables in the default schema. */
+/** A class modelling foreign key relationships and constraints of tables in forum-scrape. */
 @SuppressWarnings({"all", "unchecked", "rawtypes"})
 public class Keys {
 
@@ -20,16 +20,16 @@ public class Keys {
   // UNIQUE and PRIMARY KEY definitions
   // -------------------------------------------------------------------------
 
-  public static final UniqueKey<PagesRecord> PK_PAGES =
+  public static final UniqueKey<PagesRecord> KEY_PAGES_PRIMARY =
       Internal.createUniqueKey(
-          Pages.PAGES, DSL.name("pk_Pages"), new TableField[] {Pages.PAGES.ID}, true);
-  public static final UniqueKey<PagesRecord> SQLITE_AUTOINDEX_PAGES_2 =
+          Pages.PAGES, DSL.name("KEY_Pages_PRIMARY"), new TableField[] {Pages.PAGES.ID}, true);
+  public static final UniqueKey<PagesRecord> KEY_PAGES_URL =
       Internal.createUniqueKey(
-          Pages.PAGES,
-          DSL.name("sqlite_autoindex_Pages_2"),
-          new TableField[] {Pages.PAGES.URL},
-          true);
-  public static final UniqueKey<SitesRecord> PK_SITES =
+          Pages.PAGES, DSL.name("KEY_Pages_url"), new TableField[] {Pages.PAGES.URL}, true);
+  public static final UniqueKey<SitesRecord> KEY_SITES_PRIMARY =
       Internal.createUniqueKey(
-          Sites.SITES, DSL.name("pk_Sites"), new TableField[] {Sites.SITES.ID}, true);
+          Sites.SITES, DSL.name("KEY_Sites_PRIMARY"), new TableField[] {Sites.SITES.ID}, true);
+  public static final UniqueKey<SitesRecord> KEY_SITES_URL =
+      Internal.createUniqueKey(
+          Sites.SITES, DSL.name("KEY_Sites_url"), new TableField[] {Sites.SITES.URL}, true);
 }

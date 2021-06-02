@@ -23,102 +23,102 @@ public class PagesRecord extends UpdatableRecordImpl<PagesRecord>
 
   private static final long serialVersionUID = 1L;
 
-  /** Setter for <code>Pages.id</code>. */
+  /** Setter for <code>forum-scrape.Pages.id</code>. */
   public void setId(UUID value) {
     set(0, value);
   }
 
-  /** Getter for <code>Pages.id</code>. */
+  /** Getter for <code>forum-scrape.Pages.id</code>. */
   public UUID getId() {
     return (UUID) get(0);
   }
 
-  /** Setter for <code>Pages.sourceId</code>. */
+  /** Setter for <code>forum-scrape.Pages.sourceId</code>. */
   public void setSourceid(UUID value) {
     set(1, value);
   }
 
-  /** Getter for <code>Pages.sourceId</code>. */
+  /** Getter for <code>forum-scrape.Pages.sourceId</code>. */
   public UUID getSourceid() {
     return (UUID) get(1);
   }
 
-  /** Setter for <code>Pages.siteid</code>. */
+  /** Setter for <code>forum-scrape.Pages.siteid</code>. */
   public void setSiteid(UUID value) {
     set(2, value);
   }
 
-  /** Getter for <code>Pages.siteid</code>. */
+  /** Getter for <code>forum-scrape.Pages.siteid</code>. */
   public UUID getSiteid() {
     return (UUID) get(2);
   }
 
-  /** Setter for <code>Pages.url</code>. */
+  /** Setter for <code>forum-scrape.Pages.url</code>. */
   public void setUrl(URI value) {
     set(3, value);
   }
 
-  /** Getter for <code>Pages.url</code>. */
+  /** Getter for <code>forum-scrape.Pages.url</code>. */
   public URI getUrl() {
     return (URI) get(3);
   }
 
-  /** Setter for <code>Pages.pageType</code>. */
+  /** Setter for <code>forum-scrape.Pages.pageType</code>. */
   public void setPagetype(PageType value) {
     set(4, value);
   }
 
-  /** Getter for <code>Pages.pageType</code>. */
+  /** Getter for <code>forum-scrape.Pages.pageType</code>. */
   public PageType getPagetype() {
     return (PageType) get(4);
   }
 
-  /** Setter for <code>Pages.dlstatus</code>. */
+  /** Setter for <code>forum-scrape.Pages.dlstatus</code>. */
   public void setDlstatus(DlStatus value) {
     set(5, value);
   }
 
-  /** Getter for <code>Pages.dlstatus</code>. */
+  /** Getter for <code>forum-scrape.Pages.dlstatus</code>. */
   public DlStatus getDlstatus() {
     return (DlStatus) get(5);
   }
 
-  /** Setter for <code>Pages.updated</code>. */
+  /** Setter for <code>forum-scrape.Pages.updated</code>. */
   public void setUpdated(LocalDateTime value) {
     set(6, value);
   }
 
-  /** Getter for <code>Pages.updated</code>. */
+  /** Getter for <code>forum-scrape.Pages.updated</code>. */
   public LocalDateTime getUpdated() {
     return (LocalDateTime) get(6);
   }
 
-  /** Setter for <code>Pages.domain</code>. */
+  /** Setter for <code>forum-scrape.Pages.domain</code>. */
   public void setDomain(String value) {
     set(7, value);
   }
 
-  /** Getter for <code>Pages.domain</code>. */
+  /** Getter for <code>forum-scrape.Pages.domain</code>. */
   public String getDomain() {
     return (String) get(7);
   }
 
-  /** Setter for <code>Pages.dlStatusCode</code>. */
+  /** Setter for <code>forum-scrape.Pages.dlStatusCode</code>. */
   public void setDlstatuscode(Integer value) {
     set(8, value);
   }
 
-  /** Getter for <code>Pages.dlStatusCode</code>. */
+  /** Getter for <code>forum-scrape.Pages.dlStatusCode</code>. */
   public Integer getDlstatuscode() {
     return (Integer) get(8);
   }
 
-  /** Setter for <code>Pages.exception</code>. */
+  /** Setter for <code>forum-scrape.Pages.exception</code>. */
   public void setException(String value) {
     set(9, value);
   }
 
-  /** Getter for <code>Pages.exception</code>. */
+  /** Getter for <code>forum-scrape.Pages.exception</code>. */
   public String getException() {
     return (String) get(9);
   }

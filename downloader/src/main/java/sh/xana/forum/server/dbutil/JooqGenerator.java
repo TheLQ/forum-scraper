@@ -9,16 +9,24 @@ import sh.xana.forum.common.Utils;
 /** Run jOOq CodeGen. Automatically handles removing old files too */
 public class JooqGenerator {
   //  public static void main(String[] args) throws Exception {
+  //    ServerConfig config = new ServerConfig();
+  //
   //    // Use full class paths to for easy import
-  //    org.jooq.meta.jaxb.Configuration config =
+  //    org.jooq.meta.jaxb.Configuration jooqConfig =
   //        new org.jooq.meta.jaxb.Configuration()
-  //            .withJdbc(new Jdbc().withDriver("org.sqlite.JDBC").withUrl("jdbc:sqlite:sample.db"))
+  //            .withJdbc(
+  //                new Jdbc()
+  //                    .withUrl(config.get(config.ARG_DB_CONNECTIONSTRING))
+  //                    .withUser(config.get(config.ARG_DB_USER))
+  //                    .withPassword(config.get(config.ARG_DB_PASS)))
   //            .withGenerator(
   //                new org.jooq.meta.jaxb.Generator()
   //                    .withDatabase(
   //                        new org.jooq.meta.jaxb.Database()
-  //                            .withName("org.jooq.meta.sqlite.SQLiteDatabase")
+  //                            // .withName("org.jooq.meta.sqlite.SQLiteDatabase")
+  //                            .withName("org.jooq.meta.mariadb.MariaDBDatabase")
   //                            .withIncludes(".*")
+  //                            .withInputSchema("forum-scrape")
   //                            .withForcedTypes(
   //                                new ForcedType()
   //                                    .withUserType("java.util.UUID")
@@ -51,7 +59,7 @@ public class JooqGenerator {
   //                        new org.jooq.meta.jaxb.Target()
   //                            .withPackageName("sh.xana.forum.server.db")
   //                            .withDirectory("src/main/java")));
-  //    org.jooq.codegen.GenerationTool.generate(config);
+  //    org.jooq.codegen.GenerationTool.generate(jooqConfig);
   //  }
 
   public static class UriConverter implements Converter<String, URI> {

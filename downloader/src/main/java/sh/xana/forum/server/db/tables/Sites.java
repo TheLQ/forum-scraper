@@ -22,7 +22,7 @@ import org.jooq.impl.DSL;
 import org.jooq.impl.EnumConverter;
 import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
-import sh.xana.forum.server.db.DefaultSchema;
+import sh.xana.forum.server.db.ForumScrape;
 import sh.xana.forum.server.db.Keys;
 import sh.xana.forum.server.db.tables.records.SitesRecord;
 import sh.xana.forum.server.dbutil.DatabaseStorage.ForumType;
@@ -35,7 +35,7 @@ public class Sites extends TableImpl<SitesRecord> {
 
   private static final long serialVersionUID = 1L;
 
-  /** The reference instance of <code>Sites</code> */
+  /** The reference instance of <code>forum-scrape.Sites</code> */
   public static final Sites SITES = new Sites();
 
   /** The class holding records for this type */
@@ -44,27 +44,28 @@ public class Sites extends TableImpl<SitesRecord> {
     return SitesRecord.class;
   }
 
-  /** The column <code>Sites.id</code>. */
+  /** The column <code>forum-scrape.Sites.id</code>. */
   public final TableField<SitesRecord, UUID> ID =
-      createField(DSL.name("id"), SQLDataType.BLOB.nullable(false), this, "", new UUIDConverter());
+      createField(
+          DSL.name("id"), SQLDataType.BINARY(16).nullable(false), this, "", new UUIDConverter());
 
-  /** The column <code>Sites.url</code>. */
+  /** The column <code>forum-scrape.Sites.url</code>. */
   public final TableField<SitesRecord, URI> URL =
       createField(
           DSL.name("url"), SQLDataType.VARCHAR(255).nullable(false), this, "", new UriConverter());
 
-  /** The column <code>Sites.updated</code>. */
+  /** The column <code>forum-scrape.Sites.updated</code>. */
   public final TableField<SitesRecord, LocalDateTime> UPDATED =
       createField(DSL.name("updated"), SQLDataType.LOCALDATETIME(0).nullable(false), this, "");
 
-  /** The column <code>Sites.ForumType</code>. */
+  /** The column <code>forum-scrape.Sites.ForumType</code>. */
   public final TableField<SitesRecord, ForumType> FORUMTYPE =
       createField(
           DSL.name("ForumType"),
-          org.jooq.impl.DefaultDataType.getDefaultDataType("\"\"").nullable(false),
+          SQLDataType.VARCHAR(9).nullable(false),
           this,
           "",
-          new EnumConverter<Object, ForumType>(Object.class, ForumType.class));
+          new EnumConverter<String, ForumType>(String.class, ForumType.class));
 
   private Sites(Name alias, Table<SitesRecord> aliased) {
     this(alias, aliased, null);
@@ -74,17 +75,17 @@ public class Sites extends TableImpl<SitesRecord> {
     super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table());
   }
 
-  /** Create an aliased <code>Sites</code> table reference */
+  /** Create an aliased <code>forum-scrape.Sites</code> table reference */
   public Sites(String alias) {
     this(DSL.name(alias), SITES);
   }
 
-  /** Create an aliased <code>Sites</code> table reference */
+  /** Create an aliased <code>forum-scrape.Sites</code> table reference */
   public Sites(Name alias) {
     this(alias, SITES);
   }
 
-  /** Create a <code>Sites</code> table reference */
+  /** Create a <code>forum-scrape.Sites</code> table reference */
   public Sites() {
     this(DSL.name("Sites"), null);
   }
@@ -95,17 +96,17 @@ public class Sites extends TableImpl<SitesRecord> {
 
   @Override
   public Schema getSchema() {
-    return DefaultSchema.DEFAULT_SCHEMA;
+    return ForumScrape.FORUM_SCRAPE;
   }
 
   @Override
   public UniqueKey<SitesRecord> getPrimaryKey() {
-    return Keys.PK_SITES;
+    return Keys.KEY_SITES_PRIMARY;
   }
 
   @Override
   public List<UniqueKey<SitesRecord>> getKeys() {
-    return Arrays.<UniqueKey<SitesRecord>>asList(Keys.PK_SITES);
+    return Arrays.<UniqueKey<SitesRecord>>asList(Keys.KEY_SITES_PRIMARY, Keys.KEY_SITES_URL);
   }
 
   @Override

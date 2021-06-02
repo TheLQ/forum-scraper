@@ -31,10 +31,11 @@ public class Utils {
     }
   }
 
-//  public static String serverGetBackend(String path) {
-//    HttpRequest request = HttpRequest.newBuilder().uri(newUri(BACKEND_SERVER + path)).GET().build();
-//    return serverRequest(request, BodyHandlers.ofString()).body();
-//  }
+  //  public static String serverGetBackend(String path) {
+  //    HttpRequest request = HttpRequest.newBuilder().uri(newUri(BACKEND_SERVER +
+  // path)).GET().build();
+  //    return serverRequest(request, BodyHandlers.ofString()).body();
+  //  }
 
   public static String serverGet(String urlRaw) {
     HttpRequest request = HttpRequest.newBuilder().uri(newUri(urlRaw)).build();
