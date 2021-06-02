@@ -278,6 +278,7 @@ public class DatabaseStorage {
   public enum PageType {
     ForumList,
     TopicPage,
+    Unknown,
   }
 
   /** Sites.ForumType column */

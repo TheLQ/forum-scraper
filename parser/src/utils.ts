@@ -16,6 +16,7 @@ interface Subpage {
 export enum PageType {
     ForumList = "ForumList",
     TopicPage = "TopicPage",
+    Unknown = "Unknown",
 }
 
 export enum ForumType {
