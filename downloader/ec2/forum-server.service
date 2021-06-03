@@ -1,0 +1,21 @@
+# This script is hardcoded into the AMI image
+# unit file based on Amazon Linux nginx file
+
+[Unit]
+Description=Xana forum server
+After=network-online.target remote-fs.target nss-lookup.target
+Wants=network-online.target
+
+[Service]
+PIDFile=/run/forum-server.pid
+WorkingDirectory=/opt/app
+ExecStart=/opt/app/server-run.sh
+
+#Type=forking
+#KillSignal=SIGQUIT
+#TimeoutStopSec=5
+#KillMode=mixed
+#PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
