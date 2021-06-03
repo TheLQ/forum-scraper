@@ -2,6 +2,7 @@ import cheerio from "cheerio";
 import fs from "fs";
 import process from "process";
 import { forkBoardParse } from "./forums/ForkBoard";
+import { vBulletinParse } from "./forums/vBulletin";
 import { Result } from "./utils";
 
 function main() {
@@ -11,22 +12,26 @@ function main() {
     }
     const path = process.argv[2]
     
-    const rawHTML = fs.readFileSync(path, "utf8")
-    const $ = cheerio.load(rawHTML, {
+    const rawHtml = fs.readFileSync(path, "utf8")
+    const $ = cheerio.load(rawHtml, {
         xml: {
             normalizeWhitespace: true,
         },
     });
 
     const parsers = [
-        forkBoardParse
+        forkBoardParse,
+        vBulletinParse,
     ]
     let results: Result | null = null;
     for (const parser of parsers) {
-        results = parser($);
+        results = parser(rawHtml, $);
         if (results != null) {
             break;
         }
+    }
+    if (results == null) {
+        throw new Error("no parsers handled file")
     }
     console.log(JSON.stringify(results))
 }

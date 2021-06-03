@@ -1,11 +1,11 @@
 import { CheerioAPI } from "cheerio";
-import { ForumType, getTextChild, PageType, Result } from "../utils";
+import { assertNotBlank, ForumType, PageType, Result } from "../utils";
 
-export function forkBoardParse($: CheerioAPI): Result | null {
+export function forkBoardParse(rawHtml: String, $: CheerioAPI): Result | null {
+    // detect by version string in the footer
     let found = false;
     $(".footer_credits_bar").each((i, elem) => {
-        const innerText = getTextChild(elem);
-        if (innerText.data.indexOf("ForkBoard") != -1) {
+        if ($(elem).text().indexOf("ForkBoard") != -1) {
             found = true
         }
     })
@@ -29,9 +29,8 @@ function forkBoardExtract(result: Result, $: CheerioAPI) {
     
         // forum list
         $(".child_section .child_section_title a").each((i, elem) => {
-            const innerText = getTextChild(elem);
             result.subpages.push({
-                name: innerText.data,
+                name: assertNotBlank($(elem).text()),
                 url: elem.attribs.href,
                 pageType: PageType.ForumList,
             })
@@ -39,9 +38,8 @@ function forkBoardExtract(result: Result, $: CheerioAPI) {
     
         // topic list
         $(".thread_details div:first-child a").each((i, elem) => {
-            const innerText = getTextChild(elem);
             result.subpages.push({
-                name: innerText.data,
+                name: assertNotBlank($(elem).text()),
                 url: elem.attribs.href,
                 pageType: PageType.TopicPage,
             })
@@ -55,9 +53,8 @@ function forkBoardExtract(result: Result, $: CheerioAPI) {
     
     // Process pages
     $(".page_skip").each((i, elem) => {
-        const innerText = getTextChild(elem);
         result.subpages.push({
-            name: innerText.data,
+            name: assertNotBlank($(elem).text()),
             url: elem.attribs.href,
             pageType: result.pageType,
         })

@@ -25,11 +25,13 @@ export enum ForumType {
     phpBB = "phpBB",
 }
 
-export function getTextChild(elem: Element): Text {
-    const child = elem.childNodes[0]
-    if (child instanceof Text) {
-        return child;
-    } else {
-        throw new Error("unexpected child " + child)
+export function assertNotBlank(value: String | undefined | null): String {
+    if (value == null || value == undefined) {
+        throw new Error("Value is null")
     }
+    const result = value.trim()
+    if (result == "") {
+        throw new Error("value is blank")
+    }
+    return result;
 }
