@@ -69,7 +69,7 @@ public class ClientMain {
 
     for (ScraperEntry entry : nodeResponse.scraper()) {
       log.info("creating node " + entry.domain());
-      Scraper downloader = new Scraper(entry.domain());
+      Scraper downloader = new Scraper(config, entry.domain());
       scrapers.add(downloader);
 
       downloader.startThread();

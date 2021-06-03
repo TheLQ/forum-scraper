@@ -7,6 +7,7 @@ import sh.xana.forum.common.CommonConfig;
 public class ClientConfig extends CommonConfig {
   public final String ARG_SERVER_ADDRESS = "server.address";
   public final String ARG_ISAWS = "isAws";
+  public final String ARG_CLIENT_USERAGENT = "client.useragent";
 
   public ClientConfig() throws IOException {
     super(Path.of("config-client.properties"));

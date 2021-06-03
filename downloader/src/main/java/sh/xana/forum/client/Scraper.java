@@ -35,6 +35,8 @@ public class Scraper implements Closeable {
   private static final int CYCLE_SECONDS = 20;
   private static int INSTANCE_COUNTER = 0;
 
+  private final ClientConfig config;
+
   private final String domain;
   private final List<ScraperDownload.SiteEntry> scraperRequests = new ArrayList<>();
   private final List<ScraperUpload.Success> responseSuccess = new ArrayList<>();
@@ -43,7 +45,8 @@ public class Scraper implements Closeable {
   private final Thread thread;
   private final CountDownLatch threadCloser = new CountDownLatch(1);
 
-  public Scraper(String domain) {
+  public Scraper(ClientConfig config, String domain) {
+    this.config = config;
     this.domain = domain;
     this.thread = new Thread(this::downloadThread);
     thread.setName("Scraper" + (INSTANCE_COUNTER++));
@@ -90,7 +93,10 @@ public class Scraper implements Closeable {
       ScraperDownload.SiteEntry scraperRequest = scraperRequests.remove(0);
       try {
         log.debug("Requesting {} url {}", scraperRequest.siteId(), scraperRequest.url());
-        HttpRequest request = HttpRequest.newBuilder().uri(scraperRequest.url()).build();
+        HttpRequest request = HttpRequest.newBuilder()
+            // Fix VERY annoying forum that gives different html without this, breaking parser
+            .header("User-Agent", config.get(config.ARG_CLIENT_USERAGENT))
+            .uri(scraperRequest.url()).build();
         HttpResponse<byte[]> response = Utils.httpClient.send(request, BodyHandlers.ofByteArray());
 
         responseSuccess.add(

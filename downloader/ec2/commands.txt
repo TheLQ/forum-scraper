@@ -6,4 +6,4 @@ scp parser\dist\parser.js parser\dist\utils.js "ec2-user@aws-server:/opt/app/par
 scp "ec2-user@aws-server:app/sample.db" downloader\
 scp downloader\sample.db "ec2-user@aws-server:app/sample.db"
 
-aws s3 cp config-client.properties s3://xana.sh/
+aws s3 cp downloader\config-client.properties s3://xana.sh/
