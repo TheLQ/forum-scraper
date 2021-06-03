@@ -1,1 +1,1 @@
-aws ec2 request-spot-fleet --spot-fleet-request-config file://client-fleet3.json
+aws ec2 request-spot-fleet --spot-fleet-request-config file://spot-fleet-client.json

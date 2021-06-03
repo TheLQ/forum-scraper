@@ -1,7 +1,9 @@
 scp downloader\target\dependencies.jar "ec2-user@aws-server:/opt/app/"
 scp downloader\target\scrape-download-1.0-SNAPSHOT.jar "ec2-user@aws-server:/opt/app/"
 
-scp parser\dist\parser.js parser\dist\utils.js "ec2-user@aws-server:app/parser/dist/"
+scp parser\dist\parser.js parser\dist\utils.js "ec2-user@aws-server:/opt/app/parser/dist/"
 
 scp "ec2-user@aws-server:app/sample.db" downloader\
 scp downloader\sample.db "ec2-user@aws-server:app/sample.db"
+
+aws s3 cp config-client.properties s3://xana.sh/
