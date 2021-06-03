@@ -111,7 +111,7 @@ public class DatabaseStorage {
             .from(Pages.PAGES)
             .join(Sites.SITES)
             .on(Pages.PAGES.SITEID.eq(Sites.SITES.ID))
-            .groupBy(Pages.PAGES.DLSTATUS)
+            .groupBy(Pages.PAGES.DLSTATUS, Pages.PAGES.DOMAIN)
             .fetch();
 
     List<OverviewEntry> result = new ArrayList<>();
@@ -136,6 +136,15 @@ public class DatabaseStorage {
       result.add(new OverviewEntry(siteId, siteUrl, counter));
     }
     return result;
+  }
+
+  public List<PagesRecord> getOverviewErrors() {
+    return context
+        .select()
+        .from(Pages.PAGES)
+        .where(Pages.PAGES.EXCEPTION.isNotNull())
+        .orderBy(Pages.PAGES.UPDATED)
+        .fetchInto(PagesRecord.class);
   }
 
   // **************************** Utils ******************
@@ -175,7 +184,12 @@ public class DatabaseStorage {
     UUID id = UUID.randomUUID();
     executeOneRow(
         context
-            .insertInto(Sites.SITES, Sites.SITES.ID, Sites.SITES.URL, Sites.SITES.UPDATED, Sites.SITES.FORUMTYPE)
+            .insertInto(
+                Sites.SITES,
+                Sites.SITES.ID,
+                Sites.SITES.URL,
+                Sites.SITES.UPDATED,
+                Sites.SITES.FORUMTYPE)
             .values(id, url, LocalDateTime.now(), forumType));
     return id;
   }

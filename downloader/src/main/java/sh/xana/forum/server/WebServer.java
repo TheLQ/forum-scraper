@@ -130,10 +130,12 @@ public class WebServer extends NanoHTTPD {
     result.append("<th>PageType</th>");
     result.append("<th>Updated</th>");
     result.append("<th>URL</th>");
+    result.append("<th>SourceId</th>");
+    result.append("<th>SourceUrl</th>");
     result.append("</tr><thead>");
 
     result.append("<tbody>");
-    List<PagesRecord> pages = dbStorage.getPages(Pages.PAGES.EXCEPTION.isNotNull());
+    List<PagesRecord> pages = dbStorage.getOverviewErrors();
     for (PagesRecord page : pages) {
       result.append("<tr>");
       result.append("<td>").append(page.getId()).append("</td>");
@@ -141,10 +143,12 @@ public class WebServer extends NanoHTTPD {
       result.append("<td>").append(page.getPagetype()).append("</td>");
       result.append("<td>").append(page.getUpdated()).append("</td>");
       result.append("<td>").append(page.getUrl()).append("</td>");
+      result.append("<td>").append(page.getSourceid()).append("</td>");
+      result.append("<td>").append(dbStorage.getPage(page.getSourceid()).getUrl()).append("</td>");
       result.append("</tr>");
 
       result
-          .append("<tr><td colspan=5><pre>")
+          .append("<tr><td colspan=7><pre>")
           // need slash for base url
           .append("<a href='")
           .append(PAGE_OVERVIEW_ERRORS_CLEAR)
