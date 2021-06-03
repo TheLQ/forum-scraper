@@ -44,7 +44,7 @@ function forkBoardExtract(result: Result, $: CheerioAPI) {
                 pageType: PageType.TopicPage,
             })
         })
-    } else if ($(".post_body").length == 0) {
+    } else if ($(".post_body").length != 0) {
         result.pageType = PageType.TopicPage
     } else {
         result.pageType = PageType.Unknown

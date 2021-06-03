@@ -29,11 +29,10 @@ function vBulletinExtract(result: Result, rawHtml: String, $: CheerioAPI) {
         // forum list
         for (const forum of forums) {
             const id = assertNotBlank(forum.groups?.id);
-            const query = $(`div[id='${id}'] h2 a, div[id='${id}'] h3 a`);
-            if (query.length == 0) {
+            const elem = $(`div[id='${id}'] h2 a, div[id='${id}'] h3 a`).first();
+            if (elem.length == 0) {
                 throw new Error("didn't find anything for id " + id)
             }
-            const elem = query.first();
             try {
                 result.subpages.push({
                     pageType: PageType.ForumList,
@@ -41,8 +40,6 @@ function vBulletinExtract(result: Result, rawHtml: String, $: CheerioAPI) {
                     name: assertNotBlank($(elem).text()),
                 })
             } catch (e) {
-                console.error("element attr", elem.attr())
-                console.error("element attr", elem.html())
                 throw e;
             }
             
@@ -54,13 +51,17 @@ function vBulletinExtract(result: Result, rawHtml: String, $: CheerioAPI) {
             const elem = $(`a[id='${id}']`).first();
             result.subpages.push({
                 pageType: PageType.TopicPage,
-                url: assertNotBlank($(elem).text()),
+                url: assertNotBlank($(elem).attr("href")),
                 name: assertNotBlank($(elem).text()),
             })
         }
 
         // TopicList uses regular page number navigation
         $(".pagenav a").each((i, elem) => {
+            // skip name anchors
+            if (elem.attribs.name != undefined && elem.attribs.href == undefined) {
+                return;
+            }
             result.subpages.push({
                 name: assertNotBlank($(elem).text()),
                 url: elem.attribs.href,
@@ -72,11 +73,14 @@ function vBulletinExtract(result: Result, rawHtml: String, $: CheerioAPI) {
 
         // infinite scroll only gives us page by page...
         const next = $("link[rel='next']").first()
-        result.subpages.push({
-            name: "",
-            url: assertNotBlank(next.attr("href")),
-            pageType: result.pageType,
-        })
+        if (next.length != 0) {
+            // topic has multiple pages
+            result.subpages.push({
+                name: "",
+                url: assertNotBlank(next.attr("href")),
+                pageType: result.pageType,
+            })
+        }
     } else {
         result.pageType = PageType.Unknown
         return
