@@ -20,6 +20,7 @@ import sh.xana.forum.server.db.tables.Pages;
 import sh.xana.forum.server.db.tables.records.PagesRecord;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
 import sh.xana.forum.server.dbutil.DatabaseStorage.DlStatus;
+import sh.xana.forum.server.dbutil.DatabaseStorage.ForumType;
 
 public class WebServer extends NanoHTTPD {
   public static final Logger log = LoggerFactory.getLogger(WebServer.class);
@@ -96,8 +97,9 @@ public class WebServer extends NanoHTTPD {
   String pageAddSite(NanoHTTPD.IHTTPSession session) {
     assertAuth(session);
     URI siteUrl = Utils.toURI(WebServer.getRequiredParameter(session, "siteurl"));
+    String forumType = WebServer.getRequiredParameter(session, "forumType");
 
-    UUID siteId = dbStorage.insertSite(siteUrl);
+    UUID siteId = dbStorage.insertSite(siteUrl, ForumType.valueOf(forumType));
 
     dbStorage.insertPageQueued(siteId, List.of(siteUrl), DatabaseStorage.PageType.ForumList, null);
 

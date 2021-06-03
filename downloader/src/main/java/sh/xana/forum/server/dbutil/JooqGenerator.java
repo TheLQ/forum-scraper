@@ -103,6 +103,11 @@ public class JooqGenerator {
 
     @Override
     public byte[] to(UUID userObject) {
+      // Avoid breaking ByteBuffer.wrap
+      // This REALLY should never be null, wtf jOOq
+      if (userObject == null) {
+        return null;
+      }
       return uuidAsBytes(userObject);
     }
 

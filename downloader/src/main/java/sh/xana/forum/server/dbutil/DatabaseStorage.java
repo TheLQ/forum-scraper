@@ -171,12 +171,12 @@ public class DatabaseStorage {
    *
    * @return id
    */
-  public UUID insertSite(URI url) {
+  public UUID insertSite(URI url, ForumType forumType) {
     UUID id = UUID.randomUUID();
     executeOneRow(
         context
-            .insertInto(Sites.SITES, Sites.SITES.ID, Sites.SITES.URL, Sites.SITES.UPDATED)
-            .values(id, url, LocalDateTime.now()));
+            .insertInto(Sites.SITES, Sites.SITES.ID, Sites.SITES.URL, Sites.SITES.UPDATED, Sites.SITES.FORUMTYPE)
+            .values(id, url, LocalDateTime.now(), forumType));
     return id;
   }
 
