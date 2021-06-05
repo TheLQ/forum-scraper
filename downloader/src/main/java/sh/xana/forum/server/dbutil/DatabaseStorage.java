@@ -113,7 +113,6 @@ public class DatabaseStorage {
 
   /** Stage: reporting monitor */
   public List<OverviewEntry> getOverviewSites() {
-    // TODO: SLOW!!! But easy to write version
     var pages =
         context
             .select(
@@ -149,6 +148,33 @@ public class DatabaseStorage {
       result.add(new OverviewEntry(siteId, siteUrl, counter));
     }
     return result;
+  }
+
+  public List<PagesRecord> getOverviewPage(UUID id) {
+    List<PagesRecord> results = new ArrayList<>();
+    UUID nextId = id;
+    for (int i = 0; i < Integer.MAX_VALUE; i++) {
+      PagesRecord record =
+          context
+              .select()
+              .from(Pages.PAGES)
+              .where(Pages.PAGES.ID.eq(nextId))
+              .fetchOneInto(PagesRecord.class);
+      if (record.getId() == null) {
+        if (i == 0) {
+          throw new RuntimeException("ID not found " + id);
+        } else {
+          break;
+        }
+      }
+      results.add(record);
+
+      nextId = record.getSourceid();
+      if (nextId == null) {
+        break;
+      }
+    }
+    return results;
   }
 
   public List<PagesRecord> getOverviewErrors() {

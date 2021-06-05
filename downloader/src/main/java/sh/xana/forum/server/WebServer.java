@@ -75,6 +75,8 @@ public class WebServer extends NanoHTTPD {
           return newFixedLengthResponse(pageClientNodeInit(session));
         case PAGE_CLIENT_BUFFER:
           return newFixedLengthResponse(pageClientBuffer(session));
+        case PAGE_OVERVIEW_PAGE:
+          return newFixedLengthResponse(pageOverviewPage(session));
         case PAGE_OVERVIEW_ERRORS:
           return newFixedLengthResponse(pageOverviewErrors());
         case PAGE_OVERVIEW_ERRORS_CLEAR:
@@ -114,15 +116,31 @@ public class WebServer extends NanoHTTPD {
 
   String pageOverview() {
     StringBuilder result = new StringBuilder();
+    result.append("<pre>");
     for (DatabaseStorage.OverviewEntry entry : dbStorage.getOverviewSites()) {
       result.append(entry.toString()).append("\r\n");
     }
+    result.append("</pre>");
     return result.toString();
+  }
+
+  public static final String PAGE_OVERVIEW_PAGE = "/overview/page";
+
+  private String pageOverviewPage(IHTTPSession session) {
+    UUID pageId = UUID.fromString(getRequiredParameter(session, "pageId"));
+
+    List<PagesRecord> pages = dbStorage.getOverviewPage(pageId);
+    return _overviewPage(pages);
   }
 
   public static final String PAGE_OVERVIEW_ERRORS = "/overview/errors";
 
   private String pageOverviewErrors() {
+    List<PagesRecord> pages = dbStorage.getOverviewErrors();
+    return _overviewPage(pages);
+  }
+
+  private String _overviewPage(List<PagesRecord> pages) {
     StringBuilder result = new StringBuilder();
     result.append("<style>th, td { border: 1px solid; }</style>");
     result.append("<a href='").append(PAGE_OVERVIEW_ERRORS_CLEARALL).append("'>Clear All</a>");
@@ -139,7 +157,6 @@ public class WebServer extends NanoHTTPD {
     result.append("</tr><thead>");
 
     result.append("<tbody>");
-    List<PagesRecord> pages = dbStorage.getOverviewErrors();
     for (PagesRecord page : pages) {
       result.append("<tr>");
       result.append("<td>").append(page.getId()).append("</td>");
@@ -147,18 +164,21 @@ public class WebServer extends NanoHTTPD {
       result.append("<td>").append(page.getPagetype()).append("</td>");
       result.append("<td>").append(page.getUpdated()).append("</td>");
       result.append("<td>").append(page.getUrl()).append("</td>");
-      result.append("<td>").append(page.getSourceid()).append("</td>");
-      result.append("<td>").append(dbStorage.getPage(page.getSourceid()).getUrl()).append("</td>");
       result.append("</tr>");
 
       result
           .append("<tr><td colspan=7><pre>")
-          // need slash for base url
+          // clear errors
           .append("<a href='")
           .append(PAGE_OVERVIEW_ERRORS_CLEAR)
           .append("?pageId=")
           .append(page.getId())
-          .append("'>clear</a><br/>")
+          .append("'>clear</a>")
+          .append(" <a href='")
+          .append(PAGE_OVERVIEW_PAGE)
+          .append("?pageId=")
+          .append(page.getId())
+          .append("'>Page Info</a><br/>")
           .append(page.getException())
           .append("</pre></td></tr>");
     }

@@ -8,3 +8,4 @@ aws s3 cp downloader\config-client.properties s3://xana.sh/
 scp "ec2-user@aws-server:/opt/app/filecache/067fb735-5586-4d8a-89e9-272bc2bd9bf0.response" out.html
 
 UPDATE `Pages` SET `exception` = NULL WHERE `exception` IS NOT null
+SELECT * FROM `Pages` WHERE `url` LIKE '%/marketplace/%' LIMIT 100
