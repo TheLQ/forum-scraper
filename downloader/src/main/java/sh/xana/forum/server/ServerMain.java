@@ -16,6 +16,14 @@ public class ServerMain {
   private static Processor processor;
 
   public static void main(String[] args) throws Exception {
+    SLF4JBridgeHandler.removeHandlersForRootLogger();
+    SLF4JBridgeHandler.install();
+
+    boolean debugMode = System.getProperty(CommonConfig.PROPERTY_LOGBACK_TYPE) == null;
+    if (debugMode) {
+      log.warn("DEBUG MODE, not starting processor");
+    }
+
     ServerConfig config = new ServerConfig();
 
     Path fileCachePath = Path.of("..", "filecache");
