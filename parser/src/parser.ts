@@ -12,7 +12,21 @@ function main() {
     }
     const path = process.argv[2]
     
-    const rawHtml = fs.readFileSync(path, "utf8")
+    readFile(path)
+}
+
+function readFile(path: string) {
+    fs.readFile(path, {
+        encoding: "utf8"
+    }, (err, data) => {
+        if (err) {
+            throw err;
+        }
+        parseFile(data)
+    })
+}
+
+function parseFile(rawHtml: string) {
     const $ = cheerio.load(rawHtml, {
         xml: {
             normalizeWhitespace: true,
@@ -35,4 +49,5 @@ function main() {
     }
     console.log(JSON.stringify(results))
 }
+
 main();
