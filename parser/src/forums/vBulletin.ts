@@ -96,34 +96,31 @@ function vBulletinExtract(result: Result, rawHtml: String, $: CheerioAPI) {
     Not only is this url useless to archive, it causes "Data too long for column" SQL errors
     */
     for (const subpage of result.subpages) {
-        if (subpage.url.indexOf("/marketplace/") != -1) {
-            let newUrl = subpage.url
+        let newUrl = subpage.url
 
-            // strip infinite search id's
-            while (true) {
-                newUrl = newUrl.replace(/s=[0-9a-zA-Z]{32}/, "")
-                newUrl = newUrl.replace("&amp;", "")
-                newUrl = newUrl.replace("&", "")
-                newUrl = newUrl.replace("//", "/")
+        // strip infinite search id's
+        // note this exists on both marketplace ForumList and even topic 
+        while (true) {
+            newUrl = newUrl.replace(/s=[0-9a-zA-Z]{32}&*/, "")
+            newUrl = newUrl.replace("//", "/")
 
-                if (newUrl != subpage.url) {
-                    subpage.url = newUrl
-                } else {
-                    break;
-                }
-            }
-
-            // strip infinite page numbers
-            const pages = newUrl.match(/\/page-[0-9]+\//g)
-            if (pages != null && pages.length > 1) {
-                // we want the last one
-                pages.pop()
-                // but not the rest
-                for (const page of pages) {
-                    newUrl = newUrl.replace(page, "")
-                }
+            if (newUrl != subpage.url) {
                 subpage.url = newUrl
+            } else {
+                break;
             }
+        }
+
+        // strip infinite page numbers
+        const pages = newUrl.match(/\/page-[0-9]+\//g)
+        if (pages != null && pages.length > 1) {
+            // we want the last one
+            pages.pop()
+            // but not the rest
+            for (const page of pages) {
+                newUrl = newUrl.replace(page, "")
+            }
+            subpage.url = newUrl
         }
     }
 }
