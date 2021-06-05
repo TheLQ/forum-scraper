@@ -7,7 +7,9 @@ import java.nio.file.Path;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.bridge.SLF4JBridgeHandler;
 import sh.xana.forum.client.ClientMain;
+import sh.xana.forum.common.CommonConfig;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
 
 public class ServerMain {
@@ -31,18 +33,20 @@ public class ServerMain {
       String server = config.get(config.ARG_FILE_CACHE);
       fileCachePath = Path.of(server);
     }
-    if (!Files.exists(fileCachePath)) {
+    if (!debugMode && !Files.exists(fileCachePath)) {
       throw new RuntimeException(config.ARG_FILE_CACHE + " does not exist " + fileCachePath);
     }
 
     String nodeCmd = config.getOrDefault(config.ARG_NODE_CMD, "node");
     // start() will throw if the node cmd doesn't exist
-    Process process = new ProcessBuilder(nodeCmd, "-v").redirectErrorStream(true).start();
-    String output = IOUtils.toString(process.getInputStream(), StandardCharsets.UTF_8);
-    log.info("Node version " + output.trim());
+    if (!debugMode) {
+      Process process = new ProcessBuilder(nodeCmd, "-v").redirectErrorStream(true).start();
+      String output = IOUtils.toString(process.getInputStream(), StandardCharsets.UTF_8);
+      log.info("Node version " + output.trim());
+    }
 
     String parserScript = config.getOrDefault(config.ARG_PARSER_SCRIPT, "../parser/dist/parser.js");
-    if (!Files.exists(Path.of(parserScript))) {
+    if (!debugMode && !Files.exists(Path.of(parserScript))) {
       throw new RuntimeException(config.ARG_PARSER_SCRIPT + " does not exist " + parserScript);
     }
 
@@ -66,7 +70,10 @@ public class ServerMain {
 
     WebServer server = new WebServer(dbStorage, processor, nodeManager, config);
     server.start();
-    processor.startSpiderThread();
+
+    if (!debugMode) {
+      processor.startSpiderThread();
+    }
   }
 
   public static void close() throws InterruptedException, IOException {

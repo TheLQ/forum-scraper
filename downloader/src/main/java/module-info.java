@@ -9,6 +9,7 @@ module sh.xana.forum {
   //  requires org.jooq.meta;
   requires org.slf4j;
   requires logback.awslogs.appender;
+  requires jul.to.slf4j;
 
   exports sh.xana.forum.common.ipc;
 }

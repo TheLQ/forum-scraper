@@ -8,6 +8,7 @@ import java.util.Properties;
 import org.apache.commons.lang3.StringUtils;
 
 public class CommonConfig {
+  public static final String PROPERTY_LOGBACK_TYPE = "logbackType";
   public final String ARG_SERVER_AUTH = "server.auth";
 
   private final Properties map = new Properties();
