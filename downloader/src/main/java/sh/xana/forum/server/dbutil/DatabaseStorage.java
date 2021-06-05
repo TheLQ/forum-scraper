@@ -40,6 +40,13 @@ public class DatabaseStorage {
   public DatabaseStorage(ServerConfig config) {
     log.info("Connecting to database");
 
+    // need to load this since at runtime using cp not modules, DriverManager isn't finding it
+    try {
+      Class.forName("org.mariadb.jdbc.Driver");
+    } catch (Exception e) {
+      throw new RuntimeException("failed to load class", e);
+    }
+
     // creates actual DB connections
     ConnectionFactory connectionFactory =
         new DriverManagerConnectionFactory(
