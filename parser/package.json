@@ -9,11 +9,14 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "cheerio": "^1.0.0-rc.9"
+    "cheerio": "^1.0.0-rc.9",
+    "fastify": "^3.17.0"
   },
   "type": "module",
   "devDependencies": {
     "@types/node": "^15.6.1",
-    "typescript": "^4.3.2"
+    "ts-loader": "^9.2.2",
+    "typescript": "^4.3.2",
+    "webpack-cli": "^4.7.0"
   }
 }
