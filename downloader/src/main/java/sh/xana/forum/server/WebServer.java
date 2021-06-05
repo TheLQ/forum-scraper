@@ -81,6 +81,10 @@ public class WebServer extends NanoHTTPD {
           return newFixedLengthResponse(pageOverviewErrorsClear(session));
         case PAGE_OVERVIEW_ERRORS_CLEARALL:
           return newFixedLengthResponse(pageOverviewErrorsClearAll(session));
+        case "/favicon.ico":
+          // Stop "java.net.SocketException: An established connection was aborted by the software
+          // in your host machine"
+          return newFixedLengthResponse(Response.Status.NOT_FOUND, "image/x-icon", null);
         default:
           return newFixedLengthResponse(
               Response.Status.NOT_FOUND, NanoHTTPD.MIME_PLAINTEXT, "Not Found");
