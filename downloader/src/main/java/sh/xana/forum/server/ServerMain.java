@@ -1,10 +1,8 @@
 package sh.xana.forum.server;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
@@ -37,19 +35,6 @@ public class ServerMain {
       throw new RuntimeException(config.ARG_FILE_CACHE + " does not exist " + fileCachePath);
     }
 
-    String nodeCmd = config.getOrDefault(config.ARG_NODE_CMD, "node");
-    // start() will throw if the node cmd doesn't exist
-    if (!debugMode) {
-      Process process = new ProcessBuilder(nodeCmd, "-v").redirectErrorStream(true).start();
-      String output = IOUtils.toString(process.getInputStream(), StandardCharsets.UTF_8);
-      log.info("Node version " + output.trim());
-    }
-
-    String parserScript = config.getOrDefault(config.ARG_PARSER_SCRIPT, "../parser/dist/parser.js");
-    if (!debugMode && !Files.exists(Path.of(parserScript))) {
-      throw new RuntimeException(config.ARG_PARSER_SCRIPT + " does not exist " + parserScript);
-    }
-
     Runtime.getRuntime()
         .addShutdownHook(
             new Thread(
@@ -65,7 +50,7 @@ public class ServerMain {
     System.setProperty("org.jooq.no-logo", "true");
 
     DatabaseStorage dbStorage = new DatabaseStorage(config);
-    processor = new Processor(dbStorage, fileCachePath, nodeCmd, parserScript);
+    processor = new Processor(dbStorage, config);
     NodeManager nodeManager = new NodeManager();
 
     WebServer server = new WebServer(dbStorage, processor, nodeManager, config);

@@ -12,20 +12,17 @@ function main() {
     }
     const path = process.argv[2]
 
-    readFile(path)
+    readResponseFile(path)
 }
 
-function readFile(path: string) {
-    fs.readFile(path, {
+export async function readResponseFile(path: string) {
+    const data = await fs.promises.readFile(path, {
         encoding: "utf8"
-    }, parseFile)
+    })
+    return parseFile(data)
 }
 
-function parseFile(err: NodeJS.ErrnoException | null, rawHtml: string) {
-    if (err) {
-        throw err;
-    }
-
+function parseFile(rawHtml: string) {
     const $ = cheerio.load(rawHtml, {
         xml: {
             normalizeWhitespace: true,
@@ -46,7 +43,7 @@ function parseFile(err: NodeJS.ErrnoException | null, rawHtml: string) {
     if (results == null) {
         throw new Error("no parsers handled file")
     }
-    console.log(JSON.stringify(results))
+    return results;
 }
 
-main();
+// main();

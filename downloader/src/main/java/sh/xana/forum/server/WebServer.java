@@ -215,7 +215,7 @@ public class WebServer extends NanoHTTPD {
 
     PagesRecord page = dbStorage.getPage(pageId);
     if (page.getDlstatus().equals(DlStatus.Parse)) {
-      processor.queuePage(pageId);
+      processor.signalSpider();
       return "ok and queued parse page";
     }
     return "ok";

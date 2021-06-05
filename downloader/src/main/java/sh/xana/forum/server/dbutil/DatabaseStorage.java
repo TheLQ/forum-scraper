@@ -115,7 +115,12 @@ public class DatabaseStorage {
 
   /** Stage: Load pages for Parser */
   public List<PagesRecord> getParserPages() {
-    return getPages(Pages.PAGES.DLSTATUS.eq(DlStatus.Parse), Pages.PAGES.EXCEPTION.isNull());
+    return context
+        .select()
+        .from(Pages.PAGES)
+        .where(Pages.PAGES.DLSTATUS.eq(DlStatus.Parse), Pages.PAGES.EXCEPTION.isNull())
+        .limit(100)
+        .fetchInto(PagesRecord.class);
   }
 
   /** Stage: reporting monitor */
@@ -195,7 +200,7 @@ public class DatabaseStorage {
 
   // **************************** Utils ******************
 
-  private List<SitesRecord> getSites(Condition... conditions) {
+  public List<SitesRecord> getSites(Condition... conditions) {
     return context.select().from(Sites.SITES).where(conditions).fetchInto(SitesRecord.class);
   }
 
@@ -271,6 +276,48 @@ public class DatabaseStorage {
     executeRows(query, urls.size());
 
     return result;
+  }
+
+  public void insertPages(List<PagesRecord> pages, boolean ignoreDuplicates) {
+    //    try {
+    //      var query = context.loadInto(Pages.PAGES);
+    //      if (ignoreDuplicates) {
+    //        query.onDuplicateKeyIgnore();
+    //      }
+    //      query.loadRecords(pages).fieldsCorresponding().execute();
+    //    } catch (Exception e) {
+    //      throw new RuntimeException("IO Exception?", e);
+    //    }
+
+    var query =
+        context.insertInto(
+            Pages.PAGES,
+            Pages.PAGES.ID,
+            Pages.PAGES.SITEID,
+            Pages.PAGES.URL,
+            Pages.PAGES.PAGETYPE,
+            Pages.PAGES.DLSTATUS,
+            Pages.PAGES.UPDATED,
+            Pages.PAGES.DOMAIN,
+            Pages.PAGES.SOURCEID);
+
+    if (ignoreDuplicates) query.onDuplicateKeyIgnore();
+
+    for (PagesRecord page : pages) {
+      UUID id = UUID.randomUUID();
+
+      query.values(
+          id,
+          page.getSiteid(),
+          page.getUrl(),
+          page.getPagetype(),
+          page.getDlstatus(),
+          LocalDateTime.now(),
+          page.getUrl().getHost(),
+          page.getSourceid());
+    }
+
+    query.execute();
   }
 
   /** Change page status */
