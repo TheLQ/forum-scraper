@@ -18,17 +18,19 @@ export function forkBoardParse(rawHtml: String, $: CheerioAPI): Result | null {
         pageType: PageType.Unknown,
         subpages: []
     }
-    forkBoardExtract(result, $)
+    forkBoardExtract(result, rawHtml, $)
     return result;
 }
 
 
-function forkBoardExtract(result: Result, $: CheerioAPI) {
-    if ($("div > .post_header").length == 0) {
+function forkBoardExtract(result: Result, rawHtml: String, $: CheerioAPI) {
+    const subforums = $(".child_section .child_section_title a")
+    const threads = $(".thread_details div:first-child a")
+    if (subforums.length != 0 || threads.length != 0) {
         result.pageType = PageType.ForumList
     
         // forum list
-        $(".child_section .child_section_title a").each((i, elem) => {
+        subforums.each((i, elem) => {
             result.subpages.push({
                 name: assertNotBlank($(elem).text()),
                 url: elem.attribs.href,
@@ -37,14 +39,17 @@ function forkBoardExtract(result: Result, $: CheerioAPI) {
         })
     
         // topic list
-        $(".thread_details div:first-child a").each((i, elem) => {
+        threads.each((i, elem) => {
             result.subpages.push({
                 name: assertNotBlank($(elem).text()),
                 url: elem.attribs.href,
                 pageType: PageType.TopicPage,
             })
         })
-    } else if ($(".post_body").length != 0) {
+    } else if (rawHtml.indexOf("<a href=\"/post_new.php?thread_id=") != -1) {
+        // Note $(".post_body").length != 0 doesn't work because completely empty threads are allowed to exist...
+        // Presumably the user or post is deleted but the thread remains.
+        // So match the "reply to thread" link
         result.pageType = PageType.TopicPage
     } else {
         result.pageType = PageType.Unknown
