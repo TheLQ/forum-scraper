@@ -9,9 +9,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import org.jooq.CloseableDSLContext;
+import org.apache.commons.dbcp2.ConnectionFactory;
+import org.apache.commons.dbcp2.DriverManagerConnectionFactory;
+import org.apache.commons.dbcp2.PoolableConnection;
+import org.apache.commons.dbcp2.PoolableConnectionFactory;
+import org.apache.commons.dbcp2.PoolingDataSource;
+import org.apache.commons.pool2.ObjectPool;
+import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.jooq.Condition;
+import org.jooq.DSLContext;
 import org.jooq.Query;
+import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,23 +35,28 @@ import sh.xana.forum.server.db.tables.records.SitesRecord;
 public class DatabaseStorage {
   private static final Logger log = LoggerFactory.getLogger(DatabaseStorage.class);
 
-  private final CloseableDSLContext context;
+  private final DSLContext context;
 
   public DatabaseStorage(ServerConfig config) {
     log.info("Connecting to database");
-    try {
-      // need to load this since at runtime DriverManager isn't finding it
-      Class.forName("org.mariadb.jdbc.Driver");
-    } catch (Exception e) {
-      throw new RuntimeException("failed to load class", e);
-    }
-    String connectionString = config.getRequiredArg(config.ARG_DB_CONNECTIONSTRING);
-    String user = config.get(config.ARG_DB_USER);
-    if (user != null) {
-      context = DSL.using(connectionString, user, config.get(config.ARG_DB_PASS));
-    } else {
-      context = DSL.using(connectionString);
-    }
+
+    // creates actual DB connections
+    ConnectionFactory connectionFactory =
+        new DriverManagerConnectionFactory(
+            config.getRequiredArg(config.ARG_DB_CONNECTIONSTRING),
+            config.get(config.ARG_DB_USER),
+            config.get(config.ARG_DB_PASS));
+    // wraps actual connections with pooled ones
+    PoolableConnectionFactory poolableConnectionFactory =
+        new PoolableConnectionFactory(connectionFactory, null);
+    // object pool impl
+    ObjectPool<PoolableConnection> connectionPool =
+        new GenericObjectPool<>(poolableConnectionFactory);
+    poolableConnectionFactory.setPool(connectionPool);
+    // jdbc DataSource
+    PoolingDataSource<PoolableConnection> dataSource = new PoolingDataSource<>(connectionPool);
+
+    context = DSL.using(dataSource, SQLDialect.MARIADB);
     log.info("Connected to database");
   }
 

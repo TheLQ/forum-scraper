@@ -10,6 +10,10 @@ module sh.xana.forum {
   requires org.slf4j;
   requires logback.awslogs.appender;
   requires jul.to.slf4j;
+  requires org.mariadb.jdbc;
+  requires commons.dbcp2;
+  requires org.apache.commons.pool2;
+  requires java.management;
 
   exports sh.xana.forum.common.ipc;
 }
