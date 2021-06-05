@@ -11,22 +11,21 @@ function main() {
         process.exit(1)
     }
     const path = process.argv[2]
-    
+
     readFile(path)
 }
 
 function readFile(path: string) {
     fs.readFile(path, {
         encoding: "utf8"
-    }, (err, data) => {
-        if (err) {
-            throw err;
-        }
-        parseFile(data)
-    })
+    }, parseFile)
 }
 
-function parseFile(rawHtml: string) {
+function parseFile(err: NodeJS.ErrnoException | null, rawHtml: string) {
+    if (err) {
+        throw err;
+    }
+
     const $ = cheerio.load(rawHtml, {
         xml: {
             normalizeWhitespace: true,
