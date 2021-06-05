@@ -188,7 +188,7 @@ public class DatabaseStorage {
     return context
         .select()
         .from(Pages.PAGES)
-        .where(Pages.PAGES.EXCEPTION.isNotNull())
+        .where(Pages.PAGES.EXCEPTION.isNotNull(), Pages.PAGES.EXCEPTION.notLike("%LoginRequired%"))
         .orderBy(Pages.PAGES.UPDATED)
         .fetchInto(PagesRecord.class);
   }

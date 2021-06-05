@@ -133,6 +133,9 @@ public class Processor implements Closeable {
       }
 
       ParserResult results = Utils.jsonMapper.readValue(output, ParserResult.class);
+      if (results.loginRequired()) {
+        throw new RuntimeException("LoginRequired");
+      }
       if (!results.pageType().equals(page.getPagetype())) {
         throw new RuntimeException(
             "Expected pageType " + page.getPagetype() + " got " + results.pageType());

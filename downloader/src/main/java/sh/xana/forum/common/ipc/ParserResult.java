@@ -1,10 +1,9 @@
 package sh.xana.forum.common.ipc;
 
-import java.util.UUID;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
 
 public record ParserResult(
-    UUID nodeId,
+    boolean loginRequired,
     DatabaseStorage.PageType pageType,
     DatabaseStorage.ForumType forumType,
     ParserEntry[] subpages) {

@@ -14,6 +14,7 @@ export function forkBoardParse(rawHtml: String, $: CheerioAPI): Result | null {
     }
 
     const result: Result = {
+        loginRequired: false,
         forumType: ForumType.ForkBoard,
         pageType: PageType.Unknown,
         subpages: []

@@ -6,6 +6,7 @@ export function vBulletinParse(rawHtml: String, $: CheerioAPI): Result | null {
     let found = rawHtml.indexOf("vBulletin_init();") != -1
 
     const result: Result = {
+        loginRequired: false,
         forumType: ForumType.vBulletin,
         pageType: PageType.Unknown,
         subpages: []
@@ -20,6 +21,11 @@ export function vBulletinParse(rawHtml: String, $: CheerioAPI): Result | null {
  * then get element with DOM navigation
  */
 function vBulletinExtract(result: Result, rawHtml: String, $: CheerioAPI) {
+    if (rawHtml.indexOf("<!-- permission error message - user not logged in -->") != -1) {
+        result.loginRequired = true;
+        return;
+    }
+
     const forums = [...rawHtml.matchAll(/id=\"(?<id>f[0-9]+)\"/g)];
     const topics = [...rawHtml.matchAll(/id=\"(?<id>thread_title_[0-9]+)\"/g)];
     const posts = [...rawHtml.matchAll(/id=\"(?<id>td_post_[0-9]+)\"/g)];

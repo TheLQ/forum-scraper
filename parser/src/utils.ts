@@ -1,6 +1,7 @@
 import { Element, Text } from "domhandler";
 
 export interface Result {
+    loginRequired: boolean,
     pageType: PageType,
     forumType: ForumType | null,
     subpages: Subpage[],
