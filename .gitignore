@@ -6,5 +6,6 @@ downloader/config-server.properties
 
 parser/node_modules
 parser/dist
+parser/tmp
 
 filecache

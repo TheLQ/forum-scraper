@@ -42,9 +42,9 @@ function vBulletinExtract(result: Result, rawHtml: String, $: CheerioAPI) {
             } catch (e) {
                 throw e;
             }
-            
+
         }
-    
+
         // topic list
         for (const topic of topics) {
             const id = assertNotBlank(topic.groups?.id);
@@ -85,5 +85,45 @@ function vBulletinExtract(result: Result, rawHtml: String, $: CheerioAPI) {
         result.pageType = PageType.Unknown
         return
     }
-    
+
+    /*
+    The marketplace module seems to use either client js or cookies for state tracking.
+    But if your not a browser, it falls back tacking on the next page to end of the url
+    eg page-50/page-70 to page-50/page-70/page-90 to page page-50/page-70/page-90/page-110
+
+    Sometimes a custom id is also added (but not on my browser?), which similarly infinitely spans
+
+    Not only is this url useless to archive, it causes "Data too long for column" SQL errors
+    */
+    for (const subpage of result.subpages) {
+        if (subpage.url.indexOf("/marketplace/") != -1) {
+            let newUrl = subpage.url
+
+            // strip infinite search id's
+            while (true) {
+                newUrl = newUrl.replace(/s=[0-9a-zA-Z]{32}/, "")
+                newUrl = newUrl.replace("&amp;", "")
+                newUrl = newUrl.replace("&", "")
+                newUrl = newUrl.replace("//", "/")
+
+                if (newUrl != subpage.url) {
+                    subpage.url = newUrl
+                } else {
+                    break;
+                }
+            }
+
+            // strip infinite page numbers
+            const pages = newUrl.match(/\/page-[0-9]+\//g)
+            if (pages != null && pages.length > 1) {
+                // we want the last one
+                pages.pop()
+                // but not the rest
+                for (const page of pages) {
+                    newUrl = newUrl.replace(page, "")
+                }
+                subpage.url = newUrl
+            }
+        }
+    }
 }
