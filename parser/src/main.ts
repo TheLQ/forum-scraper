@@ -21,6 +21,12 @@ async function main() {
         default:
             throw new Error("unknown mode " + mode)
     }
-    process.exit(exitCode)
+    return exitCode
 }
-process.nextTick(main)
+main().then(
+    exitCode => {
+        console.log("init done, exit " + exitCode)
+    }, err => {
+        console.error("INIT FAIL", err)
+    }
+)

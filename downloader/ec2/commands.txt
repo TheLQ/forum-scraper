@@ -11,3 +11,5 @@ UPDATE `Pages` SET `exception` = NULL WHERE `exception` IS NOT null
 UPDATE `Pages` SET `dlstatus` = 'Queued' WHERE `dlstatus` = 'Download'
 
 SELECT * FROM `Pages` WHERE `url` LIKE '%/marketplace/%' LIMIT 100
+
+SELECT FROM `Pages` WHERE `url` LIKE "%https://www.rx8club.com/www.rx8club.com/%"
