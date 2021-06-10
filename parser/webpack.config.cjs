@@ -1,8 +1,7 @@
 const path = require('path');
 
 module.exports = {
-  // entry: './src/parser.ts',
-  entry: './src/web.ts',
+  entry: './src/main.ts',
   devtool: 'inline-source-map',
   target: 'node',
   mode: "production",

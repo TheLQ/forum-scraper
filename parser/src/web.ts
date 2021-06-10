@@ -3,12 +3,12 @@ import { readResponseFile } from "./parser"
 import fastifyImport from 'fastify';
 const fastify = fastifyImport({ logger: true })
 
-async function main() {
-    if (process.argv.length != 3) {
-        console.log("node parser.js <pathToFileCache>")
-        process.exit(1)
+export async function mainWeb(args: string[]): Promise<number> {
+    if (args.length != 0) {
+        console.log("node parser.js server <pathToFileCache>")
+        return 1
     }
-    const filecachePath = process.argv[2]
+    const filecachePath = args[0]
 
     // Declare a route
     fastify.route({
@@ -33,5 +33,5 @@ async function main() {
         fastify.log.error(err)
         process.exit(1)
     }
+    return 0
 }
-main()

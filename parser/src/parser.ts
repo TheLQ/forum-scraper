@@ -5,14 +5,16 @@ import { forkBoardParse } from "./forums/ForkBoard";
 import { vBulletinParse } from "./forums/vBulletin";
 import { Result } from "./utils";
 
-function main() {
-    if (process.argv.length != 3) {
-        console.log("node parser.js <file path>")
-        process.exit(1)
+export async function mainParser(args: string[]): Promise<number> {
+    if (args.length != 1) {
+        console.log("node parser.js file <file path>")
+        return 1
     }
-    const path = process.argv[2]
+    const path = args[0]
 
-    readResponseFile(path)
+    const result = await readResponseFile(path)
+    console.log(JSON.stringify(result))
+    return 0
 }
 
 export async function readResponseFile(path: string) {
@@ -45,5 +47,3 @@ function parseFile(rawHtml: string) {
     }
     return results;
 }
-
-// main();
