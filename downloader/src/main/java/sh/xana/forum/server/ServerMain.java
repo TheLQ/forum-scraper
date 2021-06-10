@@ -11,9 +11,10 @@ import sh.xana.forum.common.CommonConfig;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
 
 public class ServerMain {
-  public static final Logger log = LoggerFactory.getLogger(ClientMain.class);
+  private static final Logger log = LoggerFactory.getLogger(ClientMain.class);
 
   private static Processor processor;
+  private static RuntimeDebugThread debugThread;
 
   public static void main(String[] args) throws Exception {
     SLF4JBridgeHandler.removeHandlersForRootLogger();
@@ -22,6 +23,8 @@ public class ServerMain {
     boolean debugMode = System.getProperty(CommonConfig.PROPERTY_LOGBACK_TYPE) == null;
     if (debugMode) {
       log.warn("DEBUG MODE, not starting processor");
+    } else {
+      log.info("Production mode");
     }
 
     ServerConfig config = new ServerConfig();
@@ -56,10 +59,14 @@ public class ServerMain {
     WebServer server = new WebServer(dbStorage, processor, nodeManager, config);
     server.start();
 
+    debugThread = new RuntimeDebugThread();
     if (!debugMode) {
       processor.startSpiderThread();
+      debugThread.start();
     }
   }
+
+
 
   public static void close() throws InterruptedException, IOException {
     processor.close();
