@@ -27,15 +27,19 @@ export enum ForumType {
     phpBB = "phpBB",
 }
 
-export function assertNotBlank(value: string | undefined | null): string {
+export function assertNotNull(value: string | undefined | null): string {
     if (value == null || value == undefined) {
         throw new Error("Value is null")
     }
-    const result = value.trim()
-    if (result == "") {
+    return value
+}
+
+export function assertNotBlank(valueRaw: string | undefined | null): string {
+    const value = assertNotNull(valueRaw).trim()
+    if (value == "") {
         throw new Error("value is blank")
     }
-    return result;
+    return value;
 }
 
 export function getBaseUrl($: CheerioAPI) {

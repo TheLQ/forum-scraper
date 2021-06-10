@@ -1,5 +1,5 @@
 import { CheerioAPI } from "cheerio";
-import { assertNotBlank, ForumType, getBaseUrl, makeUrlWithBase, PageType, Result } from "../utils";
+import { assertNotBlank, assertNotNull, ForumType, getBaseUrl, makeUrlWithBase, PageType, Result } from "../utils";
 
 export function vBulletinParse(rawHtml: String, $: CheerioAPI): Result | null {
     // js init function they all seem to call
@@ -37,15 +37,17 @@ function vBulletinExtract(result: Result, rawHtml: String, $: CheerioAPI) {
         // forum list
         for (const forum of forums) {
             const id = assertNotBlank(forum.groups?.id);
-            const elem = $(`div[id='${id}'] h2 a, div[id='${id}'] h3 a`).first();
+            let elem = $(`div[id='${id}'] h2 a, div[id='${id}'] h3 a`);
             if (elem.length == 0) {
                 throw new Error("didn't find anything for id " + id)
             }
+            elem = elem.first()
             try {
                 result.subpages.push({
                     pageType: PageType.ForumList,
-                    url: makeUrlWithBase(baseUrl, $(elem).attr("href")),
-                    name: assertNotBlank($(elem).text()),
+                    url: makeUrlWithBase(baseUrl, elem.attr("href")),
+                    // topic can be blank, vBulliten bug?
+                    name: assertNotNull(elem.text()),
                 })
             } catch (e) {
                 throw e;
@@ -56,11 +58,17 @@ function vBulletinExtract(result: Result, rawHtml: String, $: CheerioAPI) {
         // topic list
         for (const topic of topics) {
             const id = assertNotBlank(topic.groups?.id);
-            const elem = $(`a[id='${id}']`).first();
+            let elem = $(`a[id='${id}']`);
+            if (elem.length == 0) {
+                throw new Error("didn't find anything for id " + id)
+            }
+            elem = elem.first()
+            console.log("html", elem.parent().html())
             result.subpages.push({
                 pageType: PageType.TopicPage,
                 url: makeUrlWithBase(baseUrl, $(elem).attr("href")),
-                name: assertNotBlank($(elem).text()),
+                // topic can be blank, vBulliten bug?
+                name: assertNotNull($(elem).text()),
             })
         }
 
