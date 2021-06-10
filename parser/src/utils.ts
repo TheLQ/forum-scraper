@@ -1,3 +1,4 @@
+import { CheerioAPI } from "cheerio";
 import { Element, Text } from "domhandler";
 
 export interface Result {
@@ -8,8 +9,8 @@ export interface Result {
 }
 
 interface Subpage {
-    name: String,
-    url: String,
+    name: string,
+    url: string,
     pageType: PageType,
 }
 
@@ -26,7 +27,7 @@ export enum ForumType {
     phpBB = "phpBB",
 }
 
-export function assertNotBlank(value: String | undefined | null): String {
+export function assertNotBlank(value: string | undefined | null): string {
     if (value == null || value == undefined) {
         throw new Error("Value is null")
     }
@@ -35,4 +36,28 @@ export function assertNotBlank(value: String | undefined | null): String {
         throw new Error("value is blank")
     }
     return result;
+}
+
+export function getBaseUrl($: CheerioAPI) {
+    const baseQuery = $("head > base")
+    if (baseQuery.length != 1) {
+        throw new Error("cannot find base")
+    }
+    const baseUrl = assertNotBlank($(baseQuery).attr('href'))
+    return baseUrl;
+}
+
+export function makeUrlWithBase(baseUrl: string, mainUrl: string | undefined | null): string {
+    mainUrl = assertNotBlank(mainUrl)
+
+    if (mainUrl.startsWith("http:") || mainUrl.startsWith("https:")) {
+        return mainUrl
+    }
+    if (mainUrl.startsWith("/")) {
+        mainUrl = mainUrl.substr(1)
+    }
+    if (!baseUrl.endsWith("/")) {
+        baseUrl = baseUrl + "/"
+    }
+    return baseUrl + mainUrl
 }

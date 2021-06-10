@@ -1,5 +1,5 @@
 import { CheerioAPI } from "cheerio";
-import { assertNotBlank, ForumType, PageType, Result } from "../utils";
+import { assertNotBlank, ForumType, getBaseUrl, makeUrlWithBase, PageType, Result } from "../utils";
 
 export function forkBoardParse(rawHtml: String, $: CheerioAPI): Result | null {
     // detect by version string in the footer
@@ -25,6 +25,8 @@ export function forkBoardParse(rawHtml: String, $: CheerioAPI): Result | null {
 
 
 function forkBoardExtract(result: Result, rawHtml: String, $: CheerioAPI) {
+    const baseUrl = getBaseUrl($)
+
     const subforums = $(".child_section .child_section_title a")
     const threads = $(".thread_details div:first-child a")
     if (subforums.length != 0 || threads.length != 0) {
@@ -34,7 +36,7 @@ function forkBoardExtract(result: Result, rawHtml: String, $: CheerioAPI) {
         subforums.each((i, elem) => {
             result.subpages.push({
                 name: assertNotBlank($(elem).text()),
-                url: elem.attribs.href,
+                url: makeUrlWithBase(baseUrl, elem.attribs.href),
                 pageType: PageType.ForumList,
             })
         })
@@ -43,7 +45,7 @@ function forkBoardExtract(result: Result, rawHtml: String, $: CheerioAPI) {
         threads.each((i, elem) => {
             result.subpages.push({
                 name: assertNotBlank($(elem).text()),
-                url: elem.attribs.href,
+                url: makeUrlWithBase(baseUrl, elem.attribs.href),
                 pageType: PageType.TopicPage,
             })
         })
@@ -61,7 +63,7 @@ function forkBoardExtract(result: Result, rawHtml: String, $: CheerioAPI) {
     $(".page_skip").each((i, elem) => {
         result.subpages.push({
             name: assertNotBlank($(elem).text()),
-            url: elem.attribs.href,
+            url: makeUrlWithBase(baseUrl, elem.attribs.href),
             pageType: result.pageType,
         })
     })

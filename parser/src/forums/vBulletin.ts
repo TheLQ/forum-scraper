@@ -1,5 +1,5 @@
 import { CheerioAPI } from "cheerio";
-import { assertNotBlank, ForumType, PageType, Result } from "../utils";
+import { assertNotBlank, ForumType, getBaseUrl, makeUrlWithBase, PageType, Result } from "../utils";
 
 export function vBulletinParse(rawHtml: String, $: CheerioAPI): Result | null {
     // js init function they all seem to call
@@ -26,6 +26,8 @@ function vBulletinExtract(result: Result, rawHtml: String, $: CheerioAPI) {
         return;
     }
 
+    const baseUrl = getBaseUrl($)
+
     const forums = [...rawHtml.matchAll(/id=\"(?<id>f[0-9]+)\"/g)];
     const topics = [...rawHtml.matchAll(/id=\"(?<id>thread_title_[0-9]+)\"/g)];
     const posts = [...rawHtml.matchAll(/id=\"(?<id>td_post_[0-9]+)\"/g)];
@@ -42,7 +44,7 @@ function vBulletinExtract(result: Result, rawHtml: String, $: CheerioAPI) {
             try {
                 result.subpages.push({
                     pageType: PageType.ForumList,
-                    url: assertNotBlank($(elem).attr("href")),
+                    url: makeUrlWithBase(baseUrl, $(elem).attr("href")),
                     name: assertNotBlank($(elem).text()),
                 })
             } catch (e) {
@@ -57,7 +59,7 @@ function vBulletinExtract(result: Result, rawHtml: String, $: CheerioAPI) {
             const elem = $(`a[id='${id}']`).first();
             result.subpages.push({
                 pageType: PageType.TopicPage,
-                url: assertNotBlank($(elem).attr("href")),
+                url: makeUrlWithBase(baseUrl, $(elem).attr("href")),
                 name: assertNotBlank($(elem).text()),
             })
         }
@@ -70,7 +72,7 @@ function vBulletinExtract(result: Result, rawHtml: String, $: CheerioAPI) {
             }
             result.subpages.push({
                 name: assertNotBlank($(elem).text()),
-                url: elem.attribs.href,
+                url: makeUrlWithBase(baseUrl, elem.attribs.href),
                 pageType: result.pageType,
             })
         })
@@ -83,7 +85,7 @@ function vBulletinExtract(result: Result, rawHtml: String, $: CheerioAPI) {
             // topic has multiple pages
             result.subpages.push({
                 name: "",
-                url: assertNotBlank(next.attr("href")),
+                url: makeUrlWithBase(baseUrl, next.attr("href")),
                 pageType: result.pageType,
             })
         }
@@ -107,8 +109,10 @@ function vBulletinExtract(result: Result, rawHtml: String, $: CheerioAPI) {
         // strip infinite search id's
         // note this exists on both marketplace ForumList and even topic 
         while (true) {
+            // match s=[32 character hex id]
             newUrl = newUrl.replace(/s=[0-9a-zA-Z]{32}&*/, "")
-            newUrl = newUrl.replace("//", "/")
+            // match double directory separator // but not the http:// one
+            newUrl = newUrl.replace(/(?<!http[s]*:)\/\//g, "/")
 
             if (newUrl != subpage.url) {
                 subpage.url = newUrl

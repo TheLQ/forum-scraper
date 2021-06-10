@@ -78,13 +78,11 @@ public class Processor implements Closeable {
 
   /** */
   private void pageSpiderThread() {
-    Exception ex = null;
     while (true) {
       boolean result;
       try {
         result = pageSpiderCycle();
       } catch (Exception e) {
-        ex = e;
         log.error("Caught exception in mainLoop, stopping", e);
         break;
       }
@@ -93,7 +91,7 @@ public class Processor implements Closeable {
         break;
       }
     }
-    log.info("main loop ended", ex);
+    log.info("main loop ended");
   }
 
   private boolean pageSpiderCycle() throws InterruptedException {
@@ -111,7 +109,7 @@ public class Processor implements Closeable {
     List<UUID> sqlDone = new ArrayList<>(parserPages.size());
     List<PagesRecord> sqlNewPages = new ArrayList<>();
     for (PagesRecord page : parserPages) {
-      log.info("processing page " + page.getUrl());
+      log.info("processing page {} {}", page.getUrl(), page.getId());
 
       try {
         HttpRequest request =
@@ -136,10 +134,11 @@ public class Processor implements Closeable {
               "Expected pageType " + page.getPagetype() + " got " + results.pageType());
         }
 
-        SitesRecord site = sites.stream()
-            .filter(entry -> entry.getId().equals(page.getSiteid()))
-            .findFirst()
-            .orElseThrow();
+        SitesRecord site =
+            sites.stream()
+                .filter(entry -> entry.getId().equals(page.getSiteid()))
+                .findFirst()
+                .orElseThrow();
         if (!results.forumType().equals(site.getForumtype())) {
           throw new RuntimeException(
               "Expected forumType " + site.getForumtype() + " got " + results.forumType());
@@ -147,21 +146,18 @@ public class Processor implements Closeable {
 
         for (ParserResult.ParserEntry result : results.subpages()) {
           URI url = new URI(result.url());
-          if (url.getHost() == null) {
-            URI sourceUrl = page.getUrl();
-            String path = url.getPath();
-            if (!path.startsWith("/")) {
-              path = "/" + path;
-            }
-            url =
-                new URI(
-                    sourceUrl.getScheme(),
-                    sourceUrl.getUserInfo(),
-                    sourceUrl.getHost(),
-                    sourceUrl.getPort(),
-                    path,
-                    url.getQuery(),
-                    url.getFragment());
+          if (!result.url().startsWith("http://" + page.getDomain() + "/")
+              || !result.url().startsWith("https://" + page.getDomain() + "/")) {
+            throw new RuntimeException("unexpected prefix " + result.url());
+          }
+          if (!page.getDomain().equals(url.getHost())) {
+            throw new RuntimeException(
+                "Expected domain "
+                    + page.getDomain()
+                    + " got "
+                    + url.getHost()
+                    + " for url "
+                    + url);
           }
 
           PagesRecord newPage = new PagesRecord();
