@@ -102,17 +102,18 @@ function vBulletinExtract(result: Result, rawHtml: String, $: CheerioAPI) {
         return
     }
 
-    /*
-    The marketplace module seems to use either client js or cookies for state tracking.
-    But if your not a browser, it falls back tacking on the next page to end of the url
-    eg page-50/page-70 to page-50/page-70/page-90 to page page-50/page-70/page-90/page-110
-
-    Sometimes a custom id is also added (but not on my browser?), which similarly infinitely spans
-
-    Not only is this url useless to archive, it causes "Data too long for column" SQL errors
-    */
     for (const subpage of result.subpages) {
         let newUrl = subpage.url
+
+        /*
+        The marketplace module seems to use either client js or cookies for state tracking.
+        But if your not a browser, it falls back tacking on the next page to end of the url
+        eg page-50/page-70 to page-50/page-70/page-90 to page page-50/page-70/page-90/page-110
+
+        Sometimes a custom id is also added (but not on my browser?), which similarly infinitely spans
+
+        Not only is this url useless to archive, it causes "Data too long for column" SQL errors
+        */
 
         // strip infinite search id's
         // note this exists on both marketplace ForumList and even topic 
@@ -140,5 +141,10 @@ function vBulletinExtract(result: Result, rawHtml: String, $: CheerioAPI) {
             }
             subpage.url = newUrl
         }
+
+        /*
+        There multi-page plugin uses ?ispreloading magic url
+        */
+        subpage.url = subpage.url.replace("/?ispreloading=1", "")
     }
 }
