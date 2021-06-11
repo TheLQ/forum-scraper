@@ -44,7 +44,7 @@ export function assertNotBlank(valueRaw: string | undefined | null): string {
 
 export function getBaseUrl($: CheerioAPI) {
     const baseQuery = $("head > base")
-    if (baseQuery.length != 1) {
+    if (baseQuery.length == 0) {
         throw new Error("cannot find base")
     }
 
