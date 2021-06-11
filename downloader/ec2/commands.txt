@@ -5,11 +5,17 @@ scp -r parser\dist\bundle.js "ec2-user@aws-server:/opt/app/parser.js"
 
 aws s3 cp downloader\config-client.properties s3://xana.sh/
 
-scp "ec2-user@aws-server:/opt/app/filecache/067fb735-5586-4d8a-89e9-272bc2bd9bf0.response" out.html
+scp "ec2-user@aws-server:/opt/app/filecache/067fb735-5586-4d8a-89e9-272bc2bd9bf0.response" parser/out.html
 
 UPDATE `Pages` SET `exception` = NULL WHERE `exception` IS NOT null
+
 UPDATE `Pages` SET `dlstatus` = 'Queued' WHERE `dlstatus` = 'Download'
+UPDATE `Pages` SET `dlstatus` = 'Parse' WHERE `dlstatus` = 'Done'
 
 SELECT * FROM `Pages` WHERE `url` LIKE '%/marketplace/%' LIMIT 100
 
 SELECT FROM `Pages` WHERE `url` LIKE "%https://www.rx8club.com/www.rx8club.com/%"
+
+SELECT BIN_TO_UUID(`id`,0),BIN_TO_UUID(`sourceId`),url FROM `Pages` WHERE url LIKE '%rx7club.com/www.rx7club.com%'
+
+ls -sS filecache/ | grep -E "^  0 " | cut -d' ' -f4 | cut -d'.' -f1

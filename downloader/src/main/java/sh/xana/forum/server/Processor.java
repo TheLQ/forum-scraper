@@ -145,11 +145,11 @@ public class Processor implements Closeable {
         }
 
         for (ParserResult.ParserEntry result : results.subpages()) {
-          URI url = new URI(result.url());
           if (!result.url().startsWith("http://" + page.getDomain() + "/")
-              || !result.url().startsWith("https://" + page.getDomain() + "/")) {
-            throw new RuntimeException("unexpected prefix " + result.url());
+              && !result.url().startsWith("https://" + page.getDomain() + "/")) {
+            throw new RuntimeException("Got prefix " + result.url() + " expected " + "https://" + page.getDomain() + "/");
           }
+          URI url = new URI(result.url());
           if (!page.getDomain().equals(url.getHost())) {
             throw new RuntimeException(
                 "Expected domain "

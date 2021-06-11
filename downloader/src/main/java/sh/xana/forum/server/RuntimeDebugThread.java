@@ -31,7 +31,7 @@ public class RuntimeDebugThread {
         for (var thread : ThreadUtils.getAllThreads()) {
           sb.append("Thread ").append(thread.getName()).append(System.lineSeparator());
         }
-        log.info(sb.toString());
+        System.err.println(sb.toString());
         TimeUnit.MINUTES.sleep(5);
       } catch (Exception e) {
         log.error("STATE THREAD CRASH", e);
