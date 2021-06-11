@@ -99,6 +99,10 @@ public class Scraper implements Closeable {
             .uri(scraperRequest.url()).build();
         HttpResponse<byte[]> response = Utils.httpClient.send(request, BodyHandlers.ofByteArray());
 
+        if (response.body().length == 0) {
+          throw new Exception("EmptyResponse");
+        }
+
         responseSuccess.add(
             new ScraperUpload.Success(
                 scraperRequest.siteId(),
