@@ -29,7 +29,7 @@ function forkBoardExtract(result: Result, rawHtml: String, $: CheerioAPI) {
 
     const subforums = $(".child_section .child_section_title a")
     const threads = $(".thread_details div:first-child a")
-    if (subforums.length != 0 || threads.length != 0 || rawHtml.indexOf("<a href=\"/thread_new.php?section_id=")) {
+    if (subforums.length != 0 || threads.length != 0 || rawHtml.indexOf("<a href=\"/thread_new.php?section_id=") != -1) {
         result.pageType = PageType.ForumList
     
         // forum list

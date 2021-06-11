@@ -47,7 +47,8 @@ export function getBaseUrl($: CheerioAPI) {
     if (baseQuery.length != 1) {
         throw new Error("cannot find base")
     }
-    const baseUrl = assertNotBlank($(baseQuery).attr('href'))
+
+    const baseUrl = assertNotBlank(baseQuery.last().attr('href'))
     return baseUrl;
 }
 
