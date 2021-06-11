@@ -145,6 +145,6 @@ function vBulletinExtract(result: Result, rawHtml: String, $: CheerioAPI) {
         /*
         There multi-page plugin uses ?ispreloading magic url
         */
-        subpage.url = subpage.url.replace("/?ispreloading=1", "")
+        subpage.url = subpage.url.replace("?ispreloading=1", "")
     }
 }
