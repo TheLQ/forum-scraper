@@ -152,8 +152,7 @@ public class WebServer extends NanoHTTPD {
     result.append("<th>PageType</th>");
     result.append("<th>Updated</th>");
     result.append("<th>URL</th>");
-    result.append("<th>SourceId</th>");
-    result.append("<th>SourceUrl</th>");
+    result.append("<th>DL Status Code</th>");
     result.append("</tr><thead>");
 
     result.append("<tbody>");
@@ -164,6 +163,7 @@ public class WebServer extends NanoHTTPD {
       result.append("<td>").append(page.getPagetype()).append("</td>");
       result.append("<td>").append(page.getUpdated()).append("</td>");
       result.append("<td>").append(page.getUrl()).append("</td>");
+      result.append("<td>").append(page.getDlstatuscode()).append("</td>");
       result.append("</tr>");
 
       result

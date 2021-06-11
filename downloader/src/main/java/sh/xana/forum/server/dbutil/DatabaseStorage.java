@@ -1,6 +1,7 @@
 package sh.xana.forum.server.dbutil;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -196,6 +197,16 @@ public class DatabaseStorage {
         .where(Pages.PAGES.EXCEPTION.isNotNull(), Pages.PAGES.EXCEPTION.notLike("%LoginRequired%"))
         .orderBy(Pages.PAGES.UPDATED)
         .fetchInto(PagesRecord.class);
+  }
+
+  public void oneTimeDb(PagesRecord page) throws URISyntaxException {
+        context
+            .update(Pages.PAGES)
+            .set(Pages.PAGES.DLSTATUS, DlStatus.Queued)
+            .set(Pages.PAGES.URL, new URI(page.getUrl().toString() + "/"))
+            .set(Pages.PAGES.EXCEPTION, (String) null)
+            .where(Pages.PAGES.ID.eq(page.getId()))
+        .execute();
   }
 
   // **************************** Utils ******************

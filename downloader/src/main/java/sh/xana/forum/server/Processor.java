@@ -29,6 +29,7 @@ public class Processor implements Closeable {
   private static final Logger log = LoggerFactory.getLogger(Processor.class);
 
   private final DatabaseStorage dbStorage;
+  private final ServerConfig config;
   private final Thread spiderThread;
   /**
    * Capacity should be infinite to avoid OOM, but shouldn't be too small or pageSpiderThread will
@@ -36,7 +37,7 @@ public class Processor implements Closeable {
    */
   private final BlockingQueue<Boolean> spiderSignal = new ArrayBlockingQueue<>(10);
 
-  private final ServerConfig config;
+  private final Path fileCachePath;
 
   public Processor(DatabaseStorage dbStorage, ServerConfig config) {
     this.dbStorage = dbStorage;
@@ -44,6 +45,8 @@ public class Processor implements Closeable {
 
     this.spiderThread = new Thread(this::pageSpiderThread);
     this.spiderThread.setName("ProcessorSpider");
+
+    this.fileCachePath = Path.of(config.get(config.ARG_FILE_CACHE));
   }
 
   /** Process responses the download scraper collected */
@@ -53,7 +56,6 @@ public class Processor implements Closeable {
       dbStorage.setPageException(error.id(), error.exception());
     }
 
-    Path fileCachePath = Path.of(config.get(config.ARG_FILE_CACHE));
     for (ScraperUpload.Success success : response.successes()) {
       log.debug("Writing " + success.id().toString() + " response and header");
       Files.write(fileCachePath.resolve(success.id() + ".response"), success.body());
@@ -112,6 +114,10 @@ public class Processor implements Closeable {
       log.info("processing page {} {}", page.getUrl(), page.getId());
 
       try {
+        if (Files.size(fileCachePath.resolve(page.getId() + ".response")) == 0) {
+          throw new RuntimeException("EmptyResponse");
+        }
+
         HttpRequest request =
             HttpRequest.newBuilder()
                 .uri(new URI(config.get(config.ARG_PARSER_SERVER) + "/" + page.getId()))
@@ -147,7 +153,8 @@ public class Processor implements Closeable {
         for (ParserResult.ParserEntry result : results.subpages()) {
           if (!result.url().startsWith("http://" + page.getDomain() + "/")
               && !result.url().startsWith("https://" + page.getDomain() + "/")) {
-            throw new RuntimeException("Got prefix " + result.url() + " expected " + "https://" + page.getDomain() + "/");
+            throw new RuntimeException(
+                "Got prefix " + result.url() + " expected " + "https://" + page.getDomain() + "/");
           }
           URI url = new URI(result.url());
           if (!page.getDomain().equals(url.getHost())) {
