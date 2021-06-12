@@ -1,7 +1,5 @@
 import { readResponseFile } from "./parser"
-
-import fastifyImport from 'fastify';
-const fastify = fastifyImport({ logger: true })
+import uWS from "uWebSockets.js"
 
 export async function mainWeb(args: string[]): Promise<number> {
     if (args.length != 1) {
@@ -11,23 +9,36 @@ export async function mainWeb(args: string[]): Promise<number> {
     const filecachePath = args[0]
     console.log("running webserver with filecachePath " + filecachePath)
 
-    // Declare a route
-    fastify.route({
-        method: 'GET',
-        url: '/:id',
-        handler: async (request, reply) => {
-            try {
-                const params = request.params as any;
-                const id = params.id
-                const response = await readResponseFile(filecachePath + id + ".response")
-                return response
-            } catch (e) {
-                return "" + e;
-            }
-        }
-    })
+    const port = 3000
 
-    // Run the server!
-    await fastify.listen(3000)
+    uWS.App({
+    }).get("/:id", async (res: any, req: any) => {
+        /* Can't return or yield from here without responding or attaching an abort handler */
+        res.onAborted(() => {
+            res.aborted = true;
+        });
+
+        let r = await getResponse(req.getParameter(0), filecachePath)
+
+        if (!res.aborted) {
+            res.end(r);
+        }
+    }).listen(port, (token: any) => {
+        if (token) {
+            console.log('Listening to port ' + port);
+        } else {
+            console.log('Failed to listen to port ' + port);
+        }
+    });
+
     return 0
+}
+
+async function getResponse(id: string, filecachePath: string): Promise<string> {
+    try {
+        const response = await readResponseFile(filecachePath + id + ".response")
+        return JSON.stringify(response)
+    } catch (e) {
+        return "" + e;
+    }
 }
