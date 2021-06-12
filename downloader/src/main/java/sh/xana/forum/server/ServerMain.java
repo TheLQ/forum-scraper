@@ -63,6 +63,7 @@ public class ServerMain {
     if (!debugMode) {
       processor.startSpiderThread();
       debugThread.start();
+      ClientMain.main(new String[0]);
     }
   }
 

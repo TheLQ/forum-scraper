@@ -32,7 +32,7 @@ public class Scraper implements Closeable {
   /** Number of URLs to request, and size when to do a request. Should be between SIZE - 2xSIZE */
   public static final int URL_QUEUE_REFILL_SIZE = 3;
 
-  private static final int CYCLE_SECONDS = 20;
+  private static final int CYCLE_SECONDS = 10;
   private static int INSTANCE_COUNTER = 0;
 
   private final ClientConfig config;
