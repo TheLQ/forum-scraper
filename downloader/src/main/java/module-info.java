@@ -8,12 +8,15 @@ module sh.xana.forum {
   //  requires org.jooq.codegen;
   //  requires org.jooq.meta;
   requires org.slf4j;
-  requires logback.awslogs.appender;
   requires jul.to.slf4j;
   requires org.mariadb.jdbc;
   requires commons.dbcp2;
   requires org.apache.commons.pool2;
   requires java.management;
+  requires java.sql;
+  requires java.sql.rowset;
 
-  exports sh.xana.forum.common.ipc;
+  opens sh.xana.forum.common.ipc to com.fasterxml.jackson.databind;
+  opens sh.xana.forum.server.db.tables.records to org.jooq;
+  opens sh.xana.forum.server.dbutil to com.fasterxml.jackson.databind;
 }

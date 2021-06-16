@@ -97,8 +97,6 @@ public class RuntimeDebugThread {
     return ROUNDED_DOUBLE_DECIMALFORMAT.format(usedPercentage) + "%";
   }
 
-
-
   private static double bytesToMiB(long bytes) {
     return ((double) bytes / MEGABYTE_FACTOR);
   }

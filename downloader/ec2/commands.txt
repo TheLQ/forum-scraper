@@ -19,4 +19,11 @@ SELECT FROM `Pages` WHERE `url` LIKE "%https://www.rx8club.com/www.rx8club.com/%
 
 SELECT BIN_TO_UUID(`id`,0),BIN_TO_UUID(`sourceId`),url FROM `Pages` WHERE url LIKE '%rx7club.com/www.rx7club.com%'
 
+SELECT BIN_TO_UUID(id, false),pagetype,dlstatus,updated,exception FROM `Pages`
+WHERE
+exception is not null
+and exception NOT LIKE '%LoginRequired%'
+and exception NOT LIKE '%EmptyResponse%'
+ORDER BY updated
+
 ls -sS filecache/ | grep -E "^  0 " | cut -d' ' -f4 | cut -d'.' -f1
