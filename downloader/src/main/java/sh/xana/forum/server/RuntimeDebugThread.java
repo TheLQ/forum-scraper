@@ -1,5 +1,7 @@
 package sh.xana.forum.server;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Locale;
@@ -8,7 +10,7 @@ import org.apache.commons.lang3.ThreadUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class RuntimeDebugThread {
+public class RuntimeDebugThread implements Closeable {
   private static final Logger log = LoggerFactory.getLogger(RuntimeDebugThread.class);
 
   private final Thread thread;
@@ -36,6 +38,14 @@ public class RuntimeDebugThread {
       } catch (Exception e) {
         log.error("STATE THREAD CRASH", e);
       }
+    }
+  }
+
+  @Override
+  public void close() throws IOException {
+    log.info("close called, stopping thread");
+    if (thread.isAlive()) {
+      thread.interrupt();
     }
   }
 

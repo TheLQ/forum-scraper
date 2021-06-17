@@ -68,6 +68,6 @@ public class ServerMain {
 
   public static void close() throws InterruptedException, IOException {
     processor.close();
-    processor.waitForThreadDeath();
+    debugThread.close();
   }
 }

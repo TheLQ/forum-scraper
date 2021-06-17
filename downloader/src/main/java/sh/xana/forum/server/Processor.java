@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,7 +34,7 @@ public class Processor implements Closeable {
    * Capacity should be infinite to avoid OOM, but shouldn't be too small or pageSpiderThread will
    * deadlock itself on init/load
    */
-  private final BlockingQueue<Boolean> spiderSignal = new ArrayBlockingQueue<>(10);
+  private final ArrayBlockingQueue<Boolean> spiderSignal = new ArrayBlockingQueue<>(10);
 
   private final Path fileCachePath;
 
@@ -102,9 +101,11 @@ public class Processor implements Closeable {
       log.debug("Waiting for next signal");
       // wait until we get signaled there is stuff to do, then restart
       spiderSignal.take();
-      spiderSignal.clear();
       return true;
     }
+
+    // wipe out remaining triggers
+    spiderSignal.clear();
 
     List<SitesRecord> sites = dbStorage.getSites();
 
@@ -203,9 +204,5 @@ public class Processor implements Closeable {
     if (spiderThread.isAlive()) {
       spiderThread.interrupt();
     }
-  }
-
-  public void waitForThreadDeath() throws InterruptedException {
-    spiderThread.join();
   }
 }
