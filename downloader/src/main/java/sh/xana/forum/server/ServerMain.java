@@ -49,9 +49,6 @@ public class ServerMain {
                   }
                 }));
 
-    // Hide giant logo it writes to logs on first load
-    System.setProperty("org.jooq.no-logo", "true");
-
     DatabaseStorage dbStorage = new DatabaseStorage(config);
     processor = new Processor(dbStorage, config);
     NodeManager nodeManager = new NodeManager();

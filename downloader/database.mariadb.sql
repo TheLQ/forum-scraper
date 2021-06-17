@@ -5,6 +5,9 @@
 -- HeidiSQL Version:             11.2.0.6290
 -- --------------------------------------------------------
 
+-- mysqldump  -r forum-scrape.sql --hex-blob forum-scrape
+-- mysql --default-character-set=utf8mb4 -e "SOURCE forum-scrape.sql;" forum-scrape
+
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET NAMES utf8 */;
 /*!50503 SET NAMES utf8mb4 */;

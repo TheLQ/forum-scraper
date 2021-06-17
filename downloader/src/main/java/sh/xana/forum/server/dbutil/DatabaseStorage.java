@@ -41,6 +41,9 @@ public class DatabaseStorage {
   public DatabaseStorage(ServerConfig config) {
     log.info("Connecting to database");
 
+    // Hide giant logo it writes to logs on first load
+    System.setProperty("org.jooq.no-logo", "true");
+
     // need to load this since at runtime using cp not modules, DriverManager isn't finding it
     try {
       Class.forName("org.mariadb.jdbc.Driver");
