@@ -64,8 +64,6 @@ public class ServerMain {
     }
   }
 
-
-
   public static void close() throws InterruptedException, IOException {
     processor.close();
     debugThread.close();

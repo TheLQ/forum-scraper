@@ -7,5 +7,6 @@ downloader/config-server.properties
 parser/node_modules
 parser/dist
 parser/tmp
+parser/.idea
 
 filecache
