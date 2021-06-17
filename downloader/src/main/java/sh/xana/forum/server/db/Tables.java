@@ -3,12 +3,16 @@
  */
 package sh.xana.forum.server.db;
 
+import sh.xana.forum.server.db.tables.Pageredirects;
 import sh.xana.forum.server.db.tables.Pages;
 import sh.xana.forum.server.db.tables.Sites;
 
 /** Convenience access to all tables in forum-scrape. */
 @SuppressWarnings({"all", "unchecked", "rawtypes"})
 public class Tables {
+
+  /** The table <code>forum-scrape.PageRedirects</code>. */
+  public static final Pageredirects PAGEREDIRECTS = Pageredirects.PAGEREDIRECTS;
 
   /** The table <code>forum-scrape.Pages</code>. */
   public static final Pages PAGES = Pages.PAGES;

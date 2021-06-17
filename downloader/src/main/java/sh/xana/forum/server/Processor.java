@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.Utils;
 import sh.xana.forum.common.ipc.ParserResult;
 import sh.xana.forum.common.ipc.ScraperUpload;
+import sh.xana.forum.server.db.tables.records.PageredirectsRecord;
 import sh.xana.forum.server.db.tables.records.PagesRecord;
 import sh.xana.forum.server.db.tables.records.SitesRecord;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
@@ -55,6 +56,8 @@ public class Processor implements Closeable {
       dbStorage.setPageException(error.id(), error.exception());
     }
 
+    List<PageredirectsRecord> sqlNewRedirects = new ArrayList<>();
+
     for (ScraperUpload.Success success : response.successes()) {
       log.debug("Writing " + success.id().toString() + " response and header");
       Files.write(fileCachePath.resolve(success.id() + ".response"), success.body());
@@ -63,6 +66,21 @@ public class Processor implements Closeable {
           Utils.jsonMapper.writeValueAsString(success.headers()));
 
       dbStorage.movePageDownloadToParse(success.id(), success.responseCode());
+
+      if (!success.redirectList().isEmpty()) {
+        byte counter = 0;
+        URI lastUri = null;
+        for (URI newUri : success.redirectList()) {
+          sqlNewRedirects.add(new PageredirectsRecord(success.id(), newUri, counter++));
+          lastUri = newUri;
+        }
+        dbStorage.setPageURL(success.id(), lastUri);
+      }
+    }
+
+    if (!sqlNewRedirects.isEmpty()) {
+      log.debug("dbsync redirect");
+      dbStorage.insertPageRedirects(sqlNewRedirects);
     }
     if (!response.successes().isEmpty()) {
       signalSpider();

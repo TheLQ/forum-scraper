@@ -1,7 +1,6 @@
 package sh.xana.forum.server.dbutil;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -28,8 +27,10 @@ import sh.xana.forum.client.Scraper;
 import sh.xana.forum.common.ipc.NodeResponse.ScraperEntry;
 import sh.xana.forum.common.ipc.ScraperDownload;
 import sh.xana.forum.server.ServerConfig;
+import sh.xana.forum.server.db.tables.Pageredirects;
 import sh.xana.forum.server.db.tables.Pages;
 import sh.xana.forum.server.db.tables.Sites;
+import sh.xana.forum.server.db.tables.records.PageredirectsRecord;
 import sh.xana.forum.server.db.tables.records.PagesRecord;
 import sh.xana.forum.server.db.tables.records.SitesRecord;
 
@@ -202,16 +203,6 @@ public class DatabaseStorage {
         .fetchInto(PagesRecord.class);
   }
 
-  public void oneTimeDb(PagesRecord page) throws URISyntaxException {
-        context
-            .update(Pages.PAGES)
-            .set(Pages.PAGES.DLSTATUS, DlStatus.Queued)
-            .set(Pages.PAGES.URL, new URI(page.getUrl().toString() + "/"))
-            .set(Pages.PAGES.EXCEPTION, (String) null)
-            .where(Pages.PAGES.ID.eq(page.getId()))
-        .execute();
-  }
-
   // **************************** Utils ******************
 
   public List<SitesRecord> getSites(Condition... conditions) {
@@ -334,6 +325,19 @@ public class DatabaseStorage {
     query.execute();
   }
 
+  public void insertPageRedirects(Collection<PageredirectsRecord> redirects) {
+    var query =
+        context.insertInto(
+            Pageredirects.PAGEREDIRECTS,
+            Pageredirects.PAGEREDIRECTS.ID,
+            Pageredirects.PAGEREDIRECTS.URL,
+            Pageredirects.PAGEREDIRECTS.INDEX);
+    for (PageredirectsRecord redirect : redirects) {
+      query.values(redirect.getId(), redirect.getUrl(), redirect.getIndex());
+    }
+    query.execute();
+  }
+
   /** Change page status */
   public void setPageStatus(Collection<UUID> pageIds, DlStatus status) {
     Query query =
@@ -361,6 +365,16 @@ public class DatabaseStorage {
         context
             .update(Pages.PAGES)
             .set(Pages.PAGES.EXCEPTION, (String) null)
+            .where(Pages.PAGES.ID.eq(pageId));
+
+    executeOneRow(query);
+  }
+
+  public void setPageURL(UUID pageId, URI url) {
+    Query query =
+        context
+            .update(Pages.PAGES)
+            .set(Pages.PAGES.URL, url)
             .where(Pages.PAGES.ID.eq(pageId));
 
     executeOneRow(query);

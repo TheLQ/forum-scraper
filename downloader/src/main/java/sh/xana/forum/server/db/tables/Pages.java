@@ -71,7 +71,7 @@ public class Pages extends TableImpl<PagesRecord> {
   /** The column <code>forum-scrape.Pages.url</code>. */
   public final TableField<PagesRecord, URI> URL =
       createField(
-          DSL.name("url"), SQLDataType.VARCHAR(2048).nullable(false), this, "", new UriConverter());
+          DSL.name("url"), SQLDataType.VARCHAR(250).nullable(false), this, "", new UriConverter());
 
   /** The column <code>forum-scrape.Pages.pageType</code>. */
   public final TableField<PagesRecord, PageType> PAGETYPE =

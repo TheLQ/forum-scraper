@@ -3,6 +3,7 @@ package sh.xana.forum.client;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.ConnectException;
+import java.net.URI;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
@@ -92,16 +93,41 @@ public class Scraper implements Closeable {
       // pop request and fetch content
       ScraperDownload.SiteEntry scraperRequest = scraperRequests.remove(0);
       try {
-        log.debug("Requesting {} url {}", scraperRequest.siteId(), scraperRequest.url());
-        HttpRequest request = HttpRequest.newBuilder()
-            // Fix VERY annoying forum that gives different html without this, breaking parser
-            .header("User-Agent", config.get(config.ARG_CLIENT_USERAGENT))
-            .uri(scraperRequest.url()).build();
-        HttpResponse<byte[]> response = Utils.httpClient.send(request, BodyHandlers.ofByteArray());
+        List<URI> redirectList = new ArrayList<>();
+
+        HttpResponse<byte[]> response;
+        URI url = scraperRequest.url();
+        while (true) {
+          log.debug("Requesting {} url {}", scraperRequest.siteId(), scraperRequest.url());
+          HttpRequest request =
+              HttpRequest.newBuilder()
+                  // Fix VERY annoying forum that gives different html without this, breaking parser
+                  .header("User-Agent", config.get(config.ARG_CLIENT_USERAGENT))
+                  .uri(url)
+                  .build();
+          response = Utils.httpClient.send(request, BodyHandlers.ofByteArray());
+
+          if (response.statusCode() == 301 || response.statusCode() == 302) {
+            redirectList.add(url);
+            url =
+                new URI(
+                    response
+                        .headers()
+                        .firstValue("Location")
+                        .orElseThrow(() -> new RuntimeException("Missing location")));
+          } else {
+            break;
+          }
+        }
+        if (!redirectList.isEmpty()) {
+          // add last url as final destination url
+          redirectList.add(url);
+        }
 
         responseSuccess.add(
             new ScraperUpload.Success(
                 scraperRequest.siteId(),
+                redirectList,
                 response.body(),
                 response.headers().map(),
                 response.statusCode()));

@@ -8,6 +8,7 @@ import java.util.List;
 import org.jooq.Catalog;
 import org.jooq.Table;
 import org.jooq.impl.SchemaImpl;
+import sh.xana.forum.server.db.tables.Pageredirects;
 import sh.xana.forum.server.db.tables.Pages;
 import sh.xana.forum.server.db.tables.Sites;
 
@@ -19,6 +20,9 @@ public class ForumScrape extends SchemaImpl {
 
   /** The reference instance of <code>forum-scrape</code> */
   public static final ForumScrape FORUM_SCRAPE = new ForumScrape();
+
+  /** The table <code>forum-scrape.PageRedirects</code>. */
+  public final Pageredirects PAGEREDIRECTS = Pageredirects.PAGEREDIRECTS;
 
   /** The table <code>forum-scrape.Pages</code>. */
   public final Pages PAGES = Pages.PAGES;
@@ -38,6 +42,6 @@ public class ForumScrape extends SchemaImpl {
 
   @Override
   public final List<Table<?>> getTables() {
-    return Arrays.<Table<?>>asList(Pages.PAGES, Sites.SITES);
+    return Arrays.<Table<?>>asList(Pageredirects.PAGEREDIRECTS, Pages.PAGES, Sites.SITES);
   }
 }
