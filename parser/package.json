@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "run": "node --es-module-specifier-resolution=node dist/parser.js",
-    "update": "npm-check-updates -u"
+    "update": "npm-check-updates -u",
+    "webpack": "webpack",
+    "buildts": "tsc -p ."
   },
   "author": "",
   "license": "ISC",

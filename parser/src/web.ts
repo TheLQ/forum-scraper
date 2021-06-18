@@ -6,8 +6,8 @@ export async function mainWeb(args: string[]): Promise<number> {
         console.log("node parser.js server <pathToFileCache>")
         return 1
     }
-    const filecachePath = args[0]
-    console.log("running webserver with filecachePath " + filecachePath)
+    const fileCachePath = args[0]
+    console.log("running webserver with fileCachePath " + fileCachePath)
 
     const port = 3000
 
@@ -18,7 +18,7 @@ export async function mainWeb(args: string[]): Promise<number> {
             res.aborted = true;
         });
 
-        let r = await getResponse(req.getParameter(0), filecachePath)
+        let r = await getResponse(req.getParameter(0), fileCachePath)
 
         if (!res.aborted) {
             res.end(r);
@@ -34,9 +34,9 @@ export async function mainWeb(args: string[]): Promise<number> {
     return 0
 }
 
-async function getResponse(id: string, filecachePath: string): Promise<string> {
+async function getResponse(id: string, fileCachePath: string): Promise<string> {
     try {
-        const response = await readResponseFile(filecachePath + id + ".response")
+        const response = await readResponseFile(fileCachePath, id)
         return JSON.stringify(response)
     } catch (e) {
         return "" + e;

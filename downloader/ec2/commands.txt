@@ -1,8 +1,8 @@
-scp downloader\target\dependencies.jar "ec2-user@aws-server:/opt/app/"
-scp downloader\target\scrape-download-1.0-SNAPSHOT.jar "ec2-user@aws-server:/opt/app/"
+scp downloader\target\dependencies.jar "ec2-user@aws-server:/opt/app/scraper"
+scp downloader\target\scrape-download-1.0-SNAPSHOT.jar "ec2-user@aws-server:/opt/app/scraper"
 
-scp -r parser\dist\bundle.js "ec2-user@aws-server:/opt/app/parser.js"
-scp -r parser\dist\uws_linux_arm64_83.node "ec2-user@aws-server:/opt/app/"
+scp -r parser\dist\bundle.js "ec2-user@aws-server:/opt/app/parser/parser.js"
+scp -r parser\dist\uws_linux_arm64_83.node "ec2-user@aws-server:/opt/app/parser/"
 
 aws s3 cp downloader\config-client.properties s3://xana.sh/
 

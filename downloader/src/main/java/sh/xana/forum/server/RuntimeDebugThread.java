@@ -77,7 +77,6 @@ public class RuntimeDebugThread implements Closeable {
     ROUNDED_DOUBLE_DECIMALFORMAT.setGroupingUsed(false);
   }
 
-
   public static String getTotalMemoryInMiB() {
     double totalMiB = bytesToMiB(getTotalMemory());
     return String.format("%s %s", ROUNDED_DOUBLE_DECIMALFORMAT.format(totalMiB), MIB);
@@ -110,8 +109,10 @@ public class RuntimeDebugThread implements Closeable {
   private static double bytesToMiB(long bytes) {
     return ((double) bytes / MEGABYTE_FACTOR);
   }
+
   public static String getSystemInformation() {
-    return String.format("SystemInfo=Current heap:%s; Used:%s; Free:%s; Maximum Heap:%s; Percentage Used:%s",
+    return String.format(
+        "SystemInfo=Current heap:%s; Used:%s; Free:%s; Maximum Heap:%s; Percentage Used:%s",
         getTotalMemoryInMiB(),
         getUsedMemoryInMiB(),
         getFreeMemoryInMiB(),
