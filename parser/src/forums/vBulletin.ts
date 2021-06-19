@@ -122,23 +122,18 @@ function vBulletinExtract(result: Result, rawHtml: String, $: CheerioAPI) {
             // match double directory separator // but not the http:// one
             newUrl = newUrl.replace(/(?<!http[s]*:)\/\//g, "/")
 
+            // match first page
+            const pages = newUrl.match(/(?<first>\/page-[0-9]+\/)page-[0-9]+\//)
+            const firstPage = pages?.groups?.first
+            if (firstPage !== undefined) {
+                newUrl = newUrl.replace(firstPage, "/")
+            }
+
             if (newUrl != subpage.url) {
                 subpage.url = newUrl
             } else {
                 break;
             }
-        }
-
-        // strip infinite page numbers
-        const pages = newUrl.match(/\/page-[0-9]+\//g)
-        if (pages != null && pages.length > 1) {
-            // we want the last one
-            pages.pop()
-            // but not the rest
-            for (const page of pages) {
-                newUrl = newUrl.replace(page, "")
-            }
-            subpage.url = newUrl
         }
 
         /*

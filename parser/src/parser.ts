@@ -11,7 +11,7 @@ const ARCHIVE_CACHE_FILE = 'archiveCache.7z';
 
 export async function mainParser(args: string[]): Promise<number> {
     if (args.length != 2) {
-        console.log("node parser.js file <file path>")
+        console.log("node parser.js file <file path>", args)
         return 1
     }
     const fileCachePath = args[0]
