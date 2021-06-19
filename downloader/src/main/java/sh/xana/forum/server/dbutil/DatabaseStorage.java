@@ -23,6 +23,8 @@ import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Query;
+import org.jooq.Record7;
+import org.jooq.Result;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
 import org.slf4j.Logger;
@@ -75,8 +77,7 @@ public class DatabaseStorage {
 
   /** Stage: init client */
   public List<ScraperEntry> getScraperDomainsIPC() {
-    var pages =
-        context.selectDistinct(PAGES.DOMAIN).from(PAGES).fetchInto(PagesRecord.class);
+    var pages = context.selectDistinct(PAGES.DOMAIN).from(PAGES).fetchInto(PagesRecord.class);
 
     List<ScraperEntry> resultList = new ArrayList<>(pages.size());
     for (PagesRecord page : pages) {
@@ -120,28 +121,30 @@ public class DatabaseStorage {
   }
 
   /** Stage: Load pages for Parser */
-  public List<PagesRecord> getParserPages() {
+  public Result<Record7<UUID, UUID, URI, PageType, String, URI, ForumType>> getParserPages() {
     var query =
         context
-            .select(PAGES.PAGEID, PAGES.PAGEURL, PAGES.DOMAIN, SITES.SITEURL)
+            .select(
+                PAGES.PAGEID,
+                PAGES.SITEID,
+                PAGES.PAGEURL,
+                PAGES.PAGETYPE,
+                PAGES.DOMAIN,
+                SITES.SITEURL,
+                SITES.FORUMTYPE)
             .from(PAGES)
             .join(SITES)
             .on(PAGES.SITEID.eq(SITES.SITEID))
             .where(PAGES.DLSTATUS.eq(DlStatus.Parse), PAGES.EXCEPTION.isNull())
             .limit(100);
-    log.warn(query.toString());
-    return query.fetchInto(PagesRecord.class);
+    return query.fetch();
   }
 
   /** Stage: reporting monitor */
   public List<OverviewEntry> getOverviewSites() {
     var pages =
         context
-            .select(
-                DSL.count(PAGES.PAGEID),
-                PAGES.DLSTATUS,
-                PAGES.SITEID,
-                SITES.SITEURL)
+            .select(DSL.count(PAGES.PAGEID), PAGES.DLSTATUS, PAGES.SITEID, SITES.SITEURL)
             .from(PAGES)
             .join(SITES)
             .on(PAGES.SITEID.eq(SITES.SITEID))
@@ -245,12 +248,7 @@ public class DatabaseStorage {
     UUID id = UUID.randomUUID();
     executeOneRow(
         context
-            .insertInto(
-                SITES,
-                SITES.SITEID,
-                SITES.SITEURL,
-                SITES.SITEUPDATED,
-                SITES.FORUMTYPE)
+            .insertInto(SITES, SITES.SITEID, SITES.SITEURL, SITES.SITEUPDATED, SITES.FORUMTYPE)
             .values(id, url, LocalDateTime.now(), forumType));
     return id;
   }
@@ -333,10 +331,7 @@ public class DatabaseStorage {
   public void insertPageRedirects(Collection<PageredirectsRecord> redirects) {
     var query =
         context.insertInto(
-            PAGEREDIRECTS,
-            PAGEREDIRECTS.PAGEID,
-            PAGEREDIRECTS.REDIRECTURL,
-            PAGEREDIRECTS.INDEX);
+            PAGEREDIRECTS, PAGEREDIRECTS.PAGEID, PAGEREDIRECTS.REDIRECTURL, PAGEREDIRECTS.INDEX);
     for (PageredirectsRecord redirect : redirects) {
       query.values(redirect.getPageid(), redirect.getRedirecturl(), redirect.getIndex());
     }
@@ -357,27 +352,20 @@ public class DatabaseStorage {
 
   public void setPageException(UUID pageId, String exception) {
     Query query =
-        context
-            .update(PAGES)
-            .set(PAGES.EXCEPTION, exception)
-            .where(PAGES.PAGEID.eq(pageId));
+        context.update(PAGES).set(PAGES.EXCEPTION, exception).where(PAGES.PAGEID.eq(pageId));
 
     executeOneRow(query);
   }
 
   public void setPageExceptionNull(UUID pageId) {
     Query query =
-        context
-            .update(PAGES)
-            .set(PAGES.EXCEPTION, (String) null)
-            .where(PAGES.PAGEID.eq(pageId));
+        context.update(PAGES).set(PAGES.EXCEPTION, (String) null).where(PAGES.PAGEID.eq(pageId));
 
     executeOneRow(query);
   }
 
   public void setPageURL(UUID pageId, URI url) {
-    Query query =
-        context.update(PAGES).set(PAGES.PAGEURL, url).where(PAGES.PAGEID.eq(pageId));
+    Query query = context.update(PAGES).set(PAGES.PAGEURL, url).where(PAGES.PAGEID.eq(pageId));
 
     executeOneRow(query);
   }

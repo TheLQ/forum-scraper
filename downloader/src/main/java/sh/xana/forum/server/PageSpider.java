@@ -27,6 +27,7 @@ import sh.xana.forum.server.db.tables.records.PagesRecord;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
 import sh.xana.forum.server.dbutil.DatabaseStorage.DlStatus;
 import sh.xana.forum.server.dbutil.DatabaseStorage.ForumType;
+import sh.xana.forum.server.dbutil.DatabaseStorage.PageType;
 
 /** Parse stage. Extract further URLs for downloading */
 public class PageSpider implements Closeable {
@@ -132,7 +133,7 @@ public class PageSpider implements Closeable {
     // Batch requests for improved IPC performance
     List<CompletableFuture<HttpResponse<String>>> futures = new ArrayList<>();
     for (var page : parserPages) {
-      UUID pageId = page.get(Pages.PAGES.SITEID);
+      UUID pageId = page.get(Pages.PAGES.PAGEID);
       URI siteBaseUrl = page.get(Sites.SITES.SITEURL);
       try {
         HttpRequest request =
@@ -157,7 +158,9 @@ public class PageSpider implements Closeable {
     for (CompletableFuture<HttpResponse<String>> future : futures) {
       var page = parserPages.get(counter++);
 
-      log.info("processing page {} {}", page.getPageurl(), page.getPageid());
+      UUID pageId = page.get(Pages.PAGES.PAGEID);
+
+      log.info("processing page {} {}", page.get(Pages.PAGES.PAGEURL), pageId);
       if (future == null) {
         throw new RuntimeException("Future is empty, lets stop and investigate");
       }
@@ -173,13 +176,14 @@ public class PageSpider implements Closeable {
           throw new RuntimeException("Output is empty");
         }
 
+        PageType pageType = page.get(Pages.PAGES.PAGETYPE);
         ParserResult results = Utils.jsonMapper.readValue(output, ParserResult.class);
         if (results.loginRequired()) {
           throw new RuntimeException("LoginRequired");
         }
-        if (!results.pageType().equals(page.getPagetype())) {
+        if (!results.pageType().equals(pageType)) {
           throw new RuntimeException(
-              "Expected pageType " + page.getPagetype() + " got " + results.pageType());
+              "Expected pageType " + pageType + " got " + results.pageType());
         }
 
         ForumType siteType = page.get(Sites.SITES.FORUMTYPE);
@@ -188,40 +192,36 @@ public class PageSpider implements Closeable {
               "Expected forumType " + siteType + " got " + results.forumType());
         }
 
+        String pageDomain = page.get(Pages.PAGES.DOMAIN);
         for (ParserResult.ParserEntry result : results.subpages()) {
-          if (!result.url().startsWith("http://" + page.getDomain() + "/")
-              && !result.url().startsWith("https://" + page.getDomain() + "/")) {
+          if (!result.url().startsWith("http://" + pageDomain + "/")
+              && !result.url().startsWith("https://" + pageDomain + "/")) {
             throw new RuntimeException(
-                "Got prefix " + result.url() + " expected " + "https://" + page.getDomain() + "/");
+                "Got prefix " + result.url() + " expected " + "https://" + pageDomain + "/");
           }
           URI url = new URI(result.url());
-          if (!page.getDomain().equals(url.getHost())) {
+          if (!pageDomain.equals(url.getHost())) {
             throw new RuntimeException(
-                "Expected domain "
-                    + page.getDomain()
-                    + " got "
-                    + url.getHost()
-                    + " for url "
-                    + url);
+                "Expected domain " + pageDomain + " got " + url.getHost() + " for url " + url);
           }
 
           PagesRecord newPage = new PagesRecord();
-          newPage.setSiteid(page.getSiteid());
+          newPage.setSiteid(page.get(Pages.PAGES.SITEID));
           newPage.setPageurl(url);
           newPage.setPagetype(result.pageType());
           newPage.setDlstatus(DlStatus.Queued);
-          newPage.setDomain(url.getHost());
-          newPage.setSourcepageid(page.getPageid());
+          newPage.setDomain(pageDomain);
+          newPage.setSourcepageid(pageId);
           sqlNewPages.add(newPage);
         }
 
-        sqlDone.add(page.getPageid());
+        sqlDone.add(pageId);
       } catch (JsonProcessingException e) {
         log.warn("JSON Parsing failed", e);
-        dbStorage.setPageException(page.getPageid(), "NOT JSON\r\n" + output);
+        dbStorage.setPageException(pageId, "NOT JSON\r\n" + output);
       } catch (Exception e) {
         log.warn("Failed in parser", e);
-        dbStorage.setPageException(page.getPageid(), ExceptionUtils.getStackTrace(e));
+        dbStorage.setPageException(pageId, ExceptionUtils.getStackTrace(e));
       }
     }
 
