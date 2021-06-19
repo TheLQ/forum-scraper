@@ -21,33 +21,33 @@ public class SitesRecord extends UpdatableRecordImpl<SitesRecord>
 
   private static final long serialVersionUID = 1L;
 
-  /** Setter for <code>forum-scrape.Sites.id</code>. */
-  public void setId(UUID value) {
+  /** Setter for <code>forum-scrape.Sites.siteId</code>. */
+  public void setSiteid(UUID value) {
     set(0, value);
   }
 
-  /** Getter for <code>forum-scrape.Sites.id</code>. */
-  public UUID getId() {
+  /** Getter for <code>forum-scrape.Sites.siteId</code>. */
+  public UUID getSiteid() {
     return (UUID) get(0);
   }
 
-  /** Setter for <code>forum-scrape.Sites.url</code>. */
-  public void setUrl(URI value) {
+  /** Setter for <code>forum-scrape.Sites.siteUrl</code>. */
+  public void setSiteurl(URI value) {
     set(1, value);
   }
 
-  /** Getter for <code>forum-scrape.Sites.url</code>. */
-  public URI getUrl() {
+  /** Getter for <code>forum-scrape.Sites.siteUrl</code>. */
+  public URI getSiteurl() {
     return (URI) get(1);
   }
 
-  /** Setter for <code>forum-scrape.Sites.updated</code>. */
-  public void setUpdated(LocalDateTime value) {
+  /** Setter for <code>forum-scrape.Sites.siteUpdated</code>. */
+  public void setSiteupdated(LocalDateTime value) {
     set(2, value);
   }
 
-  /** Getter for <code>forum-scrape.Sites.updated</code>. */
-  public LocalDateTime getUpdated() {
+  /** Getter for <code>forum-scrape.Sites.siteUpdated</code>. */
+  public LocalDateTime getSiteupdated() {
     return (LocalDateTime) get(2);
   }
 
@@ -86,17 +86,17 @@ public class SitesRecord extends UpdatableRecordImpl<SitesRecord>
 
   @Override
   public Field<UUID> field1() {
-    return Sites.SITES.ID;
+    return Sites.SITES.SITEID;
   }
 
   @Override
   public Field<URI> field2() {
-    return Sites.SITES.URL;
+    return Sites.SITES.SITEURL;
   }
 
   @Override
   public Field<LocalDateTime> field3() {
-    return Sites.SITES.UPDATED;
+    return Sites.SITES.SITEUPDATED;
   }
 
   @Override
@@ -106,17 +106,17 @@ public class SitesRecord extends UpdatableRecordImpl<SitesRecord>
 
   @Override
   public UUID component1() {
-    return getId();
+    return getSiteid();
   }
 
   @Override
   public URI component2() {
-    return getUrl();
+    return getSiteurl();
   }
 
   @Override
   public LocalDateTime component3() {
-    return getUpdated();
+    return getSiteupdated();
   }
 
   @Override
@@ -126,17 +126,17 @@ public class SitesRecord extends UpdatableRecordImpl<SitesRecord>
 
   @Override
   public UUID value1() {
-    return getId();
+    return getSiteid();
   }
 
   @Override
   public URI value2() {
-    return getUrl();
+    return getSiteurl();
   }
 
   @Override
   public LocalDateTime value3() {
-    return getUpdated();
+    return getSiteupdated();
   }
 
   @Override
@@ -146,19 +146,19 @@ public class SitesRecord extends UpdatableRecordImpl<SitesRecord>
 
   @Override
   public SitesRecord value1(UUID value) {
-    setId(value);
+    setSiteid(value);
     return this;
   }
 
   @Override
   public SitesRecord value2(URI value) {
-    setUrl(value);
+    setSiteurl(value);
     return this;
   }
 
   @Override
   public SitesRecord value3(LocalDateTime value) {
-    setUpdated(value);
+    setSiteupdated(value);
     return this;
   }
 
@@ -187,12 +187,12 @@ public class SitesRecord extends UpdatableRecordImpl<SitesRecord>
   }
 
   /** Create a detached, initialised SitesRecord */
-  public SitesRecord(UUID id, URI url, LocalDateTime updated, ForumType forumtype) {
+  public SitesRecord(UUID siteid, URI siteurl, LocalDateTime siteupdated, ForumType forumtype) {
     super(Sites.SITES);
 
-    setId(id);
-    setUrl(url);
-    setUpdated(updated);
+    setSiteid(siteid);
+    setSiteurl(siteurl);
+    setSiteupdated(siteupdated);
     setForumtype(forumtype);
   }
 }

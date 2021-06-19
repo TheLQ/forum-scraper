@@ -132,8 +132,8 @@ public class PageSpider implements Closeable {
     // Batch requests for improved IPC performance
     List<CompletableFuture<HttpResponse<String>>> futures = new ArrayList<>();
     for (var page : parserPages) {
-      UUID pageId = page.get(Pages.PAGES.ID);
-      URI siteBaseUrl = page.get(Sites.SITES.URL);
+      UUID pageId = page.get(Pages.PAGES.SITEID);
+      URI siteBaseUrl = page.get(Sites.SITES.SITEURL);
       try {
         HttpRequest request =
             HttpRequest.newBuilder()
@@ -157,7 +157,7 @@ public class PageSpider implements Closeable {
     for (CompletableFuture<HttpResponse<String>> future : futures) {
       var page = parserPages.get(counter++);
 
-      log.info("processing page {} {}", page.getUrl(), page.getId());
+      log.info("processing page {} {}", page.getPageurl(), page.getPageid());
       if (future == null) {
         throw new RuntimeException("Future is empty, lets stop and investigate");
       }
@@ -207,21 +207,21 @@ public class PageSpider implements Closeable {
 
           PagesRecord newPage = new PagesRecord();
           newPage.setSiteid(page.getSiteid());
-          newPage.setUrl(url);
+          newPage.setPageurl(url);
           newPage.setPagetype(result.pageType());
           newPage.setDlstatus(DlStatus.Queued);
           newPage.setDomain(url.getHost());
-          newPage.setSourceid(page.getId());
+          newPage.setSourcepageid(page.getPageid());
           sqlNewPages.add(newPage);
         }
 
-        sqlDone.add(page.getId());
+        sqlDone.add(page.getPageid());
       } catch (JsonProcessingException e) {
         log.warn("JSON Parsing failed", e);
-        dbStorage.setPageException(page.getId(), "NOT JSON\r\n" + output);
+        dbStorage.setPageException(page.getPageid(), "NOT JSON\r\n" + output);
       } catch (Exception e) {
         log.warn("Failed in parser", e);
-        dbStorage.setPageException(page.getId(), ExceptionUtils.getStackTrace(e));
+        dbStorage.setPageException(page.getPageid(), ExceptionUtils.getStackTrace(e));
       }
     }
 

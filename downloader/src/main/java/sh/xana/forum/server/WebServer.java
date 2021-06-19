@@ -158,11 +158,11 @@ public class WebServer extends NanoHTTPD {
     result.append("<tbody>");
     for (PagesRecord page : pages) {
       result.append("<tr>");
-      result.append("<td>").append(page.getId()).append("</td>");
+      result.append("<td>").append(page.getPageid()).append("</td>");
       result.append("<td>").append(page.getDlstatus()).append("</td>");
       result.append("<td>").append(page.getPagetype()).append("</td>");
-      result.append("<td>").append(page.getUpdated()).append("</td>");
-      result.append("<td>").append(page.getUrl()).append("</td>");
+      result.append("<td>").append(page.getPageupdated()).append("</td>");
+      result.append("<td>").append(page.getPageurl()).append("</td>");
       result.append("<td>").append(page.getDlstatuscode()).append("</td>");
       result.append("</tr>");
 
@@ -172,12 +172,12 @@ public class WebServer extends NanoHTTPD {
           .append("<a href='")
           .append(PAGE_OVERVIEW_ERRORS_CLEAR)
           .append("?pageId=")
-          .append(page.getId())
+          .append(page.getPageid())
           .append("'>clear</a>")
           .append(" <a href='")
           .append(PAGE_OVERVIEW_PAGE)
           .append("?pageId=")
-          .append(page.getId())
+          .append(page.getPageid())
           .append("'>Page Info</a><br/>")
           .append(page.getException())
           .append("</pre></td></tr>");
@@ -203,7 +203,7 @@ public class WebServer extends NanoHTTPD {
     List<PagesRecord> pages = dbStorage.getPages(Pages.PAGES.EXCEPTION.isNotNull());
     StringBuilder result = new StringBuilder("<pre>");
     for (PagesRecord page : pages) {
-      String clearResult = pageOverviewErrorsClear_util(page.getId());
+      String clearResult = pageOverviewErrorsClear_util(page.getPageid());
       result.append(clearResult).append("\r\n");
     }
     result.append("</pre>");

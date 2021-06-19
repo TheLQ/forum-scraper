@@ -18,23 +18,23 @@ public class PageredirectsRecord extends TableRecordImpl<PageredirectsRecord>
 
   private static final long serialVersionUID = 1L;
 
-  /** Setter for <code>forum-scrape.PageRedirects.id</code>. */
-  public void setId(UUID value) {
+  /** Setter for <code>forum-scrape.PageRedirects.pageId</code>. */
+  public void setPageid(UUID value) {
     set(0, value);
   }
 
-  /** Getter for <code>forum-scrape.PageRedirects.id</code>. */
-  public UUID getId() {
+  /** Getter for <code>forum-scrape.PageRedirects.pageId</code>. */
+  public UUID getPageid() {
     return (UUID) get(0);
   }
 
-  /** Setter for <code>forum-scrape.PageRedirects.url</code>. */
-  public void setUrl(URI value) {
+  /** Setter for <code>forum-scrape.PageRedirects.redirectUrl</code>. */
+  public void setRedirecturl(URI value) {
     set(1, value);
   }
 
-  /** Getter for <code>forum-scrape.PageRedirects.url</code>. */
-  public URI getUrl() {
+  /** Getter for <code>forum-scrape.PageRedirects.redirectUrl</code>. */
+  public URI getRedirecturl() {
     return (URI) get(1);
   }
 
@@ -64,12 +64,12 @@ public class PageredirectsRecord extends TableRecordImpl<PageredirectsRecord>
 
   @Override
   public Field<UUID> field1() {
-    return Pageredirects.PAGEREDIRECTS.ID;
+    return Pageredirects.PAGEREDIRECTS.PAGEID;
   }
 
   @Override
   public Field<URI> field2() {
-    return Pageredirects.PAGEREDIRECTS.URL;
+    return Pageredirects.PAGEREDIRECTS.REDIRECTURL;
   }
 
   @Override
@@ -79,12 +79,12 @@ public class PageredirectsRecord extends TableRecordImpl<PageredirectsRecord>
 
   @Override
   public UUID component1() {
-    return getId();
+    return getPageid();
   }
 
   @Override
   public URI component2() {
-    return getUrl();
+    return getRedirecturl();
   }
 
   @Override
@@ -94,12 +94,12 @@ public class PageredirectsRecord extends TableRecordImpl<PageredirectsRecord>
 
   @Override
   public UUID value1() {
-    return getId();
+    return getPageid();
   }
 
   @Override
   public URI value2() {
-    return getUrl();
+    return getRedirecturl();
   }
 
   @Override
@@ -109,13 +109,13 @@ public class PageredirectsRecord extends TableRecordImpl<PageredirectsRecord>
 
   @Override
   public PageredirectsRecord value1(UUID value) {
-    setId(value);
+    setPageid(value);
     return this;
   }
 
   @Override
   public PageredirectsRecord value2(URI value) {
-    setUrl(value);
+    setRedirecturl(value);
     return this;
   }
 
@@ -143,11 +143,11 @@ public class PageredirectsRecord extends TableRecordImpl<PageredirectsRecord>
   }
 
   /** Create a detached, initialised PageredirectsRecord */
-  public PageredirectsRecord(UUID id, URI url, Byte index) {
+  public PageredirectsRecord(UUID pageid, URI redirecturl, Byte index) {
     super(Pageredirects.PAGEREDIRECTS);
 
-    setId(id);
-    setUrl(url);
+    setPageid(pageid);
+    setRedirecturl(redirecturl);
     setIndex(index);
   }
 }

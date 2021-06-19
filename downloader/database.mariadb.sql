@@ -1,16 +1,16 @@
 -- mysqldump  -r forum-scrape.sql --hex-blob forum-scrape
 -- mysql --default-character-set=utf8mb4 -e "SOURCE forum-scrape.sql;" forum-scrape
 
--- MariaDB dump 10.19  Distrib 10.5.10-MariaDB, for debian-linux-gnu (x86_64)
+-- MySQL dump 10.14  Distrib 5.5.68-MariaDB, for Linux (aarch64)
 --
--- Host: 192.168.66.23    Database: forum-scrape
+-- Host: xanadb.cuxmft1hqhxv.us-east-2.rds.amazonaws.com    Database: forum-scrape
 -- ------------------------------------------------------
--- Server version	8.0.25
+-- Server version	10.5.8-MariaDB-log
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!40101 SET NAMES utf8mb4 */;
+/*!40101 SET NAMES utf8 */;
 /*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
 /*!40103 SET TIME_ZONE='+00:00' */;
 /*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
@@ -26,9 +26,9 @@ DROP TABLE IF EXISTS `PageRedirects`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `PageRedirects` (
-  `id` tinyblob NOT NULL,
-  `url` varchar(250) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci NOT NULL,
-  `index` tinyint NOT NULL
+  `pageId` tinyblob NOT NULL,
+  `redirectUrl` varchar(250) COLLATE utf8mb4_unicode_520_ci NOT NULL,
+  `index` tinyint(4) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -40,18 +40,18 @@ DROP TABLE IF EXISTS `Pages`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `Pages` (
-  `id` binary(16) NOT NULL,
-  `sourceId` binary(16) DEFAULT NULL,
+  `pageId` binary(16) NOT NULL,
+  `sourcePageId` binary(16) DEFAULT NULL,
   `siteid` binary(16) NOT NULL,
-  `url` varchar(250) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci NOT NULL,
-  `pageType` enum('ForumList','TopicPage','Unknown') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci NOT NULL,
-  `dlstatus` enum('Queued','Download','Parse','Done','Supersede','Error') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci NOT NULL,
-  `updated` datetime NOT NULL,
-  `domain` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci NOT NULL,
-  `dlStatusCode` int DEFAULT NULL,
-  `exception` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `url` (`url`)
+  `pageUrl` varchar(250) COLLATE utf8mb4_unicode_520_ci NOT NULL,
+  `pageType` enum('ForumList','TopicPage','Unknown') COLLATE utf8mb4_unicode_520_ci NOT NULL,
+  `dlstatus` enum('Queued','Download','Parse','Done','Supersede','Error') COLLATE utf8mb4_unicode_520_ci NOT NULL,
+  `pageUpdated` datetime NOT NULL,
+  `domain` varchar(255) COLLATE utf8mb4_unicode_520_ci NOT NULL,
+  `dlStatusCode` int(11) DEFAULT NULL,
+  `exception` text COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
+  PRIMARY KEY (`pageId`) USING BTREE,
+  UNIQUE KEY `url` (`pageUrl`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -63,12 +63,12 @@ DROP TABLE IF EXISTS `Sites`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `Sites` (
-  `id` binary(16) NOT NULL,
-  `url` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci NOT NULL,
-  `updated` datetime NOT NULL,
-  `ForumType` enum('ForkBoard','vBulletin','phpBB') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `url` (`url`)
+  `siteId` binary(16) NOT NULL,
+  `siteUrl` varchar(255) COLLATE utf8mb4_unicode_520_ci NOT NULL,
+  `siteUpdated` datetime NOT NULL,
+  `ForumType` enum('ForkBoard','vBulletin','phpBB') COLLATE utf8mb4_unicode_520_ci NOT NULL,
+  PRIMARY KEY (`siteId`) USING BTREE,
+  UNIQUE KEY `url` (`siteUrl`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -81,8 +81,7 @@ CREATE TABLE `Sites` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2021-06-19 15:01:19
-
+-- Dump completed on 2021-06-19 22:51:05
 
 -- source https://stackoverflow.com/a/58015720/342518
 

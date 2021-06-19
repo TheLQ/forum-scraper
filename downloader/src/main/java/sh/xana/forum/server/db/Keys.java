@@ -22,14 +22,14 @@ public class Keys {
 
   public static final UniqueKey<PagesRecord> KEY_PAGES_PRIMARY =
       Internal.createUniqueKey(
-          Pages.PAGES, DSL.name("KEY_Pages_PRIMARY"), new TableField[] {Pages.PAGES.ID}, true);
+          Pages.PAGES, DSL.name("KEY_Pages_PRIMARY"), new TableField[] {Pages.PAGES.PAGEID}, true);
   public static final UniqueKey<PagesRecord> KEY_PAGES_URL =
       Internal.createUniqueKey(
-          Pages.PAGES, DSL.name("KEY_Pages_url"), new TableField[] {Pages.PAGES.URL}, true);
+          Pages.PAGES, DSL.name("KEY_Pages_url"), new TableField[] {Pages.PAGES.PAGEURL}, true);
   public static final UniqueKey<SitesRecord> KEY_SITES_PRIMARY =
       Internal.createUniqueKey(
-          Sites.SITES, DSL.name("KEY_Sites_PRIMARY"), new TableField[] {Sites.SITES.ID}, true);
+          Sites.SITES, DSL.name("KEY_Sites_PRIMARY"), new TableField[] {Sites.SITES.SITEID}, true);
   public static final UniqueKey<SitesRecord> KEY_SITES_URL =
       Internal.createUniqueKey(
-          Sites.SITES, DSL.name("KEY_Sites_url"), new TableField[] {Sites.SITES.URL}, true);
+          Sites.SITES, DSL.name("KEY_Sites_url"), new TableField[] {Sites.SITES.SITEURL}, true);
 }

@@ -23,23 +23,23 @@ public class PagesRecord extends UpdatableRecordImpl<PagesRecord>
 
   private static final long serialVersionUID = 1L;
 
-  /** Setter for <code>forum-scrape.Pages.id</code>. */
-  public void setId(UUID value) {
+  /** Setter for <code>forum-scrape.Pages.pageId</code>. */
+  public void setPageid(UUID value) {
     set(0, value);
   }
 
-  /** Getter for <code>forum-scrape.Pages.id</code>. */
-  public UUID getId() {
+  /** Getter for <code>forum-scrape.Pages.pageId</code>. */
+  public UUID getPageid() {
     return (UUID) get(0);
   }
 
-  /** Setter for <code>forum-scrape.Pages.sourceId</code>. */
-  public void setSourceid(UUID value) {
+  /** Setter for <code>forum-scrape.Pages.sourcePageId</code>. */
+  public void setSourcepageid(UUID value) {
     set(1, value);
   }
 
-  /** Getter for <code>forum-scrape.Pages.sourceId</code>. */
-  public UUID getSourceid() {
+  /** Getter for <code>forum-scrape.Pages.sourcePageId</code>. */
+  public UUID getSourcepageid() {
     return (UUID) get(1);
   }
 
@@ -53,13 +53,13 @@ public class PagesRecord extends UpdatableRecordImpl<PagesRecord>
     return (UUID) get(2);
   }
 
-  /** Setter for <code>forum-scrape.Pages.url</code>. */
-  public void setUrl(URI value) {
+  /** Setter for <code>forum-scrape.Pages.pageUrl</code>. */
+  public void setPageurl(URI value) {
     set(3, value);
   }
 
-  /** Getter for <code>forum-scrape.Pages.url</code>. */
-  public URI getUrl() {
+  /** Getter for <code>forum-scrape.Pages.pageUrl</code>. */
+  public URI getPageurl() {
     return (URI) get(3);
   }
 
@@ -83,13 +83,13 @@ public class PagesRecord extends UpdatableRecordImpl<PagesRecord>
     return (DlStatus) get(5);
   }
 
-  /** Setter for <code>forum-scrape.Pages.updated</code>. */
-  public void setUpdated(LocalDateTime value) {
+  /** Setter for <code>forum-scrape.Pages.pageUpdated</code>. */
+  public void setPageupdated(LocalDateTime value) {
     set(6, value);
   }
 
-  /** Getter for <code>forum-scrape.Pages.updated</code>. */
-  public LocalDateTime getUpdated() {
+  /** Getter for <code>forum-scrape.Pages.pageUpdated</code>. */
+  public LocalDateTime getPageupdated() {
     return (LocalDateTime) get(6);
   }
 
@@ -150,12 +150,12 @@ public class PagesRecord extends UpdatableRecordImpl<PagesRecord>
 
   @Override
   public Field<UUID> field1() {
-    return Pages.PAGES.ID;
+    return Pages.PAGES.PAGEID;
   }
 
   @Override
   public Field<UUID> field2() {
-    return Pages.PAGES.SOURCEID;
+    return Pages.PAGES.SOURCEPAGEID;
   }
 
   @Override
@@ -165,7 +165,7 @@ public class PagesRecord extends UpdatableRecordImpl<PagesRecord>
 
   @Override
   public Field<URI> field4() {
-    return Pages.PAGES.URL;
+    return Pages.PAGES.PAGEURL;
   }
 
   @Override
@@ -180,7 +180,7 @@ public class PagesRecord extends UpdatableRecordImpl<PagesRecord>
 
   @Override
   public Field<LocalDateTime> field7() {
-    return Pages.PAGES.UPDATED;
+    return Pages.PAGES.PAGEUPDATED;
   }
 
   @Override
@@ -200,12 +200,12 @@ public class PagesRecord extends UpdatableRecordImpl<PagesRecord>
 
   @Override
   public UUID component1() {
-    return getId();
+    return getPageid();
   }
 
   @Override
   public UUID component2() {
-    return getSourceid();
+    return getSourcepageid();
   }
 
   @Override
@@ -215,7 +215,7 @@ public class PagesRecord extends UpdatableRecordImpl<PagesRecord>
 
   @Override
   public URI component4() {
-    return getUrl();
+    return getPageurl();
   }
 
   @Override
@@ -230,7 +230,7 @@ public class PagesRecord extends UpdatableRecordImpl<PagesRecord>
 
   @Override
   public LocalDateTime component7() {
-    return getUpdated();
+    return getPageupdated();
   }
 
   @Override
@@ -250,12 +250,12 @@ public class PagesRecord extends UpdatableRecordImpl<PagesRecord>
 
   @Override
   public UUID value1() {
-    return getId();
+    return getPageid();
   }
 
   @Override
   public UUID value2() {
-    return getSourceid();
+    return getSourcepageid();
   }
 
   @Override
@@ -265,7 +265,7 @@ public class PagesRecord extends UpdatableRecordImpl<PagesRecord>
 
   @Override
   public URI value4() {
-    return getUrl();
+    return getPageurl();
   }
 
   @Override
@@ -280,7 +280,7 @@ public class PagesRecord extends UpdatableRecordImpl<PagesRecord>
 
   @Override
   public LocalDateTime value7() {
-    return getUpdated();
+    return getPageupdated();
   }
 
   @Override
@@ -300,13 +300,13 @@ public class PagesRecord extends UpdatableRecordImpl<PagesRecord>
 
   @Override
   public PagesRecord value1(UUID value) {
-    setId(value);
+    setPageid(value);
     return this;
   }
 
   @Override
   public PagesRecord value2(UUID value) {
-    setSourceid(value);
+    setSourcepageid(value);
     return this;
   }
 
@@ -318,7 +318,7 @@ public class PagesRecord extends UpdatableRecordImpl<PagesRecord>
 
   @Override
   public PagesRecord value4(URI value) {
-    setUrl(value);
+    setPageurl(value);
     return this;
   }
 
@@ -336,7 +336,7 @@ public class PagesRecord extends UpdatableRecordImpl<PagesRecord>
 
   @Override
   public PagesRecord value7(LocalDateTime value) {
-    setUpdated(value);
+    setPageupdated(value);
     return this;
   }
 
@@ -394,25 +394,25 @@ public class PagesRecord extends UpdatableRecordImpl<PagesRecord>
 
   /** Create a detached, initialised PagesRecord */
   public PagesRecord(
-      UUID id,
-      UUID sourceid,
+      UUID pageid,
+      UUID sourcepageid,
       UUID siteid,
-      URI url,
+      URI pageurl,
       PageType pagetype,
       DlStatus dlstatus,
-      LocalDateTime updated,
+      LocalDateTime pageupdated,
       String domain,
       Integer dlstatuscode,
       String exception) {
     super(Pages.PAGES);
 
-    setId(id);
-    setSourceid(sourceid);
+    setPageid(pageid);
+    setSourcepageid(sourcepageid);
     setSiteid(siteid);
-    setUrl(url);
+    setPageurl(pageurl);
     setPagetype(pagetype);
     setDlstatus(dlstatus);
-    setUpdated(updated);
+    setPageupdated(pageupdated);
     setDomain(domain);
     setDlstatuscode(dlstatuscode);
     setException(exception);

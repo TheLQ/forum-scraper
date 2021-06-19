@@ -1,5 +1,9 @@
 package sh.xana.forum.server.dbutil;
 
+import static sh.xana.forum.server.db.tables.Pageredirects.PAGEREDIRECTS;
+import static sh.xana.forum.server.db.tables.Pages.PAGES;
+import static sh.xana.forum.server.db.tables.Sites.SITES;
+
 import java.net.URI;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -27,9 +31,6 @@ import sh.xana.forum.client.Scraper;
 import sh.xana.forum.common.ipc.NodeResponse.ScraperEntry;
 import sh.xana.forum.common.ipc.ScraperDownload;
 import sh.xana.forum.server.ServerConfig;
-import sh.xana.forum.server.db.tables.Pageredirects;
-import sh.xana.forum.server.db.tables.Pages;
-import sh.xana.forum.server.db.tables.Sites;
 import sh.xana.forum.server.db.tables.records.PageredirectsRecord;
 import sh.xana.forum.server.db.tables.records.PagesRecord;
 import sh.xana.forum.server.db.tables.records.SitesRecord;
@@ -75,7 +76,7 @@ public class DatabaseStorage {
   /** Stage: init client */
   public List<ScraperEntry> getScraperDomainsIPC() {
     var pages =
-        context.selectDistinct(Pages.PAGES.DOMAIN).from(Pages.PAGES).fetchInto(PagesRecord.class);
+        context.selectDistinct(PAGES.DOMAIN).from(PAGES).fetchInto(PagesRecord.class);
 
     List<ScraperEntry> resultList = new ArrayList<>(pages.size());
     for (PagesRecord page : pages) {
@@ -90,13 +91,13 @@ public class DatabaseStorage {
     List<ScraperDownload.SiteEntry> pages =
         context
             .select()
-            .from(Pages.PAGES)
-            .where(Pages.PAGES.DOMAIN.eq(domain))
-            .and(Pages.PAGES.DLSTATUS.eq(DlStatus.Queued))
-            .and(Pages.PAGES.EXCEPTION.isNull())
+            .from(PAGES)
+            .where(PAGES.DOMAIN.eq(domain))
+            .and(PAGES.DLSTATUS.eq(DlStatus.Queued))
+            .and(PAGES.EXCEPTION.isNull())
             .limit(Scraper.URL_QUEUE_REFILL_SIZE)
             .fetch()
-            .map(r -> new ScraperDownload.SiteEntry(r.get(Pages.PAGES.ID), r.get(Pages.PAGES.URL)));
+            .map(r -> new ScraperDownload.SiteEntry(r.get(PAGES.PAGEID), r.get(PAGES.PAGEURL)));
 
     setPageStatus(
         pages.stream().map(ScraperDownload.SiteEntry::siteId).collect(Collectors.toList()),
@@ -109,11 +110,11 @@ public class DatabaseStorage {
   public void movePageDownloadToParse(UUID pageId, int statusCode) {
     Query query =
         context
-            .update(Pages.PAGES)
-            .set(Pages.PAGES.DLSTATUS, DlStatus.Parse)
-            .set(Pages.PAGES.DLSTATUSCODE, statusCode)
-            .set(Pages.PAGES.UPDATED, LocalDateTime.now())
-            .where(Pages.PAGES.ID.eq(pageId));
+            .update(PAGES)
+            .set(PAGES.DLSTATUS, DlStatus.Parse)
+            .set(PAGES.DLSTATUSCODE, statusCode)
+            .set(PAGES.PAGEUPDATED, LocalDateTime.now())
+            .where(PAGES.PAGEID.eq(pageId));
 
     executeOneRow(query);
   }
@@ -122,11 +123,11 @@ public class DatabaseStorage {
   public List<PagesRecord> getParserPages() {
     var query =
         context
-            .select(Pages.PAGES.ID, Pages.PAGES.URL, Pages.PAGES.DOMAIN, Sites.SITES.URL)
-            .from(Pages.PAGES)
-            .join(Sites.SITES)
-            .on(Pages.PAGES.SITEID.eq(Sites.SITES.ID))
-            .where(Pages.PAGES.DLSTATUS.eq(DlStatus.Parse), Pages.PAGES.EXCEPTION.isNull())
+            .select(PAGES.PAGEID, PAGES.PAGEURL, PAGES.DOMAIN, SITES.SITEURL)
+            .from(PAGES)
+            .join(SITES)
+            .on(PAGES.SITEID.eq(SITES.SITEID))
+            .where(PAGES.DLSTATUS.eq(DlStatus.Parse), PAGES.EXCEPTION.isNull())
             .limit(100);
     log.warn(query.toString());
     return query.fetchInto(PagesRecord.class);
@@ -137,14 +138,14 @@ public class DatabaseStorage {
     var pages =
         context
             .select(
-                DSL.count(Pages.PAGES.ID),
-                Pages.PAGES.DLSTATUS,
-                Pages.PAGES.SITEID,
-                Sites.SITES.URL)
-            .from(Pages.PAGES)
-            .join(Sites.SITES)
-            .on(Pages.PAGES.SITEID.eq(Sites.SITES.ID))
-            .groupBy(Pages.PAGES.DLSTATUS, Pages.PAGES.DOMAIN)
+                DSL.count(PAGES.PAGEID),
+                PAGES.DLSTATUS,
+                PAGES.SITEID,
+                SITES.SITEURL)
+            .from(PAGES)
+            .join(SITES)
+            .on(PAGES.SITEID.eq(SITES.SITEID))
+            .groupBy(PAGES.DLSTATUS, PAGES.DOMAIN)
             .fetch();
 
     List<OverviewEntry> result = new ArrayList<>();
@@ -157,12 +158,12 @@ public class DatabaseStorage {
       do {
         var curPage = pageIterator.next();
         if (siteId == null) {
-          siteId = curPage.get(Pages.PAGES.SITEID);
-          siteUrl = curPage.get(Sites.SITES.URL);
-        } else if (!curPage.get(Pages.PAGES.SITEID).equals(siteId)) {
+          siteId = curPage.get(PAGES.SITEID);
+          siteUrl = curPage.get(SITES.SITEURL);
+        } else if (!curPage.get(PAGES.SITEID).equals(siteId)) {
           continue;
         }
-        counter.put(curPage.get(Pages.PAGES.DLSTATUS), curPage.value1());
+        counter.put(curPage.get(PAGES.DLSTATUS), curPage.value1());
         pageIterator.remove();
       } while (pageIterator.hasNext());
 
@@ -178,10 +179,10 @@ public class DatabaseStorage {
       PagesRecord record =
           context
               .select()
-              .from(Pages.PAGES)
-              .where(Pages.PAGES.ID.eq(nextId))
+              .from(PAGES)
+              .where(PAGES.PAGEID.eq(nextId))
               .fetchOneInto(PagesRecord.class);
-      if (record.getId() == null) {
+      if (record.getPageid() == null) {
         if (i == 0) {
           throw new RuntimeException("ID not found " + id);
         } else {
@@ -190,7 +191,7 @@ public class DatabaseStorage {
       }
       results.add(record);
 
-      nextId = record.getSourceid();
+      nextId = record.getSourcepageid();
       if (nextId == null) {
         break;
       }
@@ -201,20 +202,20 @@ public class DatabaseStorage {
   public List<PagesRecord> getOverviewErrors() {
     return context
         .select()
-        .from(Pages.PAGES)
-        .where(Pages.PAGES.EXCEPTION.isNotNull(), Pages.PAGES.EXCEPTION.notLike("%LoginRequired%"))
-        .orderBy(Pages.PAGES.UPDATED)
+        .from(PAGES)
+        .where(PAGES.EXCEPTION.isNotNull(), PAGES.EXCEPTION.notLike("%LoginRequired%"))
+        .orderBy(PAGES.PAGEUPDATED)
         .fetchInto(PagesRecord.class);
   }
 
   // **************************** Utils ******************
 
   public List<SitesRecord> getSites(Condition... conditions) {
-    return context.select().from(Sites.SITES).where(conditions).fetchInto(SitesRecord.class);
+    return context.select().from(SITES).where(conditions).fetchInto(SitesRecord.class);
   }
 
   public SitesRecord getSite(UUID siteId) {
-    List<SitesRecord> sites = getSites(Sites.SITES.ID.eq(siteId));
+    List<SitesRecord> sites = getSites(SITES.SITEID.eq(siteId));
     if (sites.size() != 1) {
       throw new RuntimeException(
           "Expected 1 row, got " + sites.size() + " for id " + siteId + "\r\n" + sites);
@@ -223,11 +224,11 @@ public class DatabaseStorage {
   }
 
   public List<PagesRecord> getPages(Condition... conditions) {
-    return context.select().from(Pages.PAGES).where(conditions).fetchInto(PagesRecord.class);
+    return context.select().from(PAGES).where(conditions).fetchInto(PagesRecord.class);
   }
 
   public PagesRecord getPage(UUID pageId) {
-    List<PagesRecord> pages = getPages(Pages.PAGES.ID.eq(pageId));
+    List<PagesRecord> pages = getPages(PAGES.PAGEID.eq(pageId));
     if (pages.size() != 1) {
       throw new RuntimeException(
           "Expected 1 row, got " + pages.size() + " for id " + pageId + "\r\n" + pages);
@@ -245,11 +246,11 @@ public class DatabaseStorage {
     executeOneRow(
         context
             .insertInto(
-                Sites.SITES,
-                Sites.SITES.ID,
-                Sites.SITES.URL,
-                Sites.SITES.UPDATED,
-                Sites.SITES.FORUMTYPE)
+                SITES,
+                SITES.SITEID,
+                SITES.SITEURL,
+                SITES.SITEUPDATED,
+                SITES.FORUMTYPE)
             .values(id, url, LocalDateTime.now(), forumType));
     return id;
   }
@@ -264,15 +265,15 @@ public class DatabaseStorage {
 
     var query =
         context.insertInto(
-            Pages.PAGES,
-            Pages.PAGES.ID,
-            Pages.PAGES.SITEID,
-            Pages.PAGES.URL,
-            Pages.PAGES.PAGETYPE,
-            Pages.PAGES.DLSTATUS,
-            Pages.PAGES.UPDATED,
-            Pages.PAGES.DOMAIN,
-            Pages.PAGES.SOURCEID);
+            PAGES,
+            PAGES.PAGEID,
+            PAGES.SITEID,
+            PAGES.PAGEURL,
+            PAGES.PAGETYPE,
+            PAGES.DLSTATUS,
+            PAGES.PAGEUPDATED,
+            PAGES.DOMAIN,
+            PAGES.SOURCEPAGEID);
 
     for (URI entry : urls) {
       UUID id = UUID.randomUUID();
@@ -289,7 +290,7 @@ public class DatabaseStorage {
 
   public void insertPages(List<PagesRecord> pages, boolean ignoreDuplicates) {
     //    try {
-    //      var query = context.loadInto(Pages.PAGES);
+    //      var query = context.loadInto(PAGES);
     //      if (ignoreDuplicates) {
     //        query.onDuplicateKeyIgnore();
     //      }
@@ -300,15 +301,15 @@ public class DatabaseStorage {
 
     var query =
         context.insertInto(
-            Pages.PAGES,
-            Pages.PAGES.ID,
-            Pages.PAGES.SITEID,
-            Pages.PAGES.URL,
-            Pages.PAGES.PAGETYPE,
-            Pages.PAGES.DLSTATUS,
-            Pages.PAGES.UPDATED,
-            Pages.PAGES.DOMAIN,
-            Pages.PAGES.SOURCEID);
+            PAGES,
+            PAGES.PAGEID,
+            PAGES.SITEID,
+            PAGES.PAGEURL,
+            PAGES.PAGETYPE,
+            PAGES.DLSTATUS,
+            PAGES.PAGEUPDATED,
+            PAGES.DOMAIN,
+            PAGES.SOURCEPAGEID);
 
     if (ignoreDuplicates) query.onDuplicateKeyIgnore();
 
@@ -318,12 +319,12 @@ public class DatabaseStorage {
       query.values(
           id,
           page.getSiteid(),
-          page.getUrl(),
+          page.getPageurl(),
           page.getPagetype(),
           page.getDlstatus(),
           LocalDateTime.now(),
-          page.getUrl().getHost(),
-          page.getSourceid());
+          page.getPageurl().getHost(),
+          page.getSourcepageid());
     }
 
     query.execute();
@@ -332,12 +333,12 @@ public class DatabaseStorage {
   public void insertPageRedirects(Collection<PageredirectsRecord> redirects) {
     var query =
         context.insertInto(
-            Pageredirects.PAGEREDIRECTS,
-            Pageredirects.PAGEREDIRECTS.ID,
-            Pageredirects.PAGEREDIRECTS.URL,
-            Pageredirects.PAGEREDIRECTS.INDEX);
+            PAGEREDIRECTS,
+            PAGEREDIRECTS.PAGEID,
+            PAGEREDIRECTS.REDIRECTURL,
+            PAGEREDIRECTS.INDEX);
     for (PageredirectsRecord redirect : redirects) {
-      query.values(redirect.getId(), redirect.getUrl(), redirect.getIndex());
+      query.values(redirect.getPageid(), redirect.getRedirecturl(), redirect.getIndex());
     }
     query.execute();
   }
@@ -346,10 +347,10 @@ public class DatabaseStorage {
   public void setPageStatus(Collection<UUID> pageIds, DlStatus status) {
     Query query =
         context
-            .update(Pages.PAGES)
-            .set(Pages.PAGES.DLSTATUS, status)
-            .set(Pages.PAGES.UPDATED, LocalDateTime.now())
-            .where(Pages.PAGES.ID.in(pageIds));
+            .update(PAGES)
+            .set(PAGES.DLSTATUS, status)
+            .set(PAGES.PAGEUPDATED, LocalDateTime.now())
+            .where(PAGES.PAGEID.in(pageIds));
 
     executeRows(query, pageIds.size());
   }
@@ -357,9 +358,9 @@ public class DatabaseStorage {
   public void setPageException(UUID pageId, String exception) {
     Query query =
         context
-            .update(Pages.PAGES)
-            .set(Pages.PAGES.EXCEPTION, exception)
-            .where(Pages.PAGES.ID.eq(pageId));
+            .update(PAGES)
+            .set(PAGES.EXCEPTION, exception)
+            .where(PAGES.PAGEID.eq(pageId));
 
     executeOneRow(query);
   }
@@ -367,16 +368,16 @@ public class DatabaseStorage {
   public void setPageExceptionNull(UUID pageId) {
     Query query =
         context
-            .update(Pages.PAGES)
-            .set(Pages.PAGES.EXCEPTION, (String) null)
-            .where(Pages.PAGES.ID.eq(pageId));
+            .update(PAGES)
+            .set(PAGES.EXCEPTION, (String) null)
+            .where(PAGES.PAGEID.eq(pageId));
 
     executeOneRow(query);
   }
 
   public void setPageURL(UUID pageId, URI url) {
     Query query =
-        context.update(Pages.PAGES).set(Pages.PAGES.URL, url).where(Pages.PAGES.ID.eq(pageId));
+        context.update(PAGES).set(PAGES.PAGEURL, url).where(PAGES.PAGEID.eq(pageId));
 
     executeOneRow(query);
   }
