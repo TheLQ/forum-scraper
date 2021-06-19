@@ -1,15 +1,15 @@
 Xana Forum Scraper
 ---
 
-This is a distributed scraper/spider to preserve forums like phpBB or vBulliten before they
+This is a distributed scraper/spider to preserve forums using phpBB, vBulliten, etc before they
 disappear from the internet. This tries to solve the following problems
 
-* The [Internet Archive](https://web.archive.org) has large gaps in content. This will ideally grab
-  every page of every topic. Hopefully we can upload our dataset there.
-* Many users linked to 3rd party image hosts that have purged content. This will map to images gathered
-  from other imghost backups.
+* The [Internet Archive](https://web.archive.org) has large gaps of forum content in very deep page
+  trees. This will grab every page of every topic. Hopefully we can upload our dataset there.
+* Many posts linked to 3rd party image hosts that have purged content. This will map to images
+  gathered from other imghost backups.
 * Naive recursive wget or httrack backups grab too much data and are too slow. This focuses on
-  fetching topic content quickly using distributed scrapers.
+  fetching targeted topic content quickly using distributed scrapers.
 * Naive backups are not robust against various failure edge cases. This can identify errors and do
   data validation.
 * (Optional) UI Frontend is not up to modern expectations. Some have tried to address this with
@@ -32,6 +32,9 @@ Architecture
 ---
 
 Currently this uses Amazon AWS. See `aws-config.md`
+
+Clients fetch from the server a per-domain list of URLs to download. Each client processes its list
+then uploads the result to the server.
 
 Saves date of download, HTTP headers, and raw byte level response.
 

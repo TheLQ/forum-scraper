@@ -8,6 +8,7 @@ https://forum.miata.net/vb/
 phpBB
 https://forums.nicoclub.com/
 https://www.eevblog.com/forum/
+https://www.fornits.com/phpbb/
 
 XenForo
 https://www.nissanforums.com
