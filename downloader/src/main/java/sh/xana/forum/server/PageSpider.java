@@ -20,11 +20,13 @@ import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.Utils;
 import sh.xana.forum.common.ipc.ParserResult;
 import sh.xana.forum.common.ipc.ScraperUpload;
+import sh.xana.forum.server.db.tables.Pages;
+import sh.xana.forum.server.db.tables.Sites;
 import sh.xana.forum.server.db.tables.records.PageredirectsRecord;
 import sh.xana.forum.server.db.tables.records.PagesRecord;
-import sh.xana.forum.server.db.tables.records.SitesRecord;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
 import sh.xana.forum.server.dbutil.DatabaseStorage.DlStatus;
+import sh.xana.forum.server.dbutil.DatabaseStorage.ForumType;
 
 /** Parse stage. Extract further URLs for downloading */
 public class PageSpider implements Closeable {
@@ -116,7 +118,7 @@ public class PageSpider implements Closeable {
   }
 
   private boolean pageSpiderCycle() throws InterruptedException {
-    List<PagesRecord> parserPages = dbStorage.getParserPages();
+    var parserPages = dbStorage.getParserPages();
     if (parserPages.size() == 0) {
       log.debug("Waiting for next signal");
       // wait until we get signaled there is stuff to do, then restart
@@ -129,29 +131,32 @@ public class PageSpider implements Closeable {
 
     // Batch requests for improved IPC performance
     List<CompletableFuture<HttpResponse<String>>> futures = new ArrayList<>();
-    for (PagesRecord page : parserPages) {
+    for (var page : parserPages) {
+      UUID pageId = page.get(Pages.PAGES.ID);
+      URI siteBaseUrl = page.get(Sites.SITES.URL);
       try {
         HttpRequest request =
             HttpRequest.newBuilder()
-                .uri(new URI(config.get(config.ARG_PARSER_SERVER) + "/" + page.getId()))
+                .uri(
+                    new URI(
+                        config.get(config.ARG_PARSER_SERVER) + "/" + pageId + "?" + siteBaseUrl))
                 .build();
         CompletableFuture<HttpResponse<String>> responseFuture =
             Utils.httpClient.sendAsync(request, BodyHandlers.ofString());
         futures.add(responseFuture);
       } catch (Exception e) {
         log.warn("Failed in parser HTTP init", e);
-        dbStorage.setPageException(page.getId(), ExceptionUtils.getStackTrace(e));
+        dbStorage.setPageException(pageId, ExceptionUtils.getStackTrace(e));
         futures.add(null);
       }
     }
-
-    List<SitesRecord> sites = dbStorage.getSites();
 
     List<UUID> sqlDone = new ArrayList<>(parserPages.size());
     List<PagesRecord> sqlNewPages = new ArrayList<>();
     int counter = 0;
     for (CompletableFuture<HttpResponse<String>> future : futures) {
-      PagesRecord page = parserPages.get(counter++);
+      var page = parserPages.get(counter++);
+
       log.info("processing page {} {}", page.getUrl(), page.getId());
       if (future == null) {
         throw new RuntimeException("Future is empty, lets stop and investigate");
@@ -177,14 +182,10 @@ public class PageSpider implements Closeable {
               "Expected pageType " + page.getPagetype() + " got " + results.pageType());
         }
 
-        SitesRecord site =
-            sites.stream()
-                .filter(entry -> entry.getId().equals(page.getSiteid()))
-                .findFirst()
-                .orElseThrow();
-        if (!results.forumType().equals(site.getForumtype())) {
+        ForumType siteType = page.get(Sites.SITES.FORUMTYPE);
+        if (!results.forumType().equals(siteType)) {
           throw new RuntimeException(
-              "Expected forumType " + site.getForumtype() + " got " + results.forumType());
+              "Expected forumType " + siteType + " got " + results.forumType());
         }
 
         for (ParserResult.ParserEntry result : results.subpages()) {

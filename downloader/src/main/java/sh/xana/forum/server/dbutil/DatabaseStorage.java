@@ -120,12 +120,16 @@ public class DatabaseStorage {
 
   /** Stage: Load pages for Parser */
   public List<PagesRecord> getParserPages() {
-    return context
-        .select()
-        .from(Pages.PAGES)
-        .where(Pages.PAGES.DLSTATUS.eq(DlStatus.Parse), Pages.PAGES.EXCEPTION.isNull())
-        .limit(100)
-        .fetchInto(PagesRecord.class);
+    var query =
+        context
+            .select(Pages.PAGES.ID, Pages.PAGES.URL, Pages.PAGES.DOMAIN, Sites.SITES.URL)
+            .from(Pages.PAGES)
+            .join(Sites.SITES)
+            .on(Pages.PAGES.SITEID.eq(Sites.SITES.ID))
+            .where(Pages.PAGES.DLSTATUS.eq(DlStatus.Parse), Pages.PAGES.EXCEPTION.isNull())
+            .limit(100);
+    log.warn(query.toString());
+    return query.fetchInto(PagesRecord.class);
   }
 
   /** Stage: reporting monitor */
@@ -372,10 +376,7 @@ public class DatabaseStorage {
 
   public void setPageURL(UUID pageId, URI url) {
     Query query =
-        context
-            .update(Pages.PAGES)
-            .set(Pages.PAGES.URL, url)
-            .where(Pages.PAGES.ID.eq(pageId));
+        context.update(Pages.PAGES).set(Pages.PAGES.URL, url).where(Pages.PAGES.ID.eq(pageId));
 
     executeOneRow(query);
   }

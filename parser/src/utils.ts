@@ -1,5 +1,10 @@
-import { CheerioAPI } from "cheerio";
-import { Element, Text } from "domhandler";
+import {CheerioAPI} from "cheerio";
+
+export interface SourcePage {
+    rawHtml: string,
+    $: CheerioAPI,
+    baseUrl: string,
+}
 
 export interface Result {
     loginRequired: boolean,
@@ -42,14 +47,14 @@ export function assertNotBlank(valueRaw: string | undefined | null): string {
     return value;
 }
 
-export function getBaseUrl($: CheerioAPI) {
-    const baseQuery = $("head > base")
-    if (baseQuery.length == 0) {
-        throw new Error("cannot find base")
+export function getBaseUrl(sourcePage: SourcePage): string {
+    const baseQuery = sourcePage.$("head > base")
+    if (baseQuery.length != 0) {
+        return assertNotBlank(baseQuery.last().attr('href'));
+    } else {
+        // fallback to baseUrl
+        return sourcePage.baseUrl
     }
-
-    const baseUrl = assertNotBlank(baseQuery.last().attr('href'))
-    return baseUrl;
 }
 
 export function makeUrlWithBase(baseUrl: string, mainUrl: string | undefined | null): string {

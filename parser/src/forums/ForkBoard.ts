@@ -1,7 +1,9 @@
 import { CheerioAPI } from "cheerio";
-import { assertNotBlank, ForumType, getBaseUrl, makeUrlWithBase, PageType, Result } from "../utils";
+import {assertNotBlank, ForumType, getBaseUrl, makeUrlWithBase, PageType, Result, SourcePage} from "../utils";
 
-export function forkBoardParse(rawHtml: String, $: CheerioAPI): Result | null {
+export function forkBoardParse(sourcePage: SourcePage): Result | null {
+    const $ = sourcePage.$
+
     // detect by version string in the footer
     let found = false;
     $(".footer_credits_bar").each((i, elem) => {
@@ -19,13 +21,16 @@ export function forkBoardParse(rawHtml: String, $: CheerioAPI): Result | null {
         pageType: PageType.Unknown,
         subpages: []
     }
-    forkBoardExtract(result, rawHtml, $)
+    forkBoardExtract(sourcePage, result)
     return result;
 }
 
 
-function forkBoardExtract(result: Result, rawHtml: String, $: CheerioAPI) {
-    const baseUrl = getBaseUrl($)
+function forkBoardExtract(sourcePage: SourcePage, result: Result) {
+    const rawHtml = sourcePage.rawHtml
+    const $ = sourcePage.$
+
+    const baseUrl = getBaseUrl(sourcePage)
 
     const subforums = $(".child_section .child_section_title a")
     const threads = $(".thread_details div:first-child a")

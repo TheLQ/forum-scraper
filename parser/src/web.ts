@@ -3,7 +3,7 @@ import uWS from "uWebSockets.js"
 
 export async function mainWeb(args: string[]): Promise<number> {
     if (args.length != 1) {
-        console.log("node parser.js server <pathToFileCache>")
+        console.log("node parser.js server [pathToFileCache]")
         return 1
     }
     const fileCachePath = args[0]
@@ -12,13 +12,13 @@ export async function mainWeb(args: string[]): Promise<number> {
     const port = 3000
 
     uWS.App({
-    }).get("/:id", async (res: any, req: any) => {
-        /* Can't return or yield from here without responding or attaching an abort handler */
+    }).get("/:id", async (res, req) => {
         res.onAborted(() => {
             res.aborted = true;
         });
 
-        let r = await getResponse(req.getParameter(0), fileCachePath)
+        // url format is /[uuid]?[baseUrl]
+        let r = await getResponse(req.getParameter(0), fileCachePath, req.getQuery())
 
         if (!res.aborted) {
             res.end(r);
@@ -34,9 +34,9 @@ export async function mainWeb(args: string[]): Promise<number> {
     return 0
 }
 
-async function getResponse(id: string, fileCachePath: string): Promise<string> {
+async function getResponse(id: string, fileCachePath: string, baseUrl: string): Promise<string> {
     try {
-        const response = await readResponseFile(fileCachePath, id)
+        const response = await readResponseFile(fileCachePath, id, baseUrl)
         return JSON.stringify(response)
     } catch (e) {
         return "" + e;

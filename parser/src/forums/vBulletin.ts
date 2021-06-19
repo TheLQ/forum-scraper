@@ -1,9 +1,18 @@
 import { CheerioAPI } from "cheerio";
-import { assertNotBlank, assertNotNull, ForumType, getBaseUrl, makeUrlWithBase, PageType, Result } from "../utils";
+import {
+    assertNotBlank,
+    assertNotNull,
+    ForumType,
+    getBaseUrl,
+    makeUrlWithBase,
+    PageType,
+    Result,
+    SourcePage
+} from "../utils";
 
-export function vBulletinParse(rawHtml: String, $: CheerioAPI): Result | null {
+export function vBulletinParse(sourcePage: SourcePage): Result | null {
     // js init function they all seem to call
-    let found = rawHtml.indexOf("vBulletin_init();") != -1
+    let found = sourcePage.rawHtml.indexOf("vBulletin_init();") != -1
 
     const result: Result = {
         loginRequired: false,
@@ -11,7 +20,7 @@ export function vBulletinParse(rawHtml: String, $: CheerioAPI): Result | null {
         pageType: PageType.Unknown,
         subpages: []
     }
-    vBulletinExtract(result, rawHtml, $)
+    vBulletinExtract(sourcePage, result)
     return result;
 }
 
@@ -20,13 +29,16 @@ export function vBulletinParse(rawHtml: String, $: CheerioAPI): Result | null {
  * Extract IDs with rudimentary regex on the raw HTML, 
  * then get element with DOM navigation
  */
-function vBulletinExtract(result: Result, rawHtml: String, $: CheerioAPI) {
+function vBulletinExtract(sourcePage: SourcePage, result: Result) {
+    const rawHtml = sourcePage.rawHtml
+    const $ = sourcePage.$
+
     if (rawHtml.indexOf("<!-- permission error message - user not logged in -->") != -1) {
         result.loginRequired = true;
         return;
     }
 
-    const baseUrl = getBaseUrl($)
+    const baseUrl = getBaseUrl(sourcePage)
 
     const forums = [...rawHtml.matchAll(/id=\"(?<id>f[0-9]+)\"/g)];
     const topics = [...rawHtml.matchAll(/id=\"(?<id>thread_title_[0-9]+)\"/g)];
@@ -37,7 +49,8 @@ function vBulletinExtract(result: Result, rawHtml: String, $: CheerioAPI) {
         // forum list
         for (const forum of forums) {
             const id = assertNotBlank(forum.groups?.id);
-            let elem = $(`div[id='${id}'] h2 a, div[id='${id}'] h3 a`);
+            // newer versions use div and headers, old versions use table and css markup
+            let elem = $(`div[id='${id}'] h2 a, div[id='${id}'] h3 a, td[id='${id}'] a`);
             if (elem.length == 0) {
                 throw new Error("didn't find anything for id " + id)
             }
@@ -52,7 +65,6 @@ function vBulletinExtract(result: Result, rawHtml: String, $: CheerioAPI) {
             } catch (e) {
                 throw e;
             }
-
         }
 
         // topic list
@@ -95,7 +107,20 @@ function vBulletinExtract(result: Result, rawHtml: String, $: CheerioAPI) {
                 url: makeUrlWithBase(baseUrl, next.attr("href")),
                 pageType: result.pageType,
             })
+        } else {
+            // try classic non-infinite scroll
+            const pages = $(".pagenav a")
+            for (const page of pages) {
+                result.subpages.push({
+                    name: "",
+                    url: makeUrlWithBase(baseUrl, $(page).attr("href")),
+                    pageType: result.pageType,
+                })
+
+            }
         }
+
+
     } else {
         result.pageType = PageType.Unknown
         return
@@ -122,7 +147,7 @@ function vBulletinExtract(result: Result, rawHtml: String, $: CheerioAPI) {
             // match double directory separator // but not the http:// one
             newUrl = newUrl.replace(/(?<!http[s]*:)\/\//g, "/")
 
-            // match first page
+            // match first duplicate of /page-50/page-70/
             const pages = newUrl.match(/(?<first>\/page-[0-9]+\/)page-[0-9]+\//)
             const firstPage = pages?.groups?.first
             if (firstPage !== undefined) {
