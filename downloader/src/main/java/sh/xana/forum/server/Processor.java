@@ -1,5 +1,7 @@
 package sh.xana.forum.server;
 
+
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.URI;
@@ -132,11 +134,8 @@ public class Processor implements Closeable {
     for (PagesRecord page : parserPages) {
       log.info("processing page {} {}", page.getUrl(), page.getId());
 
+      String output = null;
       try {
-        if (Files.size(fileCachePath.resolve(page.getId() + ".response")) == 0) {
-          throw new RuntimeException("EmptyResponse");
-        }
-
         HttpRequest request =
             HttpRequest.newBuilder()
                 .uri(new URI(config.get(config.ARG_PARSER_SERVER) + "/" + page.getId()))
@@ -145,7 +144,7 @@ public class Processor implements Closeable {
         if (response.statusCode() != 200) {
           throw new RuntimeException("Unexpected status code " + response.statusCode());
         }
-        String output = response.body();
+        output = response.body();
         if (output.equals("")) {
           throw new RuntimeException("Output is empty");
         }
@@ -197,6 +196,9 @@ public class Processor implements Closeable {
         }
 
         sqlDone.add(page.getId());
+      } catch (JsonProcessingException e) {
+        log.warn("JSON Parsing failed", e);
+        dbStorage.setPageException(page.getId(), "NOT JSON\r\n" + output);
       } catch (Exception e) {
         log.warn("Failed in parser", e);
         dbStorage.setPageException(page.getId(), ExceptionUtils.getStackTrace(e));

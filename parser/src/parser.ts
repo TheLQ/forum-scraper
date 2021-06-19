@@ -25,32 +25,18 @@ export async function mainParser(args: string[]): Promise<number> {
 export async function readResponseFile(fileCachePath: string, pageId: string): Promise<Result> {
     const path = fileCachePath + "/" + pageId + ".response";
 
-    let data: string;
-    try {
-        data = await fs.promises.readFile(path, {
+    let data: string = await fs.promises.readFile(path, {
             encoding: "utf8"
         })
-    } catch (e) {
-        if (e.code == "ENOENT") {
-            data = await extractFile(ARCHIVE_CACHE_FILE, pageId);
-        } else {
-            throw e;
-        }
-    }
+
     return parseFile(data)
 }
 
-async function extractFile(archivePath: string, pageId: string): Promise<string> {
-    // extract, read, delete (so we don't run out of space), then return
-    const result = await execFile('7za', ['e', archivePath, '-otmp', `filecache/${pageId}.response`])
-    const data = await fs.promises.readFile(`tmp/${pageId}.response`, {
-        encoding: "utf8"
-    })
-    await fs.promises.rm(`tmp/${pageId}.response`)
-    return data;
-}
-
 function parseFile(rawHtml: string): Result {
+    if (rawHtml.trim().length == 0) {
+        throw new Error("EmptyResponse")
+    }
+
     const $ = cheerio.load(rawHtml, {
         xml: {
             normalizeWhitespace: true,

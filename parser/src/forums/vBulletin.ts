@@ -63,7 +63,6 @@ function vBulletinExtract(result: Result, rawHtml: String, $: CheerioAPI) {
                 throw new Error("didn't find anything for id " + id)
             }
             elem = elem.first()
-            console.log("html", elem.parent().html())
             result.subpages.push({
                 pageType: PageType.TopicPage,
                 url: makeUrlWithBase(baseUrl, $(elem).attr("href")),
