@@ -5,8 +5,6 @@ module sh.xana.forum {
   requires org.apache.commons.io;
   requires org.apache.commons.lang3;
   requires org.jooq;
-  //  requires org.jooq.codegen;
-  //  requires org.jooq.meta;
   requires org.slf4j;
   requires jul.to.slf4j;
   requires org.mariadb.jdbc;
@@ -16,7 +14,10 @@ module sh.xana.forum {
   requires java.sql;
   requires java.sql.rowset;
 
-  opens sh.xana.forum.common.ipc to com.fasterxml.jackson.databind;
-  opens sh.xana.forum.server.db.tables.records to org.jooq;
-  opens sh.xana.forum.server.dbutil to com.fasterxml.jackson.databind;
+  opens sh.xana.forum.common.ipc to
+      com.fasterxml.jackson.databind;
+  opens sh.xana.forum.server.db.tables.records to
+      org.jooq;
+  opens sh.xana.forum.server.dbutil to
+      com.fasterxml.jackson.databind;
 }

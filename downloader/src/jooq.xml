@@ -1,0 +1,51 @@
+
+
+<configuration xmlns="http://www.jooq.org/xsd/jooq-codegen-3.14.0.xsd">
+  <jdbc>
+    <url></url>
+    <user></user>
+    <password></password>
+  </jdbc>
+
+  <generator>
+    <database>
+      <name>org.jooq.meta.mariadb.MariaDBDatabase</name>
+      <includes>.*</includes>
+      <!-- Ignore UUID_TO_BIN utility functions -->
+      <excludes>.*UUID.*</excludes>
+      <inputSchema>forum-scrape</inputSchema>
+      <forcedTypes>
+        <forcedType>
+          <userType>java.util.UUID</userType>
+          <converter>sh.xana.forum.server.dbutil.UuidConverter</converter>
+          <includeExpression>.*[iI]d</includeExpression>
+        </forcedType>
+        <forcedType>
+          <userType>java.net.URI</userType>
+          <converter>sh.xana.forum.server.dbutil.UriConverter</converter>
+          <includeExpression>.*Url</includeExpression>
+        </forcedType>
+        <forcedType>
+          <userType>sh.xana.forum.server.dbutil.DatabaseStorage.PageType</userType>
+          <includeExpression>pageType</includeExpression>
+          <enumConverter>true</enumConverter>
+        </forcedType>
+        <forcedType>
+          <userType>sh.xana.forum.server.dbutil.DatabaseStorage.DlStatus</userType>
+          <includeExpression>dlstatus</includeExpression>
+          <enumConverter>true</enumConverter>
+        </forcedType>
+        <forcedType>
+          <userType>sh.xana.forum.server.dbutil.DatabaseStorage.ForumType</userType>
+          <includeExpression>ForumType</includeExpression>
+          <enumConverter>true</enumConverter>
+        </forcedType>
+      </forcedTypes>
+    </database>
+
+    <target>
+      <packageName>sh.xana.forum.server.db</packageName>
+      <directory>src/main/java</directory>
+    </target>
+  </generator>
+</configuration>
