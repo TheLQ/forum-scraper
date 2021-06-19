@@ -27,8 +27,8 @@ import sh.xana.forum.server.dbutil.DatabaseStorage;
 import sh.xana.forum.server.dbutil.DatabaseStorage.DlStatus;
 
 /** Parse stage. Extract further URLs for downloading */
-public class Processor implements Closeable {
-  private static final Logger log = LoggerFactory.getLogger(Processor.class);
+public class PageSpider implements Closeable {
+  private static final Logger log = LoggerFactory.getLogger(PageSpider.class);
 
   private final DatabaseStorage dbStorage;
   private final ServerConfig config;
@@ -41,7 +41,7 @@ public class Processor implements Closeable {
 
   private final Path fileCachePath;
 
-  public Processor(DatabaseStorage dbStorage, ServerConfig config) {
+  public PageSpider(DatabaseStorage dbStorage, ServerConfig config) {
     this.dbStorage = dbStorage;
     this.config = config;
 

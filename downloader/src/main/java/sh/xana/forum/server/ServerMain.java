@@ -13,7 +13,7 @@ import sh.xana.forum.server.dbutil.DatabaseStorage;
 public class ServerMain {
   private static final Logger log = LoggerFactory.getLogger(ClientMain.class);
 
-  private static Processor processor;
+  private static PageSpider pageSpider;
   private static RuntimeDebugThread debugThread;
 
   public static void main(String[] args) throws Exception {
@@ -50,22 +50,22 @@ public class ServerMain {
                 }));
 
     DatabaseStorage dbStorage = new DatabaseStorage(config);
-    processor = new Processor(dbStorage, config);
+    pageSpider = new PageSpider(dbStorage, config);
     NodeManager nodeManager = new NodeManager();
 
-    WebServer server = new WebServer(dbStorage, processor, nodeManager, config);
+    WebServer server = new WebServer(dbStorage, pageSpider, nodeManager, config);
     server.start();
 
     debugThread = new RuntimeDebugThread();
     if (!debugMode) {
-      processor.startSpiderThread();
+      pageSpider.startSpiderThread();
       debugThread.start();
       ClientMain.main(new String[0]);
     }
   }
 
   public static void close() throws InterruptedException, IOException {
-    processor.close();
+    pageSpider.close();
     debugThread.close();
   }
 }

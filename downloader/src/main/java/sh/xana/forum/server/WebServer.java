@@ -31,18 +31,18 @@ public class WebServer extends NanoHTTPD {
   private final String nodeAuthValue;
 
   private final DatabaseStorage dbStorage;
-  private final Processor processor;
+  private final PageSpider pageSpider;
   private final NodeManager nodeManager;
 
   public WebServer(
       DatabaseStorage dbStorage,
-      Processor processor,
+      PageSpider pageSpider,
       NodeManager nodeManager,
       ServerConfig config) {
     // Bind to localhost since on aws we are proxied
     super(PORT);
     this.dbStorage = dbStorage;
-    this.processor = processor;
+    this.pageSpider = pageSpider;
     this.nodeManager = nodeManager;
     this.nodeAuthValue = config.get(config.ARG_SERVER_AUTH);
   }
@@ -215,7 +215,7 @@ public class WebServer extends NanoHTTPD {
 
     PagesRecord page = dbStorage.getPage(pageId);
     if (page.getDlstatus().equals(DlStatus.Parse)) {
-      processor.signalSpider();
+      pageSpider.signalSpider();
       return "ok and queued parse page";
     }
     return "ok";
@@ -242,7 +242,7 @@ public class WebServer extends NanoHTTPD {
     assertAuth(session);
     byte[] input = readPostInput(session);
     ScraperUpload scraperUpload = Utils.jsonMapper.readValue(input, ScraperUpload.class);
-    processor.processResponses(scraperUpload);
+    pageSpider.processResponses(scraperUpload);
 
     List<ScraperDownload.SiteEntry> requests;
     if (scraperUpload.requestMore()) {
