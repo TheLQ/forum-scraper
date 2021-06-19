@@ -12,12 +12,12 @@ scp "ec2-user@aws-server:/opt/app/filecache/067fb735-5586-4d8a-89e9-272bc2bd9bf0
 Broken parser
 SELECT * FROM `Pages` WHERE `url` RLIKE '.*search/page-[0-9]+/page-[0-9]+.*';
 SELECT * FROM `Pages` WHERE `url` LIKE '%/searchpage-%';
+
+UPDATE `Pages` SET `exception` = NULL WHERE `exception` IS NOT NULL AND `dlstatus` = 'Parse';
+UPDATE `Pages` SET `dlstatus` = 'Parse', `exception` = NULL WHERE `dlstatus` = 'Done';
 ###
 
-UPDATE `Pages` SET `exception` = NULL WHERE `exception` IS NOT null
-
 UPDATE `Pages` SET `dlstatus` = 'Queued' WHERE `dlstatus` = 'Download'
-UPDATE `Pages` SET `dlstatus` = 'Parse' WHERE `dlstatus` = 'Done'
 
 SELECT * FROM `Pages` WHERE `url` LIKE '%/marketplace/%' LIMIT 100
 

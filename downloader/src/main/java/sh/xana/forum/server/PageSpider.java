@@ -1,6 +1,5 @@
 package sh.xana.forum.server;
 
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.Closeable;
 import java.io.IOException;
@@ -14,6 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.CompletableFuture;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -127,20 +127,39 @@ public class PageSpider implements Closeable {
     // wipe out remaining triggers
     spiderSignal.clear();
 
-    List<SitesRecord> sites = dbStorage.getSites();
-
-    List<UUID> sqlDone = new ArrayList<>(parserPages.size());
-    List<PagesRecord> sqlNewPages = new ArrayList<>();
+    // Batch requests for improved IPC performance
+    List<CompletableFuture<HttpResponse<String>>> futures = new ArrayList<>();
     for (PagesRecord page : parserPages) {
-      log.info("processing page {} {}", page.getUrl(), page.getId());
-
-      String output = null;
       try {
         HttpRequest request =
             HttpRequest.newBuilder()
                 .uri(new URI(config.get(config.ARG_PARSER_SERVER) + "/" + page.getId()))
                 .build();
-        HttpResponse<String> response = Utils.httpClient.send(request, BodyHandlers.ofString());
+        CompletableFuture<HttpResponse<String>> responseFuture =
+            Utils.httpClient.sendAsync(request, BodyHandlers.ofString());
+        futures.add(responseFuture);
+      } catch (Exception e) {
+        log.warn("Failed in parser HTTP init", e);
+        dbStorage.setPageException(page.getId(), ExceptionUtils.getStackTrace(e));
+        futures.add(null);
+      }
+    }
+
+    List<SitesRecord> sites = dbStorage.getSites();
+
+    List<UUID> sqlDone = new ArrayList<>(parserPages.size());
+    List<PagesRecord> sqlNewPages = new ArrayList<>();
+    int counter = 0;
+    for (CompletableFuture<HttpResponse<String>> future : futures) {
+      PagesRecord page = parserPages.get(counter++);
+      log.info("processing page {} {}", page.getUrl(), page.getId());
+      if (future == null) {
+        throw new RuntimeException("Future is empty, lets stop and investigate");
+      }
+
+      String output = null;
+      try {
+        HttpResponse<String> response = future.get();
         if (response.statusCode() != 200) {
           throw new RuntimeException("Unexpected status code " + response.statusCode());
         }
