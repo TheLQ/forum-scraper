@@ -35,7 +35,7 @@ export enum ForumType {
 }
 
 export function assertNotNull(value: string | undefined | null): string {
-  if (value == null || value == undefined) {
+  if (value === null || value === undefined) {
     throw new Error('Value is null');
   }
   return value;
@@ -43,7 +43,7 @@ export function assertNotNull(value: string | undefined | null): string {
 
 export function assertNotBlank(valueRaw: string | undefined | null): string {
   const value = assertNotNull(valueRaw).trim();
-  if (value == '') {
+  if (value === '') {
     throw new Error('value is blank');
   }
   return value;
@@ -51,7 +51,7 @@ export function assertNotBlank(valueRaw: string | undefined | null): string {
 
 export function getBaseUrl(sourcePage: SourcePage): string {
   const baseQuery = sourcePage.$('head > base');
-  if (baseQuery.length != 0) {
+  if (baseQuery.length !== 0) {
     return assertNotBlank(baseQuery.last().attr('href'));
   } else {
     // fallback to baseUrl
@@ -77,17 +77,19 @@ export function makeUrlWithBase(
   return baseUrl + mainUrl;
 }
 
-export function getFirstMatch(element: Cheerio<Element>, errorMessage: string) {
-  if (element.length == 0) {
+export function getFirstMatch(
+  elements: Cheerio<Element>,
+  errorMessage: string
+): Element {
+  const arr = elements.get();
+  if (arr.length === 0) {
     throw new Error("didn't find anything for " + errorMessage);
-  } else if (element.length > 1) {
-    throw new Error(
-      'found too many ' + element.length + ' for ' + errorMessage
-    );
+  } else if (arr.length > 1) {
+    throw new Error('found too many ' + arr.length + ' for ' + errorMessage);
   }
-  return element.first();
+  return arr[0];
 }
 
 export function anchorIsNavNotLink(elem: Element) {
-  return elem.attribs.name != undefined && elem.attribs.href == undefined;
+  return elem.attribs.name !== undefined && elem.attribs.href === undefined;
 }

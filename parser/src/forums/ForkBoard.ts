@@ -1,75 +1,46 @@
-import { CheerioAPI } from "cheerio";
-import {assertNotBlank, ForumType, getBaseUrl, makeUrlWithBase, PageType, Result, SourcePage} from "../utils";
+import {ForumType, Result, SourcePage} from '../utils';
+import {AbstractForum} from './AbstractForum';
+import type {Element} from 'domhandler';
 
-export function forkBoardParse(sourcePage: SourcePage): Result | null {
-    const $ = sourcePage.$
-
+export class ForkBoard implements AbstractForum {
+  detectForumType(sourcePage: SourcePage): ForumType | null {
     // detect by version string in the footer
     let found = false;
-    $(".footer_credits_bar").each((i, elem) => {
-        if ($(elem).text().indexOf("ForkBoard") != -1) {
-            found = true
-        }
-    })
+    for (const elem of sourcePage.$('.footer_credits_bar')) {
+      if (sourcePage.$(elem).text().indexOf('ForkBoard') !== -1) {
+        found = true;
+      }
+    }
     if (!found) {
-        return null;
-    }
-
-    const result: Result = {
-        loginRequired: false,
-        forumType: ForumType.ForkBoard,
-        pageType: PageType.Unknown,
-        subpages: []
-    }
-    forkBoardExtract(sourcePage, result)
-    return result;
-}
-
-
-function forkBoardExtract(sourcePage: SourcePage, result: Result) {
-    const rawHtml = sourcePage.rawHtml
-    const $ = sourcePage.$
-
-    const baseUrl = getBaseUrl(sourcePage)
-
-    const subforums = $(".child_section .child_section_title a")
-    const threads = $(".thread_details div:first-child a")
-    if (subforums.length != 0 || threads.length != 0 || rawHtml.indexOf("<a href=\"/thread_new.php?section_id=") != -1) {
-        result.pageType = PageType.ForumList
-    
-        // forum list
-        subforums.each((i, elem) => {
-            result.subpages.push({
-                name: assertNotBlank($(elem).text()),
-                url: makeUrlWithBase(baseUrl, elem.attribs.href),
-                pageType: PageType.ForumList,
-            })
-        })
-    
-        // topic list
-        threads.each((i, elem) => {
-            result.subpages.push({
-                name: assertNotBlank($(elem).text()),
-                url: makeUrlWithBase(baseUrl, elem.attribs.href),
-                pageType: PageType.TopicPage,
-            })
-        })
-    } else if (rawHtml.indexOf("<a href=\"/post_new.php?thread_id=") != -1) {
-        // Note $(".post_body").length != 0 doesn't work because completely empty threads are allowed to exist...
-        // Presumably the user or post is deleted but the thread remains.
-        // So match the "reply to thread" link
-        result.pageType = PageType.TopicPage
+      return null;
     } else {
-        result.pageType = PageType.Unknown
-        return
+      return ForumType.ForkBoard;
     }
-    
-    // Process pages
-    $(".page_skip").each((i, elem) => {
-        result.subpages.push({
-            name: assertNotBlank($(elem).text()),
-            url: makeUrlWithBase(baseUrl, elem.attribs.href),
-            pageType: result.pageType,
-        })
-    })
+  }
+
+  detectLoginRequired(sourcePage: SourcePage): boolean {
+    return false;
+  }
+
+  getPageLinks(sourcePage: SourcePage): Element[] {
+    return sourcePage.$('.page_skip').get();
+  }
+
+  getPostElements(sourcePage: SourcePage): Element[] {
+    return sourcePage.$('.post_container').get();
+  }
+
+  getSubforumAnchors(sourcePage: SourcePage): Element[] {
+    // rawHtml.indexOf('<a href="/thread_new.php?section_id=') != -1
+    // Presumably the user or post is deleted but the thread remains.
+    // So match the "reply to thread" link
+    return sourcePage.$('.child_section .child_section_title a').get();
+  }
+
+  getTopicAnchors(sourcePage: SourcePage): Element[] {
+    // rawHtml.indexOf('<a href="/post_new.php?thread_id=') != -1
+    return sourcePage.$('.thread_details div:first-child a').get();
+  }
+
+  postProcessing(sourcePage: SourcePage, result: Result): void {}
 }

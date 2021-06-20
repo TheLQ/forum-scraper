@@ -2,7 +2,7 @@ import uWS from 'uWebSockets.js';
 import {readResponseFile} from './forums/AbstractForum';
 
 export async function mainWeb(args: string[]): Promise<number> {
-  if (args.length != 1) {
+  if (args.length !== 1) {
     console.log('node parser.js server [pathToFileCache]');
     return 1;
   }
@@ -29,7 +29,7 @@ export async function mainWeb(args: string[]): Promise<number> {
         res.end(r);
       }
     })
-    .listen(port, (token: any) => {
+    .listen(port, (token) => {
       if (token) {
         console.log('Listening to port ' + port);
       } else {
