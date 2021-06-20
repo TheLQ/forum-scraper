@@ -4,6 +4,7 @@ import { forkBoardParse } from "./forums/ForkBoard";
 import { vBulletinParse } from "./forums/vBulletin";
 import {Result, SourcePage} from "./utils";
 import {smfParse} from "./forums/smf";
+import {xenForoParse} from "./forums/XenForo";
 
 export async function mainParser(args: string[]): Promise<number> {
     if (args.length != 3) {
@@ -48,6 +49,7 @@ function parseFile(rawHtml: string, baseUrl: string): Result {
         forkBoardParse,
         vBulletinParse,
         smfParse,
+        xenForoParse,
     ]
     let results: Result | null = null;
     for (const parser of parsers) {

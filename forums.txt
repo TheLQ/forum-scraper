@@ -1,25 +1,32 @@
 vBulliten
-http://xlforum.net/forums/ - old install
+ADDED http://xlforum.net/forums/ - old install
 https://www.corvetteforum.com/ - low priority, still very active
-https://www.rx7club.com/
-https://www.rx8club.com/
-https://forum.miata.net/vb/
+ADDED https://www.rx7club.com/
+ADDED https://www.rx8club.com/
+ADDED https://forum.miata.net/vb/
+
+https://forum.supercell.com
 
 phpBB
 https://forums.nicoclub.com/
 
 SMF
-https://www.eevblog.com/forum/
-https://www.fornits.com/phpbb/
+ADDED https://www.eevblog.com/forum/
+ADDED https://www.fornits.com/phpbb/
 
 XenForo
-https://www.nissanforums.com
-https://www.kboards.com - low
-https://www.b15u.com/
-https://www.b15sentra.net/
+ADDED https://www.nissanforums.com
+ADDED https://www.kboards.com - low
+ADDED https://www.b15u.com/
+ADDED https://www.b15sentra.net/
+ADDED https://www.nissancubelife.com/
+ADDED https://www.subaruforester.org/
 
 ForkBoard
-https://www.sr20-forum.com/ - important, custom(?) forum
+ARCHIVED https://www.sr20-forum.com/ - important, custom(?) forum
 
 Unknown
 https://grassrootsmotorsports.com/forum/ - unknown, very custom theme on something else maybe?
+
+ASP Playground...
+https://forums2.battleon.com/f/default.asp
