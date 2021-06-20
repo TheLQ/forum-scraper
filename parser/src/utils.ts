@@ -82,3 +82,7 @@ export function getFirstMatch(element: Cheerio<Element>, errorMessage: string) {
     }
     return element.first();
 }
+
+export function anchorIsNavNotLink(elem: Element) {
+    return elem.attribs.name != undefined && elem.attribs.href == undefined;
+}

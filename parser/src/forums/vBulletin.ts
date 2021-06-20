@@ -1,5 +1,6 @@
 import { CheerioAPI } from "cheerio";
 import {
+    anchorIsNavNotLink,
     assertNotBlank,
     assertNotNull,
     ForumType,
@@ -87,9 +88,8 @@ function vBulletinExtract(sourcePage: SourcePage, result: Result) {
 
         // TopicList uses regular page number navigation
         $(".pagenav a").each((i, elem) => {
-            // skip name anchors
-            if (elem.attribs.name != undefined && elem.attribs.href == undefined) {
-                return;
+            if (anchorIsNavNotLink(elem)) {
+                return
             }
             result.subpages.push({
                 name: assertNotBlank($(elem).text()),
@@ -113,6 +113,9 @@ function vBulletinExtract(sourcePage: SourcePage, result: Result) {
             // try classic non-infinite scroll
             const pages = $(".pagenav a")
             for (const page of pages) {
+                if (anchorIsNavNotLink(page)) {
+                    continue
+                }
                 result.subpages.push({
                     name: "",
                     url: makeUrlWithBase(baseUrl, $(page).attr("href")),
