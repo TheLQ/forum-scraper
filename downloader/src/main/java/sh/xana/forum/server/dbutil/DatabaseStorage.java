@@ -411,6 +411,8 @@ public class DatabaseStorage {
     ForkBoard,
     vBulletin,
     phpBB,
+    XenForo,
+    SMF,
   }
 
   public record OverviewEntry(UUID siteId, URI siteUrl, Map<DlStatus, Integer> dlStatusCount) {}

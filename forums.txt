@@ -7,6 +7,8 @@ https://forum.miata.net/vb/
 
 phpBB
 https://forums.nicoclub.com/
+
+SMF
 https://www.eevblog.com/forum/
 https://www.fornits.com/phpbb/
 

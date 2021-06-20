@@ -12,7 +12,9 @@ import {
 
 export function vBulletinParse(sourcePage: SourcePage): Result | null {
     // js init function they all seem to call
-    let found = sourcePage.rawHtml.indexOf("vBulletin_init();") != -1
+    if (sourcePage.rawHtml.indexOf("vBulletin_init();") == -1) {
+        return null
+    }
 
     const result: Result = {
         loginRequired: false,

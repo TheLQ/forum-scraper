@@ -1,4 +1,4 @@
-import {CheerioAPI} from "cheerio";
+import {Cheerio, CheerioAPI, Element} from "cheerio";
 
 export interface SourcePage {
     rawHtml: string,
@@ -30,6 +30,8 @@ export enum ForumType {
     ForkBoard = "ForkBoard",
     vBulletin = "vBulletin",
     phpBB = "phpBB",
+    XenForo = "XenForo",
+    SMF = "SMF",
 }
 
 export function assertNotNull(value: string | undefined | null): string {
@@ -70,4 +72,13 @@ export function makeUrlWithBase(baseUrl: string, mainUrl: string | undefined | n
         baseUrl = baseUrl + "/"
     }
     return baseUrl + mainUrl
+}
+
+export function getFirstMatch(element: Cheerio<Element>, errorMessage: string) {
+    if (element.length == 0) {
+        throw new Error("didn't find anything for " + errorMessage)
+    } else if (element.length > 1) {
+        throw new Error("found too many " +element.length + " for " + errorMessage)
+    }
+    return element.first();
 }
