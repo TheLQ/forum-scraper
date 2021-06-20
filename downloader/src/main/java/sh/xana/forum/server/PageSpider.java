@@ -9,6 +9,7 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -79,7 +80,17 @@ public class PageSpider implements Closeable {
           sqlNewRedirects.add(new PageredirectsRecord(success.id(), newUri, counter++));
           lastUri = newUri;
         }
-        dbStorage.setPageURL(success.id(), lastUri);
+        try {
+          dbStorage.setPageURL(success.id(), lastUri);
+        } catch (Exception e) {
+          if (e.getCause() instanceof SQLIntegrityConstraintViolationException
+              && e.getCause().getMessage().contains("Duplicate entry")) {
+            // we have redirected to an existing page. So we don't need this anymore
+            dbStorage.deletePage(success.id());
+          } else {
+            throw e;
+          }
+        }
       }
     }
 
@@ -217,7 +228,7 @@ public class PageSpider implements Closeable {
 
         sqlDone.add(pageId);
       } catch (JsonProcessingException e) {
-        log.warn("JSON Parsing failed", e);
+        log.warn("JSON Parsing failed, found error " + output);
         dbStorage.setPageException(pageId, "NOT JSON\r\n" + output);
       } catch (Exception e) {
         log.warn("Failed in parser", e);

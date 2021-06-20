@@ -370,6 +370,12 @@ public class DatabaseStorage {
     executeOneRow(query);
   }
 
+  public void deletePage(UUID pageId) {
+    Query query = context.delete(PAGES).where(PAGES.PAGEID.eq(pageId));
+
+    executeOneRow(query);
+  }
+
   // *******************************
 
   private static void executeOneRow(Query query) {
