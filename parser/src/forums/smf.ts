@@ -6,7 +6,7 @@ import {
   SourcePage,
 } from '../utils';
 import {AbstractForum} from './AbstractForum';
-import type {Element} from 'domhandler';
+import {Element} from 'cheerio';
 
 export class SMF implements AbstractForum {
   detectForumType(sourcePage: SourcePage): ForumType | null {
@@ -29,19 +29,10 @@ export class SMF implements AbstractForum {
   }
 
   getPostElements(sourcePage: SourcePage): Element[] {
-    const posts = [...sourcePage.rawHtml.matchAll(/id="(?<id>msg_[0-9]+)"/g)];
-
-    const result: Element[] = [];
-    for (const post of posts) {
-      const id = assertNotBlank(post.groups?.id);
-      // newer versions use div and headers, old versions use table and css markup
-      const elem = getFirstMatch(
-        sourcePage.$(`span[id='${id}'] a`),
-        'post/topic id ' + id
-      );
-      result.push(elem);
+    if (sourcePage.$("#messageindex").length != 0) {
+      return []
     }
-    return result;
+    return this.getMessage(sourcePage, '');
   }
 
   getSubforumAnchors(sourcePage: SourcePage): Element[] {
@@ -63,8 +54,27 @@ export class SMF implements AbstractForum {
   }
 
   getTopicAnchors(sourcePage: SourcePage): Element[] {
-    // both the topiclist entry and the message posts use the same id...
-    return this.getPostElements(sourcePage);
+    // both the topiclist entry and the message posts use the same id... so make sure we are on the forumlist page
+    if (sourcePage.$("#messageindex").length == 0) {
+      return []
+    }
+    return this.getMessage(sourcePage, ' a');
+  }
+
+  getMessage(sourcePage: SourcePage, extraQuery: string) {
+    const posts = [...sourcePage.rawHtml.matchAll(/id="(?<id>msg_[0-9]+)"/g)];
+
+    const result: Element[] = [];
+    for (const post of posts) {
+      const id = assertNotBlank(post.groups?.id);
+      // newer versions use div and headers, old versions use table and css markup
+      const elem = getFirstMatch(
+        sourcePage.$(`#${id}${extraQuery}`),
+        'post/topic id ' + id
+      );
+      result.push(elem);
+    }
+    return result;
   }
 
   postProcessing(sourcePage: SourcePage, result: Result): void {
