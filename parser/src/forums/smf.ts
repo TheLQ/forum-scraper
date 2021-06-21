@@ -36,7 +36,10 @@ export class SMF implements AbstractForum {
   }
 
   getSubforumAnchors(sourcePage: SourcePage): Element[] {
-    const forums = [...sourcePage.rawHtml.matchAll(/name="(?<id>b[0-9]+)"/g)];
+    // with an id this short and generic, it can match the randomly generated input name attrib... so assume nobody has <1000 forums
+    const forums = [
+      ...sourcePage.rawHtml.matchAll(/name="(?<id>b[0-9]{1-4})"/g),
+    ];
 
     // forum list
     const result: Element[] = [];

@@ -5,7 +5,8 @@ ADDED https://www.rx7club.com/
 ADDED https://www.rx8club.com/
 ADDED https://forum.miata.net/vb/
 
-https://forum.supercell.com
+https://forum.supercell.com - VERY custom theme
+http://www.digitalfaq.com/forum/
 
 phpBB
 https://forums.nicoclub.com/
@@ -21,12 +22,17 @@ ADDED https://www.b15u.com/
 ADDED https://www.b15sentra.net/
 ADDED https://www.nissancubelife.com/
 ADDED https://www.subaruforester.org/
+https://forums.mydigitallife.net/ - custom theme
 
 ForkBoard
 ARCHIVED https://www.sr20-forum.com/ - important, custom(?) forum
 
 Unknown
 https://grassrootsmotorsports.com/forum/ - unknown, very custom theme on something else maybe?
+https://forums.evga.com/ - very custom theme
 
 ASP Playground...
 https://forums2.battleon.com/f/default.asp
+
+Wordpress bbPress
+https://millcomputing.com/forums/

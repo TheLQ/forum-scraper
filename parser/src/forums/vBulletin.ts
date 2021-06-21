@@ -58,7 +58,8 @@ export class vBulletin implements AbstractForum {
       const id = assertNotBlank(post.groups?.id);
       // newer versions use div and headers, old versions use table and css markup
       const elem = getFirstMatch(
-        sourcePage.$(`div[id='${id}']`),
+        sourcePage,
+        sourcePage.$(`#${id}`),
         'post id ' + id
       );
       result.push(elem);
@@ -74,7 +75,9 @@ export class vBulletin implements AbstractForum {
     for (const forum of forums) {
       const id = assertNotBlank(forum.groups?.id);
       // newer versions use div and headers, old versions use table and css markup
+      // cannot just use ID matching because sponsored links are underneath the parent div/td
       const elem = getFirstMatch(
+        sourcePage,
         sourcePage.$(
           `div[id='${id}'] h2 a, div[id='${id}'] h3 a, td[id='${id}'] a`
         ),
@@ -96,7 +99,8 @@ export class vBulletin implements AbstractForum {
     for (const topic of topics) {
       const id = assertNotBlank(topic.groups?.id);
       const elem = getFirstMatch(
-        sourcePage.$(`a[id='${id}']`),
+        sourcePage,
+        sourcePage.$(`#${id}`),
         'topic id ' + id
       );
       result.push(elem);
