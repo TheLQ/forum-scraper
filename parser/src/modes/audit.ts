@@ -11,10 +11,15 @@ export async function mainAudit(args: string[]) {
 
   console.log('BIG PARSE');
   const files = await fs.promises.readdir(fileCachePath);
+  const filesLength = files.length;
   console.log('file ', files[0]);
-  console.log('length ', files.length);
+  console.log('length ', filesLength);
   const results = await asyncPool(10, files, async rawFileName => {
     try {
+      const index = files.indexOf(rawFileName);
+      if (index % 100 === 0) {
+        console.log(`${index} of ${filesLength}`);
+      }
       if (rawFileName.indexOf('.response') == -1) {
         return;
       }

@@ -1,4 +1,5 @@
-import {Cheerio, CheerioAPI, Element} from 'cheerio';
+import {Cheerio, CheerioAPI} from 'cheerio';
+import {Element, Node} from 'domhandler';
 
 export interface SourcePage {
   rawHtml: string;
@@ -78,7 +79,7 @@ export function makeUrlWithBase(
 }
 
 export function getFirstMatch(
-  elements: Cheerio<Element>,
+  elements: Cheerio<Node>,
   errorMessage: string
 ): Element {
   const arr = elements.get();
@@ -87,7 +88,12 @@ export function getFirstMatch(
   } else if (arr.length > 1) {
     throw new Error('found too many ' + arr.length + ' for ' + errorMessage);
   }
-  return arr[0];
+
+  const first = arr[0];
+  if (!(first instanceof Element)) {
+    throw new Error('Found a ' + typeof arr[0] + ' not element');
+  }
+  return first;
 }
 
 export function anchorIsNavNotLink(elem: Element) {

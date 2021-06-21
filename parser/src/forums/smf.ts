@@ -29,8 +29,8 @@ export class SMF implements AbstractForum {
   }
 
   getPostElements(sourcePage: SourcePage): Element[] {
-    if (sourcePage.$("#messageindex").length != 0) {
-      return []
+    if (sourcePage.$('#messageindex').length != 0) {
+      return [];
     }
     return this.getMessage(sourcePage, '');
   }
@@ -55,8 +55,8 @@ export class SMF implements AbstractForum {
 
   getTopicAnchors(sourcePage: SourcePage): Element[] {
     // both the topiclist entry and the message posts use the same id... so make sure we are on the forumlist page
-    if (sourcePage.$("#messageindex").length == 0) {
-      return []
+    if (sourcePage.$('#messageindex').length == 0) {
+      return [];
     }
     return this.getMessage(sourcePage, ' a');
   }

@@ -116,7 +116,7 @@ export class vBulletin implements AbstractForum {
       Not only is this url useless to archive, it causes "Data too long for column" SQL errors
       */
       let newUrl = subpage.url;
-      while(true) {
+      while (true) {
         // match s=[32 character hex id]
         newUrl = newUrl.replace(/s=[0-9a-zA-Z]{32}&*/, '');
         // match double directory separator // but not the http:// one
@@ -130,9 +130,9 @@ export class vBulletin implements AbstractForum {
         }
 
         if (newUrl != subpage.url) {
-          subpage.url = newUrl
+          subpage.url = newUrl;
         } else {
-          break
+          break;
         }
       }
 

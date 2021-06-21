@@ -12,6 +12,8 @@ import {XenForo} from './XenForo';
 import type {Element} from 'domhandler';
 import fs from 'fs';
 import {vBulletin} from './vBulletin';
+import {ForkBoard} from './ForkBoard';
+import {SMF} from './smf';
 
 export interface AbstractForum {
   detectForumType(sourcePage: SourcePage): ForumType | null;
@@ -58,7 +60,7 @@ function process(rawHtml: string, baseUrlBackup: string): Result {
     baseUrl: baseUrlBackup,
   };
 
-  const parsers = [new XenForo(), new vBulletin()];
+  const parsers = [new XenForo(), new vBulletin(), new ForkBoard(), new SMF()];
 
   const baseUrl = getBaseUrl(sourcePage);
   const $ = sourcePage.$;
@@ -75,54 +77,67 @@ function process(rawHtml: string, baseUrlBackup: string): Result {
       subpages: [],
     };
 
-    if (result.loginRequired) {
-      return result;
-    }
-
-    for (const forumRaw of parser.getSubforumAnchors(sourcePage)) {
-      result.pageType = PageType.ForumList;
-
-      const forum = $(forumRaw);
-      result.subpages.push({
-        pageType: PageType.ForumList,
-        url: makeUrlWithBase(baseUrl, forum.attr('href')),
-        name: assertNotNull(forum.text()),
-      });
-    }
-
-    for (const topicRaw of parser.getTopicAnchors(sourcePage)) {
-      result.pageType = PageType.ForumList;
-
-      const topic = $(topicRaw);
-      result.subpages.push({
-        pageType: PageType.TopicPage,
-        url: makeUrlWithBase(baseUrl, topic.attr('href')),
-        name: assertNotNull(topic.text()),
-      });
-    }
-
-    for (const postRaw of parser.getPostElements(sourcePage)) {
-      if (
-        result.pageType !== PageType.TopicPage &&
-        result.pageType !== PageType.Unknown
-      ) {
-        throw new Error('detected both post elements and subforum/topic links');
-      } else {
-        result.pageType = PageType.TopicPage;
+    try {
+      if (result.loginRequired) {
+        return result;
       }
 
-      break;
-    }
+      for (const forumRaw of parser.getSubforumAnchors(sourcePage)) {
+        result.pageType = PageType.ForumList;
 
-    for (const pageLink of parser.getPageLinks(sourcePage)) {
-      result.subpages.push({
-        name: $(pageLink).text(),
-        url: makeUrlWithBase(baseUrl, pageLink.attribs.href),
-        pageType: result.pageType,
-      });
-    }
+        const forum = $(forumRaw);
+        result.subpages.push({
+          pageType: PageType.ForumList,
+          url: makeUrlWithBase(baseUrl, forum.attr('href')),
+          name: assertNotNull(forum.text()),
+        });
+      }
 
-    return result;
+      for (const topicRaw of parser.getTopicAnchors(sourcePage)) {
+        result.pageType = PageType.ForumList;
+
+        const topic = $(topicRaw);
+        try {
+          result.subpages.push({
+            pageType: PageType.TopicPage,
+            url: makeUrlWithBase(baseUrl, topic.attr('href')),
+            name: assertNotNull(topic.text()),
+          });
+        } catch (e) {
+          console.log('failing element ', topic.parent().html());
+          throw e;
+        }
+      }
+
+      for (const postRaw of parser.getPostElements(sourcePage)) {
+        if (
+          result.pageType !== PageType.TopicPage &&
+          result.pageType !== PageType.Unknown
+        ) {
+          console.log('postRaw', sourcePage.$(postRaw).parent().html());
+          throw new Error(
+            'detected both post elements and subforum/topic links'
+          );
+        } else {
+          result.pageType = PageType.TopicPage;
+        }
+
+        break;
+      }
+
+      for (const pageLink of parser.getPageLinks(sourcePage)) {
+        result.subpages.push({
+          name: $(pageLink).text(),
+          url: makeUrlWithBase(baseUrl, pageLink.attribs.href),
+          pageType: result.pageType,
+        });
+      }
+
+      return result;
+    } catch (e) {
+      console.log('result', result);
+      throw e;
+    }
   }
 
   // above loop didn't find anything
