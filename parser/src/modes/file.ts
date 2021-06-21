@@ -1,6 +1,8 @@
-import {readResponseFile} from './forums/AbstractForum';
+import {readResponseFile} from '../forums/AbstractForum';
+import asyncPool from 'tiny-async-pool';
+import fs from 'fs';
 
-export async function mainParser(args: string[]): Promise<number> {
+export async function mainFile(args: string[]): Promise<number> {
   if (args.length !== 3) {
     console.log('node parser.js file [fileCachePath] [pageId] [baseUrl]', args);
     return 1;
@@ -11,5 +13,6 @@ export async function mainParser(args: string[]): Promise<number> {
 
   const result = await readResponseFile(fileCachePath, pageId, baseUrl);
   console.log(JSON.stringify(result));
+
   return 0;
 }

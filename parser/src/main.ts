@@ -1,6 +1,7 @@
 import process from 'process';
-import {mainWeb} from './web';
-import {mainParser} from './parser';
+import {mainWeb} from './modes/web';
+import {mainFile} from './modes/file';
+import {mainAudit} from './modes/audit';
 
 async function main() {
   let args = process.argv;
@@ -16,7 +17,10 @@ async function main() {
       exitCode = await mainWeb(args);
       break;
     case 'file':
-      exitCode = await mainParser(args);
+      exitCode = await mainFile(args);
+      break;
+    case 'audit':
+      exitCode = await mainAudit(args);
       break;
     default:
       throw new Error('unknown mode ' + mode);

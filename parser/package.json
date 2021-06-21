@@ -14,7 +14,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/tiny-async-pool": "^1.0.0",
     "cheerio": "^1.0.0-rc.10",
+    "tiny-async-pool": "^1.2.0",
     "uWebSockets.js": "github:uNetworking/uWebSockets.js#v19.2.0"
   },
   "type": "module",
