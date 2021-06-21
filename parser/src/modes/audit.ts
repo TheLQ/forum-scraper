@@ -24,11 +24,21 @@ export async function mainAudit(args: string[]) {
         return;
       }
       const newPageId = rawFileName.substr(0, rawFileName.indexOf('.'));
-      const result = await readResponseFile(
-        fileCachePath,
-        newPageId,
-        'https://BIG_AUDIT/'
-      );
+      let result;
+      try {
+        result = await readResponseFile(
+          fileCachePath,
+          newPageId,
+          'https://BIG_AUDIT/'
+        );
+      } catch (e) {
+        if (e.message == 'EmptyResponse') {
+          return;
+        } else {
+          throw e;
+        }
+      }
+
       if (JSON.stringify(result) == '{ff}') {
         console.log('true');
       }

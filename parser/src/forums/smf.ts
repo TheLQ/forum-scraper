@@ -47,6 +47,7 @@ export class SMF implements AbstractForum {
       const id = assertNotBlank(forum.groups?.id);
       // SubForum links have a convenient unique name attribute
       const elem = getFirstMatch(
+        sourcePage,
         sourcePage.$(`a[name='${id}']`),
         'forum id ' + id
       );
@@ -72,6 +73,7 @@ export class SMF implements AbstractForum {
       const id = assertNotBlank(post.groups?.id);
       // newer versions use div and headers, old versions use table and css markup
       const elem = getFirstMatch(
+        sourcePage,
         sourcePage.$(`#${id}${extraQuery}`),
         'post/topic id ' + id
       );

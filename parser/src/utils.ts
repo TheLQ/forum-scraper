@@ -79,6 +79,7 @@ export function makeUrlWithBase(
 }
 
 export function getFirstMatch(
+  sourcePage: SourcePage,
   elements: Cheerio<Node>,
   errorMessage: string
 ): Element {
@@ -86,6 +87,10 @@ export function getFirstMatch(
   if (arr.length === 0) {
     throw new Error("didn't find anything for " + errorMessage);
   } else if (arr.length > 1) {
+    for (const node of arr) {
+      console.log('FAILING NODE ', sourcePage.$(node).parent().html());
+    }
+    console.log('match', arr[0] == arr[1]);
     throw new Error('found too many ' + arr.length + ' for ' + errorMessage);
   }
 

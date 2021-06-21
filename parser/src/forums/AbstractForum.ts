@@ -41,6 +41,9 @@ export async function readResponseFile(
   const data: string = await fs.promises.readFile(path, {
     encoding: 'utf8',
   });
+  if (data.indexOf('<center><h1>502 Bad Gateway</h1></center>') !== -1) {
+    throw new Error('EmptyResponse');
+  }
 
   return process(data, baseUrl);
 }
