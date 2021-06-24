@@ -10,6 +10,8 @@ http://www.digitalfaq.com/forum/
 
 phpBB
 https://forums.nicoclub.com/
+https://blueirissoftware.com/forum
+https://forums.zoneminder.com
 
 SMF
 ADDED https://www.eevblog.com/forum/

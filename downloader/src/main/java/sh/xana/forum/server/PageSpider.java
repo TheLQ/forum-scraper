@@ -193,13 +193,13 @@ public class PageSpider implements Closeable {
           throw new RuntimeException("LoginRequired");
         }
         if (!results.pageType().equals(pageType)) {
-          throw new RuntimeException(
+          throw new SpiderWarningException(
               "Expected pageType " + pageType + " got " + results.pageType());
         }
 
         ForumType siteType = page.get(Sites.SITES.FORUMTYPE);
         if (!results.forumType().equals(siteType)) {
-          throw new RuntimeException(
+          throw new SpiderWarningException(
               "Expected forumType " + siteType + " got " + results.forumType());
         }
 
@@ -230,6 +230,9 @@ public class PageSpider implements Closeable {
       } catch (JsonProcessingException e) {
         log.warn("JSON Parsing failed, found error " + output);
         dbStorage.setPageException(pageId, "NOT JSON\r\n" + output);
+      } catch (SpiderWarningException e) {
+        // same thing as below, just don't spam the log file
+        dbStorage.setPageException(pageId, ExceptionUtils.getStackTrace(e));
       } catch (Exception e) {
         log.warn("Failed in parser", e);
         dbStorage.setPageException(pageId, ExceptionUtils.getStackTrace(e));
@@ -247,6 +250,17 @@ public class PageSpider implements Closeable {
     log.debug("dbsync done");
 
     return true;
+  }
+
+  private static class SpiderWarningException extends RuntimeException {
+
+    public SpiderWarningException(String message) {
+      super(message);
+    }
+
+    public SpiderWarningException(String message, Throwable cause) {
+      super(message, cause);
+    }
   }
 
   @Override

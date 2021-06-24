@@ -88,7 +88,7 @@ public class Scraper implements Closeable {
     }
 
     if (scraperRequests.size() == 0) {
-      log.warn("Queue is empty, not doing anything");
+      log.info("Queue is empty, not doing anything");
     } else {
       // pop request and fetch content
       ScraperDownload.SiteEntry scraperRequest = scraperRequests.remove(0);
