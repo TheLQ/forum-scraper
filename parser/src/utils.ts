@@ -81,12 +81,13 @@ export function makeUrlWithBase(
 export function getFirstMatch(
   sourcePage: SourcePage,
   elements: Cheerio<Node>,
-  errorMessage: string
+  errorMessage: string,
+  ignoreExtra = false
 ): Element {
   const arr = elements.get();
   if (arr.length === 0) {
     throw new Error("didn't find anything for " + errorMessage);
-  } else if (arr.length > 1) {
+  } else if (!ignoreExtra && arr.length > 1) {
     for (const node of arr) {
       console.log('FAILING NODE ', sourcePage.$(node).parent().html());
     }

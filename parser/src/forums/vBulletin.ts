@@ -76,12 +76,14 @@ export class vBulletin implements AbstractForum {
       const id = assertNotBlank(forum.groups?.id);
       // newer versions use div and headers, old versions use table and css markup
       // cannot just use ID matching because sponsored links are underneath the parent div/td
+      // also ignore extra matches since it may match subforums
       const elem = getFirstMatch(
         sourcePage,
         sourcePage.$(
           `div[id='${id}'] h2 a, div[id='${id}'] h3 a, td[id='${id}'] a`
         ),
-        'forum id ' + id
+        'forum id ' + id,
+        true
       );
       result.push(elem);
     }
