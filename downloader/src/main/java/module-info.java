@@ -13,6 +13,8 @@ module sh.xana.forum {
   requires java.management;
   requires java.sql;
   requires java.sql.rowset;
+  requires org.jsoup;
+  requires checker.framework;
 
   opens sh.xana.forum.common.ipc to
       com.fasterxml.jackson.databind;

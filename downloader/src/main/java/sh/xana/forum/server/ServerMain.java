@@ -65,6 +65,7 @@ public class ServerMain {
   }
 
   public static void close() throws InterruptedException, IOException {
+    log.error("CLOSING");
     pageSpider.close();
     debugThread.close();
   }

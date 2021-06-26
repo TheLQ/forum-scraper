@@ -230,6 +230,10 @@ public class DatabaseStorage {
     return context.select().from(PAGES).where(conditions).fetchInto(PagesRecord.class);
   }
 
+  public List<PagesRecord> getPagesIds(Condition... conditions) {
+    return context.select(PAGES.PAGEID).from(PAGES).where(conditions).fetchInto(PagesRecord.class);
+  }
+
   public PagesRecord getPage(UUID pageId) {
     List<PagesRecord> pages = getPages(PAGES.PAGEID.eq(pageId));
     if (pages.size() != 1) {
