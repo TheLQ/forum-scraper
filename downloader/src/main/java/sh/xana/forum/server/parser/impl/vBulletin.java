@@ -135,7 +135,8 @@ public class vBulletin implements AbstractForum {
         // First, match http://domain.com/http://domain.com
         Matcher domains = PATTERN_DUPLICATE_DOMAIN.matcher(newUrl);
         if (domains.find() && domains.find()) {
-          // Just drop this nonsense, it's difficult to parse back into a real url, and pageNav already covers it
+          // Just drop this nonsense, it's difficult to parse back into a real url, and pageNav
+          // already covers it
           itr.remove();
           continue outer;
           // String match = domains.group();
