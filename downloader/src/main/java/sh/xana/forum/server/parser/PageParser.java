@@ -51,7 +51,9 @@ public class PageParser {
     } else if (args[0].equals("file")) {
       UUID pageId = UUID.fromString(args[1]);
       Path path = parser.getPagePath(pageId);
-      ParserResult result = parser.parsePage(Files.readAllBytes(path), pageId, storage.getPageDomain(pageId).toString());
+      ParserResult result =
+          parser.parsePage(
+              Files.readAllBytes(path), pageId, storage.getPageDomain(pageId).toString());
       parser.postValidator(pageId, result);
       return;
     }
@@ -93,7 +95,8 @@ public class PageParser {
               try {
                 UUID pageId = page.getPageid();
                 byte[] data = Files.readAllBytes(getPagePath(pageId));
-                ParserResult result = parsePage(data, pageId, dbStorage.getPageDomain(pageId).toString());
+                ParserResult result =
+                    parsePage(data, pageId, dbStorage.getPageDomain(pageId).toString());
                 postValidator(pageId, result);
               } catch (Exception e) {
                 log.error("FAIL ON " + page.getPageid(), e);
@@ -139,7 +142,8 @@ public class PageParser {
 
                 UUID pageId = page.getPageid();
                 byte[] data = Files.readAllBytes(getPagePath(pageId));
-                ParserResult result = parsePage(data, pageId, dbStorage.getPageDomain(pageId).toString());
+                ParserResult result =
+                    parsePage(data, pageId, dbStorage.getPageDomain(pageId).toString());
                 postValidator(pageId, result);
                 return null;
               });
@@ -187,7 +191,9 @@ public class PageParser {
               try {
                 open.put(
                     new QueueEntry(
-                        new FileInputStream(getPagePath(pageId).toFile()), pageId, dbStorage.getPageDomain(pageId).toString()));
+                        new FileInputStream(getPagePath(pageId).toFile()),
+                        pageId,
+                        dbStorage.getPageDomain(pageId).toString()));
               } catch (Exception e) {
                 log.error("FAILED TO PUT", e);
                 System.exit(1);
@@ -199,7 +205,7 @@ public class PageParser {
     //    List<PagesRecord> pages = dbStorage.getPages(Pages.PAGES.SOURCEPAGEID.eq(pageId));
     List<ValidationRecord> pages =
         dbStorage.getPageByUrl(
-                result.subpages().stream().map(ParserEntry::url).collect(Collectors.toList()));
+            result.subpages().stream().map(ParserEntry::url).collect(Collectors.toList()));
 
     List<String> errors = new ArrayList<>();
     for (ValidationRecord page : pages) {
@@ -215,7 +221,7 @@ public class PageParser {
     }
 
     if (!errors.isEmpty()) {
-      throw new RuntimeException(
+      log.error(
           "Failed to parse page "
               + pageId
               + System.lineSeparator()

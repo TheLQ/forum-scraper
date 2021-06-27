@@ -238,17 +238,28 @@ public class DatabaseStorage {
 
   public List<ValidationRecord> getPageByUrl(List<String> url) {
     List<ValidationRecord> result = new ArrayList<>();
-    for (var obj : context.select(PAGES.PAGEID, PAGES.PAGEURL).from(PAGES).where(PAGES.PAGEURL.in(url))) {
-        result.add(new ValidationRecord(obj.value1(), obj.value2(), false));
+    for (var obj :
+        context.select(PAGES.PAGEID, PAGES.PAGEURL).from(PAGES).where(PAGES.PAGEURL.in(url))) {
+      result.add(new ValidationRecord(obj.value1(), obj.value2(), false));
     }
-    for (var obj : context.select(PAGEREDIRECTS.PAGEID, PAGEREDIRECTS.REDIRECTURL).from(PAGEREDIRECTS).where(PAGEREDIRECTS.REDIRECTURL.in(url), PAGEREDIRECTS.INDEX.eq((byte)0))) {
+    for (var obj :
+        context
+            .select(PAGEREDIRECTS.PAGEID, PAGEREDIRECTS.REDIRECTURL)
+            .from(PAGEREDIRECTS)
+            .where(PAGEREDIRECTS.REDIRECTURL.in(url), PAGEREDIRECTS.INDEX.eq((byte) 0))) {
       result.add(new ValidationRecord(obj.value1(), obj.value2(), true));
     }
     return result;
   }
 
   public URI getPageDomain(UUID pageId) {
-    return context.select(SITES.SITEURL).from(SITES).join(PAGES).on(PAGES.SITEID.eq(SITES.SITEID)).where(PAGES.PAGEID.eq(pageId)).fetchOne(SITES.SITEURL);
+    return context
+        .select(SITES.SITEURL)
+        .from(SITES)
+        .join(PAGES)
+        .on(PAGES.SITEID.eq(SITES.SITEID))
+        .where(PAGES.PAGEID.eq(pageId))
+        .fetchOne(SITES.SITEURL);
   }
 
   public PagesRecord getPage(UUID pageId) {
