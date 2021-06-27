@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
-import org.apache.commons.lang3.StringUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
@@ -105,6 +104,7 @@ public class vBulletin implements AbstractForum {
 
   @Override
   public void postProcessing(SourcePage sourcePage, ParserResult result) {
+    outer:
     for (var itr = result.subpages().listIterator(); itr.hasNext(); ) {
       ParserEntry entry = itr.next();
       while (true) {
@@ -135,16 +135,19 @@ public class vBulletin implements AbstractForum {
         // First, match http://domain.com/http://domain.com
         Matcher domains = PATTERN_DUPLICATE_DOMAIN.matcher(newUrl);
         if (domains.find() && domains.find()) {
-          String match = domains.group();
-          newUrl = StringUtils.replace(newUrl, match, "", 1);
-
-          // Then match search/&page=2 , which literally nothing else references that format
-          newUrl = newUrl.replace("search/&page=", "search/page-");
-
-          // Then make sure the url ends with /
-          if (!newUrl.endsWith("/")) {
-            newUrl = newUrl + "/";
-          }
+          // Just drop this nonsense, it's difficult to parse back into a real url, and pageNav already covers it
+          itr.remove();
+          continue outer;
+          // String match = domains.group();
+          // newUrl = StringUtils.replace(newUrl, match, "", 1);
+          //
+          // // Then match search/&page=2 , which literally nothing else references that format
+          // newUrl = newUrl.replace("search/&page=", "search/page-");
+          //
+          // // Then make sure the url ends with /
+          // if (!newUrl.endsWith("/")) {
+          //   newUrl = newUrl + "/";
+          // }
         }
 
         // The infinite scroll plugin uses a ?ispreloading magic url

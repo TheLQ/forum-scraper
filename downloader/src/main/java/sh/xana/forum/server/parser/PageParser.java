@@ -55,6 +55,9 @@ public class PageParser {
           parser.parsePage(
               Files.readAllBytes(path), pageId, storage.getPageDomain(pageId).toString());
       parser.postValidator(pageId, result);
+      log.info(
+          "result {}",
+          Utils.jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(result));
       return;
     }
 
