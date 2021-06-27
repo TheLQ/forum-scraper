@@ -6,7 +6,11 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
+import org.apache.commons.lang3.StringUtils;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.ipc.ParserResult;
 import sh.xana.forum.common.ipc.ParserResult.ParserEntry;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
@@ -16,6 +20,7 @@ import sh.xana.forum.server.parser.ForumUtils;
 import sh.xana.forum.server.parser.SourcePage;
 
 public class vBulletin implements AbstractForum {
+  private static final Logger log = LoggerFactory.getLogger(vBulletin.class);
 
   @Override
   public DatabaseStorage.ForumType detectForumType(String rawHtml) {
@@ -66,12 +71,14 @@ public class vBulletin implements AbstractForum {
     List<Element> result = new ArrayList<>();
     while (matcher.find()) {
       String id = ForumUtils.assertNotBlank(matcher.group("id"));
-      Element anchor =
-          ForumUtils.selectOnlyOne(
+      // for td, older implementations seem to put all subforums under the main one without a
+      // dedicated id. So cannout use selectOnlyOne
+      Elements anchors =
+          ForumUtils.selectOneOrMore(
               sourcePage.doc(),
               "div[id='ID'] h2 a, div[id='ID'] h3 a, td[id='ID'] a".replaceAll("ID", id),
               "for forum " + id);
-      result.add(anchor);
+      result.addAll(anchors);
     }
     return result;
   }
@@ -94,6 +101,7 @@ public class vBulletin implements AbstractForum {
   private final Pattern PATTERN_DUPLICATE_SEP = Pattern.compile("(?<!http[s]?:)//");
   private final Pattern PATTERN_DUPLICATE_PAGE =
       Pattern.compile("(?<first>/page-[0-9]+/)page-[0-9]+/");
+  private final Pattern PATTERN_DUPLICATE_DOMAIN = Pattern.compile("http[s]?://[a-zA-Z0-9.]+/");
 
   @Override
   public void postProcessing(SourcePage sourcePage, ParserResult result) {
@@ -120,6 +128,23 @@ public class vBulletin implements AbstractForum {
         Matcher pages = PATTERN_DUPLICATE_PAGE.matcher(newUrl);
         if (pages.find()) {
           newUrl = newUrl.replace(pages.group("first"), "/");
+        }
+
+        // site 60b02d52-f85a-4c09-9ba5-44e25f405f00 can give us a very broken link in
+        // <link rel=next> , maybe for anti-scraping :|
+        // First, match http://domain.com/http://domain.com
+        Matcher domains = PATTERN_DUPLICATE_DOMAIN.matcher(newUrl);
+        if (domains.find() && domains.find()) {
+          String match = domains.group();
+          newUrl = StringUtils.replace(newUrl, match, "", 1);
+
+          // Then match search/&page=2 , which literally nothing else references that format
+          newUrl = newUrl.replace("search/&page=", "search/page-");
+
+          // Then make sure the url ends with /
+          if (!newUrl.endsWith("/")) {
+            newUrl = newUrl + "/";
+          }
         }
 
         // The infinite scroll plugin uses a ?ispreloading magic url
