@@ -9,6 +9,8 @@ import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.ipc.ParserResult;
 import sh.xana.forum.common.ipc.ParserResult.ParserEntry;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
@@ -18,6 +20,7 @@ import sh.xana.forum.server.parser.ForumUtils;
 import sh.xana.forum.server.parser.SourcePage;
 
 public class SMF implements AbstractForum {
+  private static final Logger log = LoggerFactory.getLogger(SMF.class);
 
   @Override
   public DatabaseStorage.ForumType detectForumType(String rawHtml) {
@@ -33,9 +36,10 @@ public class SMF implements AbstractForum {
   @Override
   public Document newDocument(String rawHtml, String baseUrl) {
     /*
-    site 2432457d-49f9-4de3-b2b9-8716a8d51dde has a really broken ad module that randomly injects an iframe. This breaks html parsing in both jsoup and Firefox(!)
+    site 2432457d-49f9-4de3-b2b9-8716a8d51dde has a really broken ad module that randomly injects
+    an iframe. This breaks html parsing in both jsoup and Firefox(!)
     */
-    rawHtml = PATTERN_AD_IFRAME.matcher(rawHtml).replaceFirst("");
+    rawHtml = PATTERN_AD_IFRAME.matcher(rawHtml).replaceAll("");
 
     return AbstractForum.super.newDocument(rawHtml, baseUrl);
   }
@@ -101,6 +105,7 @@ public class SMF implements AbstractForum {
   }
 
   private final Pattern PATTERN_SID = Pattern.compile("\\?PHPSESSID=[A-Za-z0-9]+");
+
   @Override
   public void postProcessing(SourcePage sourcePage, ParserResult result) {
     for (var itr = result.subpages().listIterator(); itr.hasNext(); ) {
