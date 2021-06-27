@@ -1,11 +1,14 @@
 package sh.xana.forum.server.parser;
 
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -24,7 +27,6 @@ import sh.xana.forum.common.ipc.ParserResult;
 import sh.xana.forum.common.ipc.ParserResult.ParserEntry;
 import sh.xana.forum.server.ServerConfig;
 import sh.xana.forum.server.db.tables.Pages;
-import sh.xana.forum.server.db.tables.records.PagesRecord;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
 import sh.xana.forum.server.dbutil.DatabaseStorage.DlStatus;
 import sh.xana.forum.server.dbutil.DatabaseStorage.ValidationRecord;
@@ -60,10 +62,47 @@ public class Auditor {
           "result {}",
           Utils.jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(result));
       return;
+    } else if (args[0].equals("delete")) {
+      log.error("================== DELETE");
+      log.error("================== DELETE");
+      log.error("================== DELETE... 5 sec");
+      Thread.sleep(5000);
+
+      log.info("Fetching page ids...");
+      Set<UUID> pagesIds = dbStorage.getPagesIds();
+      log.info("Fetched {} page ids", pagesIds.size());
+
+      log.info("Listing directory");
+      AtomicInteger pageCounter = new AtomicInteger();
+      AtomicInteger deleteCounter = new AtomicInteger();
+      Files.walk(Path.of(config.get(config.ARG_FILE_CACHE)), 1)
+          .forEach(path -> {
+            String rawId = path.getFileName().toString();
+            if (!rawId.endsWith(".response")) {
+              return;
+            }
+            if (pageCounter.incrementAndGet() % 1000 == 0) {
+              log.info("Processed " + pageCounter);
+            }
+
+            rawId = rawId.substring(0, rawId.indexOf('.'));
+            UUID pageId = UUID.fromString(rawId);
+            if (!pagesIds.contains(pageId)) {
+              deleteCounter.incrementAndGet();
+              try {
+                Files.delete(path);
+              } catch (IOException e) {
+                throw new RuntimeException("fail", e);
+              }
+            }
+          });
+      log.info("Processed {} pages, deleted {}", pageCounter, deleteCounter);
+
+      return;
     }
 
     log.info("query start");
-    List<PagesRecord> pages =
+    Set<UUID> pages =
         dbStorage.getPagesIds(
             //
             //
@@ -79,23 +118,22 @@ public class Auditor {
     }
   }
 
-  public static void start_simple(List<PagesRecord> pages) {
+  public static void start_simple(Collection<UUID> pages) {
     AtomicInteger counter = new AtomicInteger();
     pages.parallelStream()
         .forEach(
-            page -> {
+            pageId -> {
               int idx = counter.incrementAndGet();
               if (idx % 1000 == 0) {
                 log.info("{} of {}", idx, pages.size());
               }
               try {
-                UUID pageId = page.getPageid();
                 byte[] data = Files.readAllBytes(parser.getPagePath(pageId));
                 ParserResult result =
                     parser.parsePage(data, pageId, dbStorage.getPageDomain(pageId).toString());
                 postValidator(pageId, result);
               } catch (Exception e) {
-                log.error("FAIL ON " + page.getPageid(), e);
+                log.error("FAIL ON " + pageId, e);
                 System.exit(1);
               }
             });
@@ -119,7 +157,7 @@ public class Auditor {
     }
   }
 
-  public static void start_thread(List<PagesRecord> pages) {
+  public static void start_thread(Collection<UUID> pages) {
     int threads = 16;
     ThreadPoolExecutor threadPoolExecutor =
         new ThreadPoolExecutor(
@@ -127,7 +165,7 @@ public class Auditor {
     //    threadPoolExecutor.setRejectedExecutionHandler();
 
     AtomicInteger counter = new AtomicInteger();
-    for (PagesRecord page : pages) {
+    for (UUID pageId : pages) {
       threadPoolExecutor.submit(
           (Callable<Void>)
               () -> {
@@ -136,7 +174,6 @@ public class Auditor {
                   log.info("{} of {}", idx, pages.size());
                 }
 
-                UUID pageId = page.getPageid();
                 byte[] data = Files.readAllBytes(parser.getPagePath(pageId));
                 ParserResult result =
                     parser.parsePage(data, pageId, dbStorage.getPageDomain(pageId).toString());
@@ -148,7 +185,7 @@ public class Auditor {
 
   private record QueueEntry(InputStream in, UUID pageId, String baseUrl) {}
 
-  public static void start_preopen(List<PagesRecord> pages) {
+  public static void start_preopen(Collection<UUID> pages) {
     BlockingQueue<QueueEntry> open = new ArrayBlockingQueue<>(100);
 
     AtomicInteger counter = new AtomicInteger();
@@ -183,8 +220,7 @@ public class Auditor {
 
     pages.parallelStream()
         .forEach(
-            page -> {
-              UUID pageId = page.getPageid();
+            pageId -> {
               try {
                 open.put(
                     new QueueEntry(

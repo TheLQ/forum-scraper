@@ -11,6 +11,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.apache.commons.dbcp2.ConnectionFactory;
@@ -230,8 +231,8 @@ public class DatabaseStorage {
     return context.select().from(PAGES).where(conditions).fetchInto(PagesRecord.class);
   }
 
-  public List<PagesRecord> getPagesIds(Condition... conditions) {
-    return context.select(PAGES.PAGEID).from(PAGES).where(conditions).fetchInto(PagesRecord.class);
+  public Set<UUID> getPagesIds(Condition... conditions) {
+    return context.select(PAGES.PAGEID).from(PAGES).where(conditions).fetchSet(PAGES.PAGEID);
   }
 
   public record ValidationRecord(UUID pageId, URI url, boolean isRedirect) {}
