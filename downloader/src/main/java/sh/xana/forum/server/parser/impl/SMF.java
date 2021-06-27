@@ -10,6 +10,7 @@ import javax.annotation.Nonnull;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import sh.xana.forum.common.ipc.ParserResult;
+import sh.xana.forum.common.ipc.ParserResult.ParserEntry;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
 import sh.xana.forum.server.dbutil.DatabaseStorage.ForumType;
 import sh.xana.forum.server.parser.AbstractForum;
@@ -99,6 +100,17 @@ public class SMF implements AbstractForum {
     return result;
   }
 
+  private final Pattern PATTERN_SID = Pattern.compile("\\?PHPSESSID=[A-Za-z0-9]+");
   @Override
-  public void postProcessing(SourcePage sourcePage, ParserResult result) {}
+  public void postProcessing(SourcePage sourcePage, ParserResult result) {
+    for (var itr = result.subpages().listIterator(); itr.hasNext(); ) {
+      ParserEntry entry = itr.next();
+      String newUrl = entry.url();
+      newUrl = PATTERN_SID.matcher(newUrl).replaceFirst("");
+
+      if (!newUrl.equals(entry.url())) {
+        itr.set(new ParserEntry(entry.name(), newUrl, entry.pageType()));
+      }
+    }
+  }
 }
