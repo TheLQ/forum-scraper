@@ -428,31 +428,5 @@ public class DatabaseStorage {
     }
   }
 
-  /** Pages.DlStatus column */
-  public enum DlStatus {
-    Queued,
-    Download,
-    Parse,
-    Done,
-    Supersede,
-    Error,
-  }
-
-  /** Pages.PageType column */
-  public enum PageType {
-    ForumList,
-    TopicPage,
-    Unknown,
-  }
-
-  /** Sites.ForumType column */
-  public enum ForumType {
-    ForkBoard,
-    vBulletin,
-    phpBB,
-    XenForo,
-    SMF,
-  }
-
   public record OverviewEntry(UUID siteId, URI siteUrl, Map<DlStatus, Integer> dlStatusCount) {}
 }

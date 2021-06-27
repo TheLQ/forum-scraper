@@ -25,8 +25,8 @@ import org.jooq.impl.TableImpl;
 import sh.xana.forum.server.db.ForumScrape;
 import sh.xana.forum.server.db.Keys;
 import sh.xana.forum.server.db.tables.records.PagesRecord;
-import sh.xana.forum.server.dbutil.DatabaseStorage.DlStatus;
-import sh.xana.forum.server.dbutil.DatabaseStorage.PageType;
+import sh.xana.forum.server.dbutil.DlStatus;
+import sh.xana.forum.server.dbutil.PageType;
 import sh.xana.forum.server.dbutil.UriConverter;
 import sh.xana.forum.server.dbutil.UuidConverter;
 

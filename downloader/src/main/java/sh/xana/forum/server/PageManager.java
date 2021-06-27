@@ -26,9 +26,9 @@ import sh.xana.forum.server.db.tables.Sites;
 import sh.xana.forum.server.db.tables.records.PageredirectsRecord;
 import sh.xana.forum.server.db.tables.records.PagesRecord;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
-import sh.xana.forum.server.dbutil.DatabaseStorage.DlStatus;
-import sh.xana.forum.server.dbutil.DatabaseStorage.ForumType;
-import sh.xana.forum.server.dbutil.DatabaseStorage.PageType;
+import sh.xana.forum.server.dbutil.DlStatus;
+import sh.xana.forum.server.dbutil.ForumType;
+import sh.xana.forum.server.dbutil.PageType;
 import sh.xana.forum.server.parser.PageParser;
 
 /** Parse stage. Extract further URLs for downloading */

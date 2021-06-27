@@ -7,7 +7,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import sh.xana.forum.common.ipc.ParserResult;
-import sh.xana.forum.server.dbutil.DatabaseStorage.ForumType;
+import sh.xana.forum.server.dbutil.ForumType;
 
 public interface AbstractForum {
   @Nullable

@@ -4,7 +4,7 @@ import java.util.Collection;
 import javax.annotation.Nullable;
 import org.jsoup.nodes.Element;
 import sh.xana.forum.common.ipc.ParserResult;
-import sh.xana.forum.server.dbutil.DatabaseStorage.ForumType;
+import sh.xana.forum.server.dbutil.ForumType;
 import sh.xana.forum.server.parser.AbstractForum;
 import sh.xana.forum.server.parser.SourcePage;
 

@@ -13,8 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.ipc.ParserResult;
 import sh.xana.forum.common.ipc.ParserResult.ParserEntry;
-import sh.xana.forum.server.dbutil.DatabaseStorage;
-import sh.xana.forum.server.dbutil.DatabaseStorage.ForumType;
+import sh.xana.forum.server.dbutil.ForumType;
 import sh.xana.forum.server.parser.AbstractForum;
 import sh.xana.forum.server.parser.ForumUtils;
 import sh.xana.forum.server.parser.SourcePage;
@@ -23,7 +22,7 @@ public class SMF implements AbstractForum {
   private static final Logger log = LoggerFactory.getLogger(SMF.class);
 
   @Override
-  public DatabaseStorage.ForumType detectForumType(String rawHtml) {
+  public ForumType detectForumType(String rawHtml) {
     if (rawHtml.contains("var smf_theme_url")) {
       return ForumType.SMF;
     } else {

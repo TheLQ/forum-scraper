@@ -28,7 +28,7 @@ import sh.xana.forum.common.ipc.ParserResult.ParserEntry;
 import sh.xana.forum.server.ServerConfig;
 import sh.xana.forum.server.db.tables.Pages;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
-import sh.xana.forum.server.dbutil.DatabaseStorage.DlStatus;
+import sh.xana.forum.server.dbutil.DlStatus;
 import sh.xana.forum.server.dbutil.DatabaseStorage.ValidationRecord;
 
 /** Audits complete file cache */

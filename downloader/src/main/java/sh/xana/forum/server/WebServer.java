@@ -19,8 +19,9 @@ import sh.xana.forum.common.ipc.ScraperUpload;
 import sh.xana.forum.server.db.tables.Pages;
 import sh.xana.forum.server.db.tables.records.PagesRecord;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
-import sh.xana.forum.server.dbutil.DatabaseStorage.DlStatus;
-import sh.xana.forum.server.dbutil.DatabaseStorage.ForumType;
+import sh.xana.forum.server.dbutil.DlStatus;
+import sh.xana.forum.server.dbutil.ForumType;
+import sh.xana.forum.server.dbutil.PageType;
 
 public class WebServer extends NanoHTTPD {
   public static final Logger log = LoggerFactory.getLogger(WebServer.class);
@@ -107,7 +108,7 @@ public class WebServer extends NanoHTTPD {
 
     UUID siteId = dbStorage.insertSite(siteUrl, ForumType.valueOf(forumType));
 
-    dbStorage.insertPageQueued(siteId, List.of(siteUrl), DatabaseStorage.PageType.ForumList, null);
+    dbStorage.insertPageQueued(siteId, List.of(siteUrl), PageType.ForumList, null);
 
     return siteId.toString();
   }
