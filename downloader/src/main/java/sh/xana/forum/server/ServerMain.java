@@ -13,7 +13,7 @@ import sh.xana.forum.server.dbutil.DatabaseStorage;
 public class ServerMain {
   private static final Logger log = LoggerFactory.getLogger(ClientMain.class);
 
-  private static PageSpider pageSpider;
+  private static PageManager pageManager;
   private static RuntimeDebugThread debugThread;
 
   public static void main(String[] args) throws Exception {
@@ -50,15 +50,15 @@ public class ServerMain {
                 }));
 
     DatabaseStorage dbStorage = new DatabaseStorage(config);
-    pageSpider = new PageSpider(dbStorage, config);
+    pageManager = new PageManager(dbStorage, config);
     NodeManager nodeManager = new NodeManager();
 
-    WebServer server = new WebServer(dbStorage, pageSpider, nodeManager, config);
+    WebServer server = new WebServer(dbStorage, pageManager, nodeManager, config);
     server.start();
 
     debugThread = new RuntimeDebugThread();
     if (!debugMode) {
-      pageSpider.startSpiderThread();
+      pageManager.startSpiderThread();
       debugThread.start();
       ClientMain.main(new String[0]);
     }
@@ -66,7 +66,7 @@ public class ServerMain {
 
   public static void close() throws InterruptedException, IOException {
     log.error("CLOSING");
-    pageSpider.close();
+    pageManager.close();
     debugThread.close();
   }
 }

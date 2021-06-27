@@ -42,13 +42,6 @@ public class Auditor {
     dbStorage = new DatabaseStorage(config);
     parser = new PageParser(config);
 
-    //    if (true) {
-    ////      log.info("match " +
-    // SMF.PATTERN_SID.matcher("https://www.eevblog.com/forum/beginners/1600/?PHPSESSID=qf571lncip3uqm5uv9otgklpr1").replaceAll(""));
-    //      storage.tmp();
-    //      return;
-    //    }
-
     if (args.length == 0) {
       throw new RuntimeException("no args");
     } else if (args[0].equals("file")) {

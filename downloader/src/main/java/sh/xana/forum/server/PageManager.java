@@ -29,10 +29,11 @@ import sh.xana.forum.server.dbutil.DatabaseStorage;
 import sh.xana.forum.server.dbutil.DatabaseStorage.DlStatus;
 import sh.xana.forum.server.dbutil.DatabaseStorage.ForumType;
 import sh.xana.forum.server.dbutil.DatabaseStorage.PageType;
+import sh.xana.forum.server.parser.PageParser;
 
 /** Parse stage. Extract further URLs for downloading */
-public class PageSpider implements Closeable {
-  private static final Logger log = LoggerFactory.getLogger(PageSpider.class);
+public class PageManager implements Closeable {
+  private static final Logger log = LoggerFactory.getLogger(PageManager.class);
 
   private final DatabaseStorage dbStorage;
   private final ServerConfig config;
@@ -44,8 +45,9 @@ public class PageSpider implements Closeable {
   private final ArrayBlockingQueue<Boolean> spiderSignal = new ArrayBlockingQueue<>(10);
 
   private final Path fileCachePath;
+  private final PageParser pageParser;
 
-  public PageSpider(DatabaseStorage dbStorage, ServerConfig config) {
+  public PageManager(DatabaseStorage dbStorage, ServerConfig config) {
     this.dbStorage = dbStorage;
     this.config = config;
 
@@ -53,6 +55,8 @@ public class PageSpider implements Closeable {
     this.spiderThread.setName("ProcessorSpider");
 
     this.fileCachePath = Path.of(config.get(config.ARG_FILE_CACHE));
+
+    this.pageParser = new PageParser(config);
   }
 
   /** Process responses the download scraper collected */
@@ -166,31 +170,18 @@ public class PageSpider implements Closeable {
     List<UUID> sqlDone = new ArrayList<>(parserPages.size());
     List<PagesRecord> sqlNewPages = new ArrayList<>();
     int counter = 0;
-    for (CompletableFuture<HttpResponse<String>> future : futures) {
-      var page = parserPages.get(counter++);
-
+    for (var page : parserPages) {
       UUID pageId = page.get(Pages.PAGES.PAGEID);
+      URI siteBaseUrl = page.get(Sites.SITES.SITEURL);
+      PageType pageType = page.get(Pages.PAGES.PAGETYPE);
 
       log.info("processing page {} {}", page.get(Pages.PAGES.PAGEURL), pageId);
-      if (future == null) {
-        throw new RuntimeException("Future is empty, lets stop and investigate");
-      }
 
       String output = null;
       try {
-        HttpResponse<String> response = future.get();
-        if (response.statusCode() != 200) {
-          throw new RuntimeException("Unexpected status code " + response.statusCode());
-        }
-        output = response.body();
-        if (output.equals("")) {
-          throw new RuntimeException("Output is empty");
-        }
-
-        PageType pageType = page.get(Pages.PAGES.PAGETYPE);
-        ParserResult results = Utils.jsonMapper.readValue(output, ParserResult.class);
+        ParserResult results = pageParser.parsePage(Files.readAllBytes(pageParser.getPagePath(pageId)), pageId, siteBaseUrl.toString());
         if (results.loginRequired()) {
-          throw new RuntimeException("LoginRequired");
+          throw new SpiderWarningException("LoginRequired");
         }
         if (!results.pageType().equals(pageType)) {
           throw new SpiderWarningException(
@@ -207,12 +198,12 @@ public class PageSpider implements Closeable {
         for (ParserResult.ParserEntry result : results.subpages()) {
           if (!result.url().startsWith("http://" + pageDomain + "/")
               && !result.url().startsWith("https://" + pageDomain + "/")) {
-            throw new RuntimeException(
+            throw new SpiderWarningException(
                 "Got prefix " + result.url() + " expected " + "https://" + pageDomain + "/");
           }
           URI url = new URI(result.url());
           if (!pageDomain.equals(url.getHost())) {
-            throw new RuntimeException(
+            throw new SpiderWarningException(
                 "Expected domain " + pageDomain + " got " + url.getHost() + " for url " + url);
           }
 
