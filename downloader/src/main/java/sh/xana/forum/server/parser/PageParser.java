@@ -16,6 +16,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 import org.jsoup.nodes.Element;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +30,7 @@ import sh.xana.forum.server.dbutil.DatabaseStorage;
 import sh.xana.forum.server.dbutil.DatabaseStorage.DlStatus;
 import sh.xana.forum.server.dbutil.DatabaseStorage.ForumType;
 import sh.xana.forum.server.dbutil.DatabaseStorage.PageType;
+import sh.xana.forum.server.dbutil.DatabaseStorage.ValidationRecord;
 import sh.xana.forum.server.parser.impl.ForkBoard;
 import sh.xana.forum.server.parser.impl.SMF;
 import sh.xana.forum.server.parser.impl.XenForo_F;
@@ -41,15 +44,15 @@ public class PageParser {
   public static void main(String[] args) throws Exception {
     ServerConfig config = new ServerConfig();
     DatabaseStorage storage = new DatabaseStorage(config);
-    PageParser parser = new PageParser(config);
+    PageParser parser = new PageParser(config, storage);
 
     if (args.length == 0) {
       throw new RuntimeException("no args");
     } else if (args[0].equals("file")) {
       UUID pageId = UUID.fromString(args[1]);
       Path path = parser.getPagePath(pageId);
-      parser.parsePage(Files.readAllBytes(path), pageId, "http://1/");
-
+      ParserResult result = parser.parsePage(Files.readAllBytes(path), pageId, storage.getPageDomain(pageId).toString());
+      parser.postValidator(pageId, result);
       return;
     }
 
@@ -71,9 +74,11 @@ public class PageParser {
   }
 
   private final ServerConfig config;
+  private final DatabaseStorage dbStorage;
 
-  public PageParser(ServerConfig config) {
+  public PageParser(ServerConfig config, DatabaseStorage dbStorage) {
     this.config = config;
+    this.dbStorage = dbStorage;
   }
 
   public void start_simple(List<PagesRecord> pages) {
@@ -86,12 +91,10 @@ public class PageParser {
                 log.info("{} of {}", idx, pages.size());
               }
               try {
-
-                byte[] data = Files.readAllBytes(getPagePath(page.getPageid()));
-                ParserResult result = parsePage(data, page.getPageid(), "http://1/");
-                if (result.subpages().size() == 888888) {
-                  System.out.println("asdf");
-                }
+                UUID pageId = page.getPageid();
+                byte[] data = Files.readAllBytes(getPagePath(pageId));
+                ParserResult result = parsePage(data, pageId, dbStorage.getPageDomain(pageId).toString());
+                postValidator(pageId, result);
               } catch (Exception e) {
                 log.error("FAIL ON " + page.getPageid(), e);
                 System.exit(1);
@@ -115,35 +118,31 @@ public class PageParser {
       }
       return true;
     }
-
   }
 
   public void start_thread(List<PagesRecord> pages) {
     int threads = 16;
-    ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(
-        threads,
-        threads,
-        0L,
-        TimeUnit.MILLISECONDS,
-        new ThreadPoolQueue<>(100)
-    );
-//    threadPoolExecutor.setRejectedExecutionHandler();
+    ThreadPoolExecutor threadPoolExecutor =
+        new ThreadPoolExecutor(
+            threads, threads, 0L, TimeUnit.MILLISECONDS, new ThreadPoolQueue<>(100));
+    //    threadPoolExecutor.setRejectedExecutionHandler();
 
     AtomicInteger counter = new AtomicInteger();
     for (PagesRecord page : pages) {
-        threadPoolExecutor.submit((Callable<Void>) () -> {
-          int idx = counter.incrementAndGet();
-          if (idx % 1000 == 0) {
-            log.info("{} of {}", idx, pages.size());
-          }
+      threadPoolExecutor.submit(
+          (Callable<Void>)
+              () -> {
+                int idx = counter.incrementAndGet();
+                if (idx % 1000 == 0) {
+                  log.info("{} of {}", idx, pages.size());
+                }
 
-          byte[] data = Files.readAllBytes(getPagePath(page.getPageid()));
-          ParserResult result = parsePage(data, page.getPageid(), "http://1/");
-          if (result.subpages().size() == 888888) {
-            System.out.println("asdf");
-          }
-          return null;
-        });
+                UUID pageId = page.getPageid();
+                byte[] data = Files.readAllBytes(getPagePath(pageId));
+                ParserResult result = parsePage(data, pageId, dbStorage.getPageDomain(pageId).toString());
+                postValidator(pageId, result);
+                return null;
+              });
     }
   }
 
@@ -162,13 +161,15 @@ public class PageParser {
                       log.info("STARTING THREAD");
                       while (true) {
                         int idx = counter.incrementAndGet();
-//                        if (idx % 1000 == 0) {
+                        if (idx % 1000 == 0) {
                           log.info("{} of {}", idx, pages.size());
-//                        }
+                        }
 
                         try {
                           QueueEntry take = open.take();
-                          parsePage(take.in().readAllBytes(), take.pageId(), take.baseUrl());
+                          ParserResult result =
+                              parsePage(take.in().readAllBytes(), take.pageId(), take.baseUrl());
+                          postValidator(take.pageId(), result);
                         } catch (Exception e) {
                           log.error("FAILED TO PARSE", e);
                           System.exit(1);
@@ -186,12 +187,40 @@ public class PageParser {
               try {
                 open.put(
                     new QueueEntry(
-                        new FileInputStream(getPagePath(pageId).toFile()), pageId, "http://1/"));
+                        new FileInputStream(getPagePath(pageId).toFile()), pageId, dbStorage.getPageDomain(pageId).toString()));
               } catch (Exception e) {
                 log.error("FAILED TO PUT", e);
                 System.exit(1);
               }
             });
+  }
+
+  private void postValidator(UUID pageId, ParserResult result) {
+    //    List<PagesRecord> pages = dbStorage.getPages(Pages.PAGES.SOURCEPAGEID.eq(pageId));
+    List<ValidationRecord> pages =
+        dbStorage.getPageByUrl(
+                result.subpages().stream().map(ParserEntry::url).collect(Collectors.toList()));
+
+    List<String> errors = new ArrayList<>();
+    for (ValidationRecord page : pages) {
+      if (result.subpages().stream()
+          .noneMatch(parserEntry -> parserEntry.url().equals(page.url().toString()))) {
+        errors.add("parser missing url " + page.url());
+      }
+    }
+    for (ParserEntry subpage : result.subpages()) {
+      if (pages.stream().noneMatch(page -> page.url().toString().equals(subpage.url()))) {
+        errors.add("db missing url " + subpage.url());
+      }
+    }
+
+    if (!errors.isEmpty()) {
+      throw new RuntimeException(
+          "Failed to parse page "
+              + pageId
+              + System.lineSeparator()
+              + StringUtils.join(errors, System.lineSeparator()));
+    }
   }
 
   private Path getPagePath(UUID pageId) {
@@ -242,7 +271,7 @@ public class PageParser {
   private void addAnchorSubpage(
       Collection<Element> elements, List<ParserEntry> subpages, PageType pageType) {
     for (Element element : elements) {
-      ParserEntry parser = new ParserEntry(element.text(), element.attr("href"), pageType);
+      ParserEntry parser = new ParserEntry(element.text(), element.absUrl("href"), pageType);
       subpages.add(parser);
     }
   }
