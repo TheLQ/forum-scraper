@@ -26,17 +26,17 @@
           <includeExpression>.*Url</includeExpression>
         </forcedType>
         <forcedType>
-          <userType>sh.xana.forum.server.dbutil.DatabaseStorage.PageType</userType>
+          <userType>sh.xana.forum.server.dbutil.PageType</userType>
           <includeExpression>pageType</includeExpression>
           <enumConverter>true</enumConverter>
         </forcedType>
         <forcedType>
-          <userType>sh.xana.forum.server.dbutil.DatabaseStorage.DlStatus</userType>
+          <userType>sh.xana.forum.server.dbutil.DlStatus</userType>
           <includeExpression>dlstatus</includeExpression>
           <enumConverter>true</enumConverter>
         </forcedType>
         <forcedType>
-          <userType>sh.xana.forum.server.dbutil.DatabaseStorage.ForumType</userType>
+          <userType>sh.xana.forum.server.dbutil.ForumType</userType>
           <includeExpression>ForumType</includeExpression>
           <enumConverter>true</enumConverter>
         </forcedType>
