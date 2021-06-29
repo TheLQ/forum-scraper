@@ -97,8 +97,7 @@ public class SMF implements AbstractForum {
       String id = ForumUtils.assertNotBlank(matcher.group("id"));
 
       Element element =
-          ForumUtils.selectOnlyOne(
-              sourcePage.doc(), "#" + id + extraQuery, "post/topic id " + id);
+          ForumUtils.selectOnlyOne(sourcePage.doc(), "#" + id + extraQuery, "post/topic id " + id);
       result.add(element);
     }
     return result;

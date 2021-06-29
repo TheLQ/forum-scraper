@@ -15,6 +15,7 @@ import sh.xana.forum.common.Utils;
 import sh.xana.forum.common.ipc.NodeInitRequest;
 import sh.xana.forum.common.ipc.NodeResponse;
 import sh.xana.forum.common.ipc.ScraperDownload;
+import sh.xana.forum.common.ipc.ScraperDownload.SiteEntry;
 import sh.xana.forum.common.ipc.ScraperUpload;
 import sh.xana.forum.server.db.tables.Pages;
 import sh.xana.forum.server.db.tables.records.PagesRecord;
@@ -260,13 +261,19 @@ public class WebServer extends NanoHTTPD {
     assertAuth(session);
     byte[] input = readPostInput(session);
     ScraperUpload scraperUpload = Utils.jsonMapper.readValue(input, ScraperUpload.class);
-    pageManager.processResponses(scraperUpload);
 
     List<ScraperDownload.SiteEntry> requests;
-    if (scraperUpload.requestMore()) {
-      requests = dbStorage.movePageQueuedToDownloadIPC(scraperUpload.domain());
-    } else {
-      requests = List.of();
+    synchronized (pageManager.PROCESSOR_LOCK) {
+      pageManager.processResponses(scraperUpload);
+      if (scraperUpload.requestMore()) {
+        requests = dbStorage.movePageQueuedToDownloadIPC(scraperUpload.domain());
+      } else {
+        requests = List.of();
+      }
+    }
+
+    for (SiteEntry entry : requests) {
+      log.debug("Rquesting download of {} url {}", entry.pageId(), entry.url());
     }
     ScraperDownload download = new ScraperDownload(requests);
 

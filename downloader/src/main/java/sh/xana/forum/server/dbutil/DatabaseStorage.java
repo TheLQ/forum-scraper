@@ -90,6 +90,7 @@ public class DatabaseStorage {
 
   /** Stage: Load pages to be downloaded by Scraper */
   public List<ScraperDownload.SiteEntry> movePageQueuedToDownloadIPC(String domain) {
+    // TODO: VERY SUSPICIOUS RACE. Seems multiple clients can request the page,
     List<ScraperDownload.SiteEntry> pages =
         context
             .select()

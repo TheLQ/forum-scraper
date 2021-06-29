@@ -4,9 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.URI;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLIntegrityConstraintViolationException;
@@ -14,8 +11,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.CompletableFuture;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.jooq.Record7;
+import org.jooq.Result;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.Utils;
@@ -43,6 +41,11 @@ public class PageManager implements Closeable {
    * deadlock itself on init/load
    */
   private final ArrayBlockingQueue<Boolean> spiderSignal = new ArrayBlockingQueue<>(10);
+  /**
+   * Very carefully lock all DlStatus state changes to avoid races, especially as the database grows
+   * and individual queries take longer
+   */
+  public final Object PROCESSOR_LOCK = new Object();
 
   private final Path fileCachePath;
   private final PageParser pageParser;
@@ -61,6 +64,7 @@ public class PageManager implements Closeable {
 
   /** Process responses the download scraper collected */
   public void processResponses(ScraperUpload response) throws IOException, InterruptedException {
+    // TODO: ALSO VERY RACY
     for (ScraperUpload.Error error : response.errors()) {
       log.debug("Found error for {} {}", error.id(), error.exception());
       dbStorage.setPageException(error.id(), error.exception());
@@ -123,7 +127,8 @@ public class PageManager implements Closeable {
   }
 
   public void signalSpider() throws InterruptedException {
-    spiderSignal.put(true);
+    // insert request but do not block to avoid deadlocking PROCESSOR_LOCK
+    spiderSignal.offer(true);
   }
 
   public void startSpiderThread() {
@@ -149,7 +154,10 @@ public class PageManager implements Closeable {
   }
 
   private boolean pageSpiderCycle() throws InterruptedException {
-    var parserPages = dbStorage.getParserPages();
+    Result<Record7<UUID, UUID, URI, PageType, String, URI, ForumType>> parserPages;
+    synchronized (PROCESSOR_LOCK) {
+      parserPages = dbStorage.getParserPages();
+    }
     if (parserPages.size() == 0) {
       log.debug("Waiting for next signal");
       // wait until we get signaled there is stuff to do, then restart
@@ -160,31 +168,8 @@ public class PageManager implements Closeable {
     // wipe out remaining triggers
     spiderSignal.clear();
 
-    // Batch requests for improved IPC performance
-    List<CompletableFuture<HttpResponse<String>>> futures = new ArrayList<>();
-    for (var page : parserPages) {
-      UUID pageId = page.get(Pages.PAGES.PAGEID);
-      URI siteBaseUrl = page.get(Sites.SITES.SITEURL);
-      try {
-        HttpRequest request =
-            HttpRequest.newBuilder()
-                .uri(
-                    new URI(
-                        config.get(config.ARG_PARSER_SERVER) + "/" + pageId + "?" + siteBaseUrl))
-                .build();
-        CompletableFuture<HttpResponse<String>> responseFuture =
-            Utils.httpClient.sendAsync(request, BodyHandlers.ofString());
-        futures.add(responseFuture);
-      } catch (Exception e) {
-        log.warn("Failed in parser HTTP init", e);
-        dbStorage.setPageException(pageId, ExceptionUtils.getStackTrace(e));
-        futures.add(null);
-      }
-    }
-
     List<UUID> sqlDone = new ArrayList<>(parserPages.size());
     List<PagesRecord> sqlNewPages = new ArrayList<>();
-    int counter = 0;
     for (var page : parserPages) {
       UUID pageId = page.get(Pages.PAGES.PAGEID);
       URI siteBaseUrl = page.get(Sites.SITES.SITEURL);
