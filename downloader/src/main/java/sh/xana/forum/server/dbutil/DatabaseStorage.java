@@ -377,7 +377,8 @@ public class DatabaseStorage {
         context
             .update(PAGES)
             .set(PAGES.DLSTATUS, status)
-            .set(PAGES.PAGEUPDATED, LocalDateTime.now())
+            // do not update status for anything but download to parse
+            // .set(PAGES.PAGEUPDATED, LocalDateTime.now())
             .where(PAGES.PAGEID.in(pageIds));
 
     executeRows(query, pageIds.size());
