@@ -117,11 +117,27 @@ public class WebServer extends NanoHTTPD {
 
   String pageOverview() {
     StringBuilder result = new StringBuilder();
-    result.append("<pre>");
+    result.append("<table>");
+    result.append("<tr>");
+    result.append("<th>ID</th>");
+    result.append("<th>UUID</th>");
+    result.append("<th>Queued</th>");
+    result.append("<th>Download</th>");
+    result.append("<th>Parse</th>");
+    result.append("<th>Done</th>");
+    result.append("</tr>");
+
     for (DatabaseStorage.OverviewEntry entry : dbStorage.getOverviewSites()) {
-      result.append(entry.toString()).append("\r\n");
+      result.append("<tr>");
+      result.append("<td>").append(entry.siteId()).append("</td>");
+      result.append("<td>").append(entry.siteUrl()).append("</td>");
+      result.append("<td>").append(entry.dlStatusCount().get(DlStatus.Queued)).append("</td>");
+      result.append("<td>").append(entry.dlStatusCount().get(DlStatus.Download)).append("</td>");
+      result.append("<td>").append(entry.dlStatusCount().get(DlStatus.Parse)).append("</td>");
+      result.append("<td>").append(entry.dlStatusCount().get(DlStatus.Done)).append("</td>");
+      result.append("</tr>");
     }
-    result.append("</pre>");
+    result.append("</table>");
     return result.toString();
   }
 
@@ -275,7 +291,6 @@ public class WebServer extends NanoHTTPD {
     Path filename = Path.of(filenameStr);
     if (!Files.exists(filename)) {
       log.debug("Cannot find path {} full {}", filename, filename.toAbsolutePath());
-      log.trace("Cannot find path {} full {}", filename, filename.toAbsolutePath());
       return newFixedLengthResponse(
           Response.Status.NOT_FOUND, NanoHTTPD.MIME_HTML, "file not found " + filenameStr);
     }
