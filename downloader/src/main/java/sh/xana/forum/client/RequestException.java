@@ -18,7 +18,7 @@ public class RequestException extends RuntimeException {
     if (body instanceof String) {
       msg += " body length " + msg.length() + System.lineSeparator() + msg;
     } else if (body.getClass().isArray()) {
-      msg += " body array length " + ((Object[])body).length;
+      msg += " body array length " + ((Object[]) body).length;
     } else {
       msg += " body " + body;
     }

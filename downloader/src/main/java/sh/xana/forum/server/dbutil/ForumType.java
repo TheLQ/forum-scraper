@@ -1,8 +1,6 @@
 package sh.xana.forum.server.dbutil;
 
-/**
- * Sites.ForumType column
- */
+/** Sites.ForumType column */
 public enum ForumType {
   ForkBoard,
   vBulletin,

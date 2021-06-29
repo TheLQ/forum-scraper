@@ -1,8 +1,6 @@
 package sh.xana.forum.server.dbutil;
 
-/**
- * Pages.PageType column
- */
+/** Pages.PageType column */
 public enum PageType {
   ForumList,
   TopicPage,

@@ -76,7 +76,7 @@ public class PageParser {
     } catch (ParserException e) {
       throw e;
     } catch (Exception e) {
-      throw new ParserException("Failed inside parser", pageId);
+      throw new ParserException("Failed inside parser", pageId, e);
     }
     throw new ParserException("No parsers handled this file", pageId);
   }
@@ -92,10 +92,10 @@ public class PageParser {
   public static class ParserException extends RuntimeException {
 
     public ParserException(String message, UUID pageId) {
-      this(message, null, pageId);
+      this(message, pageId, null);
     }
 
-    public ParserException(String message, Throwable cause, UUID pageId) {
+    public ParserException(String message, UUID pageId, Throwable cause) {
       super(message + " Page " + pageId, cause);
     }
   }

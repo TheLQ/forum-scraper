@@ -161,8 +161,9 @@ public class Scraper implements Closeable {
       ScraperUpload request =
           new ScraperUpload(
               ClientMain.NODE_ID, this.domain, requestMore, responseSuccess, responseError);
-      String newRequestsJSON = Utils.serverPostBackend(
-          WebServer.PAGE_CLIENT_BUFFER, Utils.jsonMapper.writeValueAsString(request));
+      String newRequestsJSON =
+          Utils.serverPostBackend(
+              WebServer.PAGE_CLIENT_BUFFER, Utils.jsonMapper.writeValueAsString(request));
 
       ScraperDownload response = Utils.jsonMapper.readValue(newRequestsJSON, ScraperDownload.class);
       scraperRequests.addAll(response.entries());

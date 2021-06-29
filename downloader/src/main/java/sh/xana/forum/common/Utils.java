@@ -63,7 +63,8 @@ public class Utils {
         TimeUnit.MINUTES.sleep(waitMinutes);
       }
     }
-    throw new RuntimeException("FAILED AFTER EXPONENTIAL BACKOFF, last exception attached", lastException);
+    throw new RuntimeException(
+        "FAILED AFTER EXPONENTIAL BACKOFF, last exception attached", lastException);
   }
 
   public static <T> HttpResponse<T> serverRequest(
