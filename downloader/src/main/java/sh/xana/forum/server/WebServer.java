@@ -244,7 +244,8 @@ public class WebServer extends NanoHTTPD {
     assertAuth(session);
     byte[] input = readPostInput(session);
     NodeInitRequest request = Utils.jsonMapper.readValue(input, NodeInitRequest.class);
-    UUID nodeId = nodeManager.registerNode(request.ip(), request.hostname());
+    // UUID nodeId = nodeManager.registerNode(request.ip(), request.hostname());
+    UUID nodeId = UUID.randomUUID();
 
     NodeResponse response =
         new NodeResponse(
