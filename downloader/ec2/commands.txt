@@ -18,7 +18,8 @@ UPDATE `Pages` SET `exception` = NULL WHERE `exception` IS NOT NULL AND `dlstatu
 UPDATE `Pages` SET `dlstatus` = 'Parse', `exception` = NULL WHERE `dlstatus` = 'Done';
 ###
 
-UPDATE `Pages` SET `dlstatus` = 'Queued' WHERE `dlstatus` = 'Download'
+UPDATE `Pages` SET `dlstatus` = 'Queued' WHERE `dlstatus` = 'Download';
+UPDATE `Pages` SET `exception` = Null WHERE `dlstatus` = 'Queued';
 
 SELECT * FROM `Pages` WHERE `url` LIKE '%/marketplace/%' LIMIT 100
 

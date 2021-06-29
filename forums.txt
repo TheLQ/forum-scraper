@@ -12,6 +12,7 @@ phpBB
 https://forums.nicoclub.com/
 https://blueirissoftware.com/forum
 https://forums.zoneminder.com
+https://www.msextra.com/forums/
 
 SMF
 ADDED https://www.eevblog.com/forum/
@@ -25,6 +26,7 @@ ADDED https://www.b15sentra.net/
 ADDED https://www.nissancubelife.com/
 ADDED https://www.subaruforester.org/
 https://forums.mydigitallife.net/ - custom theme
+https://www.thesubaruforums.com/
 
 ForkBoard
 ARCHIVED https://www.sr20-forum.com/ - important, custom(?) forum
@@ -38,3 +40,6 @@ https://forums2.battleon.com/f/default.asp
 
 Wordpress bbPress
 https://millcomputing.com/forums/
+
+Invision Community
+https://www.ultimatesubaru.org/forum/

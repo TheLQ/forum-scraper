@@ -6,6 +6,7 @@ import java.net.URI;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -101,6 +102,7 @@ public class Scraper implements Closeable {
                   // Fix VERY annoying forum that gives different html without this, breaking parser
                   .header("User-Agent", config.get(config.ARG_CLIENT_USERAGENT))
                   .uri(url)
+                  .timeout(Duration.ofSeconds(60))
                   .build();
           response = Utils.httpClient.send(request, BodyHandlers.ofByteArray());
 

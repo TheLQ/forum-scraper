@@ -9,6 +9,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +42,8 @@ public class Utils {
   //  }
 
   public static String serverGet(String urlRaw) {
-    HttpRequest request = HttpRequest.newBuilder().uri(newUri(urlRaw)).build();
+    HttpRequest request =
+        HttpRequest.newBuilder().uri(newUri(urlRaw)).timeout(Duration.ofSeconds(60)).build();
     return serverRequest(request, BodyHandlers.ofString()).body();
   }
 
@@ -54,6 +56,7 @@ public class Utils {
                 .uri(newUri(BACKEND_SERVER + path))
                 .POST(BodyPublishers.ofString(postData))
                 .header(WebServer.NODE_AUTH_KEY, BACKEND_KEY)
+                .timeout(Duration.ofSeconds(60))
                 .build();
         return serverRequest(request, BodyHandlers.ofString()).body();
       } catch (RequestException e) {
