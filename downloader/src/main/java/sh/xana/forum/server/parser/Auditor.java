@@ -28,8 +28,8 @@ import sh.xana.forum.common.ipc.ParserResult.ParserEntry;
 import sh.xana.forum.server.ServerConfig;
 import sh.xana.forum.server.db.tables.Pages;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
-import sh.xana.forum.server.dbutil.DlStatus;
 import sh.xana.forum.server.dbutil.DatabaseStorage.ValidationRecord;
+import sh.xana.forum.server.dbutil.DlStatus;
 
 /** Audits complete file cache */
 public class Auditor {
@@ -45,11 +45,17 @@ public class Auditor {
     if (args.length == 0) {
       throw new RuntimeException("no args");
     } else if (args[0].equals("file")) {
-      UUID pageId = UUID.fromString(args[1]);
-      Path path = parser.getPagePath(pageId);
-      ParserResult result =
-          parser.parsePage(
-              Files.readAllBytes(path), pageId, dbStorage.getPageDomain(pageId).toString());
+      String pathArg = args[1];
+      Path path = Path.of(pathArg);
+      UUID pageId = null;
+      String domain = "http://1/";
+      if (!Files.exists(path)) {
+        pageId = UUID.fromString(pathArg);
+        path = parser.getPagePath(pageId);
+        domain = dbStorage.getPageDomain(pageId).toString();
+      }
+
+      ParserResult result = parser.parsePage(Files.readAllBytes(path), pageId, domain);
       postValidator(pageId, result);
       log.info(
           "result {}",
@@ -69,26 +75,27 @@ public class Auditor {
       AtomicInteger pageCounter = new AtomicInteger();
       AtomicInteger deleteCounter = new AtomicInteger();
       Files.walk(Path.of(config.get(config.ARG_FILE_CACHE)), 1)
-          .forEach(path -> {
-            String rawId = path.getFileName().toString();
-            if (!rawId.endsWith(".response")) {
-              return;
-            }
-            if (pageCounter.incrementAndGet() % 1000 == 0) {
-              log.info("Processed " + pageCounter);
-            }
+          .forEach(
+              path -> {
+                String rawId = path.getFileName().toString();
+                if (!rawId.endsWith(".response")) {
+                  return;
+                }
+                if (pageCounter.incrementAndGet() % 1000 == 0) {
+                  log.info("Processed " + pageCounter);
+                }
 
-            rawId = rawId.substring(0, rawId.indexOf('.'));
-            UUID pageId = UUID.fromString(rawId);
-            if (!pagesIds.contains(pageId)) {
-              deleteCounter.incrementAndGet();
-              try {
-                Files.delete(path);
-              } catch (IOException e) {
-                throw new RuntimeException("fail", e);
-              }
-            }
-          });
+                rawId = rawId.substring(0, rawId.indexOf('.'));
+                UUID pageId = UUID.fromString(rawId);
+                if (!pagesIds.contains(pageId)) {
+                  deleteCounter.incrementAndGet();
+                  try {
+                    Files.delete(path);
+                  } catch (IOException e) {
+                    throw new RuntimeException("fail", e);
+                  }
+                }
+              });
       log.info("Processed {} pages, deleted {}", pageCounter, deleteCounter);
 
       return;
