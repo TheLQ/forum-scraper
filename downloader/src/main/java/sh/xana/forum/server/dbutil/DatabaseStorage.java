@@ -98,6 +98,8 @@ public class DatabaseStorage {
             .where(PAGES.DOMAIN.eq(domain))
             .and(PAGES.DLSTATUS.eq(DlStatus.Queued))
             .and(PAGES.EXCEPTION.isNull())
+            // Select ForumList first, which alphabetically is before TopicPage
+            .orderBy(PAGES.PAGETYPE)
             .limit(Scraper.URL_QUEUE_REFILL_SIZE)
             .fetch()
             .map(r -> new ScraperDownload.SiteEntry(r.get(PAGES.PAGEID), r.get(PAGES.PAGEURL)));
