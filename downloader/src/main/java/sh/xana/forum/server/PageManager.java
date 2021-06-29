@@ -69,28 +69,43 @@ public class PageManager implements Closeable {
     List<PageredirectsRecord> sqlNewRedirects = new ArrayList<>();
 
     for (ScraperUpload.Success success : response.successes()) {
-      log.debug("Writing " + success.id().toString() + " response and header");
-      Files.write(fileCachePath.resolve(success.id() + ".response"), success.body());
+      log.debug("Writing " + success.pageId().toString() + " response and header");
+      try {
+        PagesRecord page = dbStorage.getPage(success.pageId());
+        if (page.getPageurl().equals("asdf")) {
+          throw new RuntimeException("que?");
+        }
+      } catch (Exception e) {
+        throw new RuntimeException(
+            "Failed to get page "
+                + success.pageId()
+                + " url "
+                + success.pageUrl()
+                + " headers "
+                + success.headers(),
+            e);
+      }
+      Files.write(fileCachePath.resolve(success.pageId() + ".response"), success.body());
       Files.writeString(
-          fileCachePath.resolve(success.id() + ".headers"),
+          fileCachePath.resolve(success.pageId() + ".headers"),
           Utils.jsonMapper.writeValueAsString(success.headers()));
 
-      dbStorage.movePageDownloadToParse(success.id(), success.responseCode());
+      dbStorage.movePageDownloadToParse(success.pageId(), success.responseCode());
 
       if (!success.redirectList().isEmpty()) {
         byte counter = 0;
         URI lastUri = null;
         for (URI newUri : success.redirectList()) {
-          sqlNewRedirects.add(new PageredirectsRecord(success.id(), newUri, counter++));
+          sqlNewRedirects.add(new PageredirectsRecord(success.pageId(), newUri, counter++));
           lastUri = newUri;
         }
         try {
-          dbStorage.setPageURL(success.id(), lastUri);
+          dbStorage.setPageURL(success.pageId(), lastUri);
         } catch (Exception e) {
           if (e.getCause() instanceof SQLIntegrityConstraintViolationException
               && e.getCause().getMessage().contains("Duplicate entry")) {
             // we have redirected to an existing page. So we don't need this anymore
-            dbStorage.deletePage(success.id());
+            dbStorage.deletePage(success.pageId());
           } else {
             throw e;
           }
@@ -179,7 +194,9 @@ public class PageManager implements Closeable {
 
       String output = null;
       try {
-        ParserResult results = pageParser.parsePage(Files.readAllBytes(pageParser.getPagePath(pageId)), pageId, siteBaseUrl.toString());
+        ParserResult results =
+            pageParser.parsePage(
+                Files.readAllBytes(pageParser.getPagePath(pageId)), pageId, siteBaseUrl.toString());
         if (results.loginRequired()) {
           throw new SpiderWarningException("LoginRequired");
         }
@@ -198,8 +215,11 @@ public class PageManager implements Closeable {
         for (ParserResult.ParserEntry result : results.subpages()) {
           if (!result.url().startsWith("http://" + pageDomain + "/")
               && !result.url().startsWith("https://" + pageDomain + "/")) {
-            throw new SpiderWarningException(
-                "Got prefix " + result.url() + " expected " + "https://" + pageDomain + "/");
+            log.warn(
+                "Got prefix {} expected https://{}/ for pageId {}",
+                result.url(),
+                pageDomain,
+                pageId);
           }
           URI url = new URI(result.url());
           if (!pageDomain.equals(url.getHost())) {

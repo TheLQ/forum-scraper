@@ -55,8 +55,8 @@ public class SMF implements AbstractForum {
 
   @Override
   public @Nonnull Collection<Element> getPostElements(SourcePage sourcePage) {
-    // both the topiclist entry and the message posts use the same id... so make sure we are on the
-    // post page
+    // both the topiclist entry and the message posts use the same id... so make sure we are on
+    // the post page
     if (!sourcePage.doc().select("#messageindex").isEmpty()) {
       return Collections.emptyList();
     }
@@ -80,8 +80,8 @@ public class SMF implements AbstractForum {
 
   @Override
   public @Nonnull Collection<Element> getTopicAnchors(SourcePage sourcePage) {
-    // both the topiclist entry and the message posts use the same id... so make sure we are on the
-    // forumlist page
+    // both the topiclist entry and the message posts use the same id... so make sure we are on
+    // the forumlist page
     if (sourcePage.doc().select("#messageindex").isEmpty()) {
       return Collections.emptyList();
     }
@@ -97,7 +97,8 @@ public class SMF implements AbstractForum {
       String id = ForumUtils.assertNotBlank(matcher.group("id"));
 
       Element element =
-          ForumUtils.selectOnlyOne(sourcePage.doc(), "#" + id + extraQuery, "post/topic id " + id);
+          ForumUtils.selectOnlyOne(
+              sourcePage.doc(), "#" + id + extraQuery, "post/topic id " + id);
       result.add(element);
     }
     return result;

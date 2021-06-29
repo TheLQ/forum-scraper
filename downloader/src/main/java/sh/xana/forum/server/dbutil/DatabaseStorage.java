@@ -102,7 +102,7 @@ public class DatabaseStorage {
             .map(r -> new ScraperDownload.SiteEntry(r.get(PAGES.PAGEID), r.get(PAGES.PAGEURL)));
 
     setPageStatus(
-        pages.stream().map(ScraperDownload.SiteEntry::siteId).collect(Collectors.toList()),
+        pages.stream().map(ScraperDownload.SiteEntry::pageId).collect(Collectors.toList()),
         DlStatus.Download);
 
     return pages;
@@ -222,7 +222,7 @@ public class DatabaseStorage {
     List<SitesRecord> sites = getSites(SITES.SITEID.eq(siteId));
     if (sites.size() != 1) {
       throw new RuntimeException(
-          "Expected 1 row, got " + sites.size() + " for id " + siteId + "\r\n" + sites);
+          "Expected 1 row, got " + sites.size() + " for siteId " + siteId + "\r\n" + sites);
     }
     return sites.get(0);
   }
@@ -267,7 +267,7 @@ public class DatabaseStorage {
     List<PagesRecord> pages = getPages(PAGES.PAGEID.eq(pageId));
     if (pages.size() != 1) {
       throw new RuntimeException(
-          "Expected 1 row, got " + pages.size() + " for id " + pageId + "\r\n" + pages);
+          "Expected 1 row, got " + pages.size() + " for pageId " + pageId + "\r\n" + pages);
     }
     return pages.get(0);
   }
@@ -275,7 +275,7 @@ public class DatabaseStorage {
   /**
    * New site
    *
-   * @return id
+   * @return pageId
    */
   public UUID insertSite(URI url, ForumType forumType) {
     UUID id = UUID.randomUUID();
@@ -289,7 +289,7 @@ public class DatabaseStorage {
   /**
    * New page to be queued for later download
    *
-   * @return id
+   * @return pageId
    */
   public List<UUID> insertPageQueued(UUID siteId, List<URI> urls, PageType type, UUID sourceId) {
     List<UUID> result = new ArrayList<>(urls.size());

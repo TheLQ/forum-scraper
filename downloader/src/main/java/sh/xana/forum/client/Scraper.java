@@ -95,7 +95,7 @@ public class Scraper implements Closeable {
         HttpResponse<byte[]> response;
         URI url = scraperRequest.url();
         while (true) {
-          log.debug("Requesting {} url {}", scraperRequest.siteId(), scraperRequest.url());
+          log.debug("Requesting {} url {}", scraperRequest.pageId(), scraperRequest.url());
           HttpRequest request =
               HttpRequest.newBuilder()
                   // Fix VERY annoying forum that gives different html without this, breaking parser
@@ -123,7 +123,8 @@ public class Scraper implements Closeable {
 
         responseSuccess.add(
             new ScraperUpload.Success(
-                scraperRequest.siteId(),
+                scraperRequest.pageId(),
+                scraperRequest.url(),
                 redirectList,
                 response.body(),
                 response.headers().map(),
@@ -133,7 +134,7 @@ public class Scraper implements Closeable {
       } catch (Exception e) {
         log.debug("exception during run", e);
         responseError.add(
-            new ScraperUpload.Error(scraperRequest.siteId(), ExceptionUtils.getStackTrace(e)));
+            new ScraperUpload.Error(scraperRequest.pageId(), ExceptionUtils.getStackTrace(e)));
       }
     }
 

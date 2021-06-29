@@ -5,5 +5,5 @@ import java.util.List;
 import java.util.UUID;
 
 public record ScraperDownload(List<SiteEntry> entries) {
-  public record SiteEntry(UUID siteId, URI url) {}
+  public record SiteEntry(UUID pageId, URI url) {}
 }
