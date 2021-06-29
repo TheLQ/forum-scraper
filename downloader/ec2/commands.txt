@@ -1,4 +1,5 @@
 scp downloader\target\dependencies.jar "ec2-user@aws-server:/opt/app/scraper"
+scp -r downloader\target\modules "ec2-user@aws-server:/opt/app/scraper/"
 scp downloader\target\scrape-download-1.0-SNAPSHOT.jar "ec2-user@aws-server:/opt/app/scraper"
 
 scp -r parser\dist\bundle.js "ec2-user@aws-server:/opt/app/parser/parser.js"

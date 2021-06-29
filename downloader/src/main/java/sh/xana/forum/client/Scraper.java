@@ -2,14 +2,12 @@ package sh.xana.forum.client;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.net.ConnectException;
 import java.net.URI;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
@@ -44,7 +42,6 @@ public class Scraper implements Closeable {
   private final List<ScraperUpload.Error> responseError = new ArrayList<>();
 
   private final Thread thread;
-  private final CountDownLatch threadCloser = new CountDownLatch(1);
 
   public Scraper(ClientConfig config, String domain) {
     this.config = config;
@@ -131,6 +128,8 @@ public class Scraper implements Closeable {
                 response.body(),
                 response.headers().map(),
                 response.statusCode()));
+      } catch (InterruptedException e) {
+        throw e;
       } catch (Exception e) {
         log.debug("exception during run", e);
         responseError.add(
@@ -140,12 +139,14 @@ public class Scraper implements Closeable {
 
     // sleep then continue for the next cycle
     log.debug("Queued {} urls, sleeping {} seconds", scraperRequests.size(), CYCLE_SECONDS);
-    boolean isClosing = threadCloser.await(CYCLE_SECONDS, TimeUnit.SECONDS);
-    if (isClosing) {
-      // send what we have
+    try {
+      TimeUnit.SECONDS.sleep(CYCLE_SECONDS);
+    } catch (InterruptedException e) {
+      log.info("Captured interrupt, sending last request");
       refillQueue(false);
+      return true;
     }
-    return isClosing;
+    return false;
   }
 
   /** Fetch new batch of URLs to process, and submit completedBuffer */
@@ -160,28 +161,8 @@ public class Scraper implements Closeable {
       ScraperUpload request =
           new ScraperUpload(
               ClientMain.NODE_ID, this.domain, requestMore, responseSuccess, responseError);
-      String newRequestsJSON = null;
-      for (int i = 0; i < 30; i++) {
-        try {
-          newRequestsJSON =
-              Utils.serverPostBackend(
-                  WebServer.PAGE_CLIENT_BUFFER, Utils.jsonMapper.writeValueAsString(request));
-          break;
-        } catch (Exception e) {
-          if (e.getCause() instanceof ConnectException) {
-            int waitMinutes = i + /*0-base*/ 1;
-            log.warn("Failed to connect, waiting for {} minutes", waitMinutes, e);
-            boolean isClosing = threadCloser.await(waitMinutes, TimeUnit.MINUTES);
-            if (isClosing) {
-              // close early
-              return true;
-            }
-            // continue onto next loop
-          } else {
-            throw e;
-          }
-        }
-      }
+      String newRequestsJSON = Utils.serverPostBackend(
+          WebServer.PAGE_CLIENT_BUFFER, Utils.jsonMapper.writeValueAsString(request));
 
       ScraperDownload response = Utils.jsonMapper.readValue(newRequestsJSON, ScraperDownload.class);
       scraperRequests.addAll(response.entries());
@@ -197,9 +178,7 @@ public class Scraper implements Closeable {
   @Override
   public void close() throws IOException {
     log.info("close called, stopping thread");
-    if (thread.isAlive()) {
-      threadCloser.countDown();
-    }
+    thread.interrupt();
   }
 
   public void waitForThreadDeath() throws InterruptedException {

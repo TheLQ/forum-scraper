@@ -1,6 +1,7 @@
 package sh.xana.forum.common;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
@@ -8,9 +9,11 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.helpers.MessageFormatter;
+import sh.xana.forum.client.RequestException;
 import sh.xana.forum.server.WebServer;
 
 public class Utils {
@@ -42,43 +45,39 @@ public class Utils {
     return serverRequest(request, BodyHandlers.ofString()).body();
   }
 
-  public static String serverPostBackend(String path, String postData) {
-    HttpRequest request =
-        HttpRequest.newBuilder()
-            .uri(newUri(BACKEND_SERVER + path))
-            .POST(BodyPublishers.ofString(postData))
-            .header(WebServer.NODE_AUTH_KEY, BACKEND_KEY)
-            .build();
-    return serverRequest(request, BodyHandlers.ofString()).body();
-  }
-
-  public static String serverPost(String urlRaw, String postData) {
-    HttpRequest request =
-        HttpRequest.newBuilder()
-            .uri(newUri(urlRaw))
-            .POST(BodyPublishers.ofString(postData))
-            .build();
-    return serverRequest(request, BodyHandlers.ofString()).body();
+  public static String serverPostBackend(String path, String postData) throws InterruptedException {
+    Exception lastException = null;
+    for (int i = 0; i < 30; i++) {
+      try {
+        HttpRequest request =
+            HttpRequest.newBuilder()
+                .uri(newUri(BACKEND_SERVER + path))
+                .POST(BodyPublishers.ofString(postData))
+                .header(WebServer.NODE_AUTH_KEY, BACKEND_KEY)
+                .build();
+        return serverRequest(request, BodyHandlers.ofString()).body();
+      } catch (RequestException e) {
+        lastException = e;
+        int waitMinutes = i + /*0-base*/ 1;
+        log.warn("Request failed, waiting " + waitMinutes + " minutes", e);
+        TimeUnit.MINUTES.sleep(waitMinutes);
+      }
+    }
+    throw new RuntimeException("FAILED AFTER EXPONENTIAL BACKOFF, last exception attached", lastException);
   }
 
   public static <T> HttpResponse<T> serverRequest(
       HttpRequest request, HttpResponse.BodyHandler<T> responseBodyHandler) {
     try {
       HttpResponse<T> response = httpClient.send(request, responseBodyHandler);
-
       if (response.statusCode() != 200) {
-        String debug = "";
-        if (response.body() instanceof String) {
-          debug =
-              ". Response length "
-                  + ((String) response.body()).length()
-                  + " '"
-                  + response.body()
-                  + "'";
-        }
-        throw new RuntimeException("Failing status code " + response.statusCode() + debug);
+        throw new RequestException(request.uri(), response.statusCode(), response.body());
       }
       return response;
+    } catch (RequestException e) {
+      throw e;
+    } catch (IOException e) {
+      throw new RequestException("Failed to connect", e);
     } catch (Exception e) {
       throw new RuntimeException("Failure on " + request.uri(), e);
     }
