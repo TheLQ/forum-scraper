@@ -6,8 +6,9 @@
     </encoder>
   </appender>
 
+  <timestamp key="timestamp" datePattern="yyyy-MM-dd-HHmmss"/>
   <appender name="FILE" class="ch.qos.logback.core.FileAppender">
-    <file>server-errors.log</file>
+    <file>server-errors-${timestamp}.log</file>
     <append>true</append>
     <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
       <level>WARN</level>
