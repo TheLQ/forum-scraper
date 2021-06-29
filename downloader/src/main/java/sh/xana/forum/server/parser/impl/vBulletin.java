@@ -39,7 +39,7 @@ public class vBulletin implements AbstractForum {
     List<Element> elements = new ArrayList<>();
 
     // normal page nav list
-    for (Element elem : sourcePage.doc().select(".pagenav a, link[rel='next']")) {
+    for (Element elem : sourcePage.doc().select(".pagenav a, .pagination a, link[rel='next']")) {
       if (ForumUtils.anchorIsNotNavLink(elem)) {
         continue;
       }
@@ -51,7 +51,9 @@ public class vBulletin implements AbstractForum {
 
   @Override
   public @Nonnull Collection<Element> getPostElements(SourcePage sourcePage) {
-    Matcher matcher = Pattern.compile("id=\"(?<id>td_post_[0-9]+)\"").matcher(sourcePage.rawHtml());
+    Matcher matcher =
+        Pattern.compile("id=\"(?<id>(td_post|post_message)_[0-9]+)\"")
+            .matcher(sourcePage.rawHtml());
 
     List<Element> result = new ArrayList<>();
     while (matcher.find()) {
@@ -64,7 +66,7 @@ public class vBulletin implements AbstractForum {
 
   @Override
   public @Nonnull Collection<Element> getSubforumAnchors(SourcePage sourcePage) {
-    Matcher matcher = Pattern.compile("id=\"(?<id>f[0-9]+)\"").matcher(sourcePage.rawHtml());
+    Matcher matcher = Pattern.compile("id=\"(?<id>f(orum)?[0-9]+)\"").matcher(sourcePage.rawHtml());
 
     List<Element> result = new ArrayList<>();
     while (matcher.find()) {
@@ -74,7 +76,8 @@ public class vBulletin implements AbstractForum {
       Elements anchors =
           ForumUtils.selectOneOrMore(
               sourcePage.doc(),
-              "div[id='ID'] h2 a, div[id='ID'] h3 a, td[id='ID'] a".replaceAll("ID", id),
+              "div[id='ID'] h2 a, div[id='ID'] h3 a, td[id='ID'] a, li[id='ID'] .forumtitle a"
+                  .replaceAll("ID", id),
               "for forum " + id);
       result.addAll(anchors);
     }
@@ -152,6 +155,10 @@ public class vBulletin implements AbstractForum {
 
         // The infinite scroll plugin uses a ?ispreloading magic url
         newUrl = newUrl.replace("?ispreloading=1", "");
+
+        if (newUrl.endsWith("&")) {
+          newUrl = newUrl.substring(0, newUrl.length() - 1);
+        }
 
         if (!entry.url().equals(newUrl)) {
           entry = new ParserEntry(entry.name(), newUrl, entry.pageType());
