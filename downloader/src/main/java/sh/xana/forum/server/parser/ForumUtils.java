@@ -23,7 +23,8 @@ public class ForumUtils {
 
   public static boolean anchorIsNotNavLink(Element elem) {
     return (!elem.attr("name").isBlank() && elem.attr("href").isBlank())
-        || elem.attr("href").startsWith("javascript://");
+        || elem.attr("href").startsWith("javascript://")
+        || elem.attr("href").startsWith("#");
   }
 
   public static String assertNotBlank(String in) {

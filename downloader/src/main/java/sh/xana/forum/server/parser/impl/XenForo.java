@@ -8,7 +8,7 @@ import sh.xana.forum.server.dbutil.ForumType;
 import sh.xana.forum.server.parser.AbstractForum;
 import sh.xana.forum.server.parser.SourcePage;
 
-public class XenForo_F implements AbstractForum {
+public class XenForo implements AbstractForum {
   @Override
   public @Nullable ForumType detectForumType(String rawHtml) {
     if (rawHtml.contains("<html id=\"XF\"")) {
@@ -25,22 +25,23 @@ public class XenForo_F implements AbstractForum {
 
   @Override
   public Collection<Element> getPageLinks(SourcePage sourcePage) {
-    return sourcePage.doc().select("a[qid=\"page-nav-other-page\"]");
+    return sourcePage.doc().select(".pageNav-page a, .PageNav a");
   }
 
   @Override
   public Collection<Element> getPostElements(SourcePage sourcePage) {
-    return sourcePage.doc().select("article[qid=\"post-text\"]");
+    return sourcePage.doc().select(".messageContent, .message-content");
   }
 
   @Override
   public Collection<Element> getSubforumAnchors(SourcePage sourcePage) {
-    return sourcePage.doc().select("a[qid=\"forum-item-title\"]");
+    return sourcePage.doc().select(".node-title a, .nodeTitle a");
   }
 
   @Override
   public Collection<Element> getTopicAnchors(SourcePage sourcePage) {
-    return sourcePage.doc().select("a[qid=\"thread-item-title\"]");
+    //return sourcePage.doc().select("a[qid=\"thread-item-title\"]");
+    return sourcePage.doc().select(".title a, .structItem-title a");
   }
 
   @Override

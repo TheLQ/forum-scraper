@@ -15,13 +15,13 @@ import sh.xana.forum.server.dbutil.ForumType;
 import sh.xana.forum.server.dbutil.PageType;
 import sh.xana.forum.server.parser.impl.ForkBoard;
 import sh.xana.forum.server.parser.impl.SMF;
-import sh.xana.forum.server.parser.impl.XenForo_F;
+import sh.xana.forum.server.parser.impl.XenForo;
 import sh.xana.forum.server.parser.impl.vBulletin;
 
 public class PageParser {
   private static final Logger log = LoggerFactory.getLogger(PageParser.class);
   private static final AbstractForum[] PARSERS =
-      new AbstractForum[] {new vBulletin(), new XenForo_F(), new SMF(), new ForkBoard()};
+      new AbstractForum[] {new vBulletin(), new XenForo(), new SMF(), new ForkBoard()};
 
   private final ServerConfig config;
 

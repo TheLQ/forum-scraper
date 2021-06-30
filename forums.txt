@@ -13,6 +13,7 @@ https://forums.nicoclub.com/
 https://blueirissoftware.com/forum
 https://forums.zoneminder.com
 https://www.msextra.com/forums/
+https://arstechnica.com/civis/
 
 SMF
 ADDED https://www.eevblog.com/forum/
@@ -43,3 +44,6 @@ https://millcomputing.com/forums/
 
 Invision Community
 https://www.ultimatesubaru.org/forum/
+
+Discourse
+https://community.wd.com/
