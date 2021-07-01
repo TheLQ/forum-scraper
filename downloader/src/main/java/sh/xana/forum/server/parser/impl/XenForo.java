@@ -41,7 +41,7 @@ public class XenForo implements AbstractForum {
 
   @Override
   public @NotNull Collection<Element> getTopicAnchors(SourcePage sourcePage) {
-    //return sourcePage.doc().select("a[qid=\"thread-item-title\"]");
+    // return sourcePage.doc().select("a[qid=\"thread-item-title\"]");
     return sourcePage.doc().select(".title a, .structItem-title a");
   }
 

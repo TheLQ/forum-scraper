@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
+import org.apache.commons.lang3.StringUtils;
 import org.jsoup.nodes.Element;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,13 +35,14 @@ public class PageParser {
   }
 
   public ParserResult parsePage(byte[] data, UUID pageId, String baseUrl) {
+    ForumType forumType = null;
     try {
       String rawHtml = new String(data);
 
       PageType pageType = PageType.Unknown;
       List<ParserEntry> subpages = new ArrayList<>();
       for (AbstractForum parser : PARSERS) {
-        ForumType forumType = parser.detectForumType(rawHtml);
+        forumType = parser.detectForumType(rawHtml);
         if (forumType == null) {
           continue;
         }
@@ -68,6 +70,8 @@ public class PageParser {
         }
 
         addAnchorSubpage(parser.getPageLinks(sourcePage), subpages, pageType);
+
+        pageType = parser.postForcePageType(sourcePage, pageType);
 
         ParserResult result = new ParserResult(false, pageType, forumType, subpages);
         parser.postProcessing(sourcePage, result);

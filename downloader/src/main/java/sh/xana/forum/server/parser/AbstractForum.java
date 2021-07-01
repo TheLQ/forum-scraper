@@ -8,6 +8,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import sh.xana.forum.common.ipc.ParserResult;
 import sh.xana.forum.server.dbutil.ForumType;
+import sh.xana.forum.server.dbutil.PageType;
 
 public interface AbstractForum {
   @Nullable
@@ -30,6 +31,10 @@ public interface AbstractForum {
 
   @Nonnull
   Collection<Element> getTopicAnchors(SourcePage sourcePage);
+
+  default PageType postForcePageType(SourcePage sourcePage, PageType currentType) {
+    return currentType;
+  }
 
   void postProcessing(SourcePage sourcePage, ParserResult result);
 }

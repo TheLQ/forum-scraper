@@ -67,8 +67,7 @@ public class WebServer extends NanoHTTPD {
       }
       switch (page) {
         case "/":
-          return newFixedLengthResponse(
-              "Started " + start + " currently " + new Date());
+          return newFixedLengthResponse("Started " + start + " currently " + new Date());
         case PAGE_SITE_ADD:
           return newFixedLengthResponse(pageAddSite(session));
         case PAGE_OVERVIEW:
