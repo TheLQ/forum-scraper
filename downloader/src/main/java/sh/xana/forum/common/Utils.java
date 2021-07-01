@@ -56,7 +56,7 @@ public class Utils {
                 .uri(newUri(BACKEND_SERVER + path))
                 .POST(BodyPublishers.ofString(postData))
                 .header(WebServer.NODE_AUTH_KEY, BACKEND_KEY)
-                .timeout(Duration.ofSeconds(60))
+                .timeout(Duration.ofSeconds(120))
                 .build();
         return serverRequest(request, BodyHandlers.ofString()).body();
       } catch (RequestException e) {

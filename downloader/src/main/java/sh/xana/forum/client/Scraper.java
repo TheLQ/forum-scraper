@@ -1,7 +1,6 @@
 package sh.xana.forum.client;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -30,7 +29,7 @@ import sh.xana.forum.server.WebServer;
 public class Scraper implements Closeable {
   public static final Logger log = LoggerFactory.getLogger(Scraper.class);
   /** Number of URLs to request, and size when to do a request. Should be between SIZE - 2xSIZE */
-  public static final int URL_QUEUE_REFILL_SIZE = 3;
+  public static final int URL_QUEUE_REFILL_SIZE = 10;
 
   private static final int CYCLE_SECONDS = 10;
   private static int INSTANCE_COUNTER = 0;
@@ -180,7 +179,7 @@ public class Scraper implements Closeable {
   }
 
   @Override
-  public void close() throws IOException {
+  public void close() {
     log.info("close called, stopping thread");
     thread.interrupt();
   }
