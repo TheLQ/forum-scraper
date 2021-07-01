@@ -16,13 +16,13 @@ public class ForumUtils {
   public static Elements selectOneOrMore(Document doc, String selector, String error) {
     Elements elems = doc.select(selector);
     if (elems.size() == 0) {
-      throw new RuntimeException("not enough " + elems.size() + " for " + error);
+      throw new RuntimeException("0 elements for  for " + error);
     }
     return elems;
   }
 
   public static boolean anchorIsNotNavLink(Element elem) {
-    return (!elem.attr("name").isBlank() && elem.attr("href").isBlank())
+    return elem.attr("href").isBlank()
         || elem.attr("href").startsWith("javascript://")
         || elem.attr("href").startsWith("#");
   }

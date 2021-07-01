@@ -76,7 +76,7 @@ public class PageParser {
     } catch (ParserException e) {
       throw e;
     } catch (Exception e) {
-      throw new ParserException("Failed inside parser", pageId, e);
+      throw new ParserException("Failed inside parser " + forumType, pageId, e);
     }
     throw new ParserException("No parsers handled this file", pageId);
   }
@@ -84,7 +84,15 @@ public class PageParser {
   private void addAnchorSubpage(
       Collection<Element> elements, List<ParserEntry> subpages, PageType pageType) {
     for (Element element : elements) {
-      ParserEntry parser = new ParserEntry(element.text(), element.absUrl("href"), pageType);
+      if (ForumUtils.anchorIsNotNavLink(element)) {
+        continue;
+      }
+
+      String url = element.absUrl("href");
+      if (StringUtils.isBlank(url)) {
+        throw new RuntimeException("href blank in " + element.outerHtml());
+      }
+      ParserEntry parser = new ParserEntry(element.text(), url.trim(), pageType);
       subpages.add(parser);
     }
   }
