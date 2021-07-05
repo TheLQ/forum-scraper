@@ -49,6 +49,8 @@ public class PageParser {
 
         SourcePage sourcePage = new SourcePage(rawHtml, parser.newDocument(rawHtml, baseUrl));
 
+        parser.preProcessing(sourcePage);
+
         if (parser.detectLoginRequired(sourcePage)) {
           return new ParserResult(true, pageType, forumType, subpages);
         }
@@ -62,6 +64,15 @@ public class PageParser {
         // TODO: Iterate through to build post history
         if (!parser.getPostElements(sourcePage).isEmpty()) {
           if (pageType != PageType.Unknown) {
+            for (Element elem : parser.getSubforumAnchors(sourcePage)) {
+              log.info("forum " + elem);
+            }
+            for (Element elem : parser.getTopicAnchors(sourcePage)) {
+              log.info("topic " + elem);
+            }
+            for (Element elem : parser.getPostElements(sourcePage)) {
+              log.info("post " + elem);
+            }
             throw new ParserException(
                 "detected both post elements and subforum/topic links", pageId);
           } else {
