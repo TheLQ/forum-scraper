@@ -13,8 +13,8 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sh.xana.forum.common.RecieveRequest;
 import sh.xana.forum.common.SqsManager;
-import sh.xana.forum.common.SqsManager.RecieveMessage;
 import sh.xana.forum.common.Utils;
 import sh.xana.forum.common.ipc.ScraperDownload;
 import sh.xana.forum.common.ipc.ScraperUpload;
@@ -37,9 +37,9 @@ public class Scraper implements Closeable {
   private final ClientConfig config;
   private final SqsManager sqsManager;
   private final URI queue;
-  private final List<RecieveMessage<ScraperDownload>> scraperDownloads = new ArrayList<>();
+  private final List<RecieveRequest<ScraperDownload>> scraperDownloads = new ArrayList<>();
   /** Message is from the original ScraperDownload */
-  private final List<RecieveMessage<ScraperUpload>> scraperUploads = new ArrayList<>();
+  private final List<RecieveRequest<ScraperUpload>> scraperUploads = new ArrayList<>();
 
   private final Thread thread;
 
@@ -133,7 +133,7 @@ public class Scraper implements Closeable {
       }
 
       scraperUploads.add(
-          new RecieveMessage<>(
+          new RecieveRequest<>(
               scraperRequestMessage.message(),
               new ScraperUpload(
                   scraperRequest.pageId(),
@@ -167,7 +167,7 @@ public class Scraper implements Closeable {
     try {
       if (!scraperUploads.isEmpty()) {
         sqsManager.sendUploadRequests(
-            scraperUploads.stream().map(RecieveMessage::obj).collect(Collectors.toList()));
+            scraperUploads.stream().map(RecieveRequest::obj).collect(Collectors.toList()));
         // deleted the processed scraperDownload messages that we copied to the scraperUpload list
         sqsManager.deleteQueueMessage(queue, scraperUploads);
       }

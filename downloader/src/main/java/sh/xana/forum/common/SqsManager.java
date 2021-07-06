@@ -98,7 +98,7 @@ public class SqsManager {
     send(queue, entries, false);
   }
 
-  public List<RecieveMessage<ScraperDownload>> receiveDownloadRequests(URI queueUrl) {
+  public List<RecieveRequest<ScraperDownload>> receiveDownloadRequests(URI queueUrl) {
     return receive(queueUrl, ScraperDownload.class);
   }
 
@@ -106,11 +106,11 @@ public class SqsManager {
     send(uploadQueueUrl, entries, true);
   }
 
-  public List<RecieveMessage<ScraperUpload>> receiveUploadRequests() {
+  public List<RecieveRequest<ScraperUpload>> receiveUploadRequests() {
     return receive(uploadQueueUrl, ScraperUpload.class);
   }
 
-  public void deleteUploadRequests(List<RecieveMessage<ScraperUpload>> messages) {
+  public void deleteUploadRequests(List<RecieveRequest<ScraperUpload>> messages) {
     deleteQueueMessage(uploadQueueUrl, messages);
   }
 
@@ -143,16 +143,16 @@ public class SqsManager {
     }
   }
 
-  private <T> List<RecieveMessage<T>> receive(URI queueUrl, Class<T> clazz) {
+  private <T> List<RecieveRequest<T>> receive(URI queueUrl, Class<T> clazz) {
     try {
       final ReceiveMessageRequest receiveMessageRequest =
           new ReceiveMessageRequest().withQueueUrl(queueUrl.toString()).withMaxNumberOfMessages(10);
       ReceiveMessageResult receiveMessageResult = sqsClient.receiveMessage(receiveMessageRequest);
 
-      List<RecieveMessage<T>> result = new ArrayList<>();
+      List<RecieveRequest<T>> result = new ArrayList<>();
       for (Message message : receiveMessageResult.getMessages()) {
         result.add(
-            new RecieveMessage<T>(message, Utils.jsonMapper.readValue(message.getBody(), clazz)));
+            new RecieveRequest<T>(message, Utils.jsonMapper.readValue(message.getBody(), clazz)));
       }
       return result;
     } catch (Exception e) {
@@ -160,11 +160,11 @@ public class SqsManager {
     }
   }
 
-  public void deleteQueueMessage(URI queueUrl, List<RecieveMessage<ScraperUpload>> message) {
+  public void deleteQueueMessage(URI queueUrl, List<RecieveRequest<ScraperUpload>> message) {
     sqsClient.deleteMessageBatch(
         queueUrl.toString(),
         message.stream()
-            .map(RecieveMessage::message)
+            .map(RecieveRequest::message)
             .map(e -> new DeleteMessageBatchRequestEntry(e.getMessageId(), e.getReceiptHandle()))
             .collect(Collectors.toList()));
   }
@@ -190,6 +190,4 @@ public class SqsManager {
   public static String getQueueNameSafeOrig(String str) {
     return str.replace("_", ".");
   }
-
-  public static record RecieveMessage<T>(Message message, T obj) {}
 }

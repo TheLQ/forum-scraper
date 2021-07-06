@@ -18,8 +18,8 @@ import org.jooq.Record7;
 import org.jooq.Result;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sh.xana.forum.common.RecieveRequest;
 import sh.xana.forum.common.SqsManager;
-import sh.xana.forum.common.SqsManager.RecieveMessage;
 import sh.xana.forum.common.Utils;
 import sh.xana.forum.common.ipc.ParserResult;
 import sh.xana.forum.common.ipc.ScraperDownload;
@@ -65,14 +65,14 @@ public class PageManager implements Closeable {
   }
 
   public boolean _processUploads() throws IOException {
-    List<RecieveMessage<ScraperUpload>> recieveMessages = sqsManager.receiveUploadRequests();
-    if (recieveMessages.isEmpty()) {
+    List<RecieveRequest<ScraperUpload>> recieveRequests = sqsManager.receiveUploadRequests();
+    if (recieveRequests.isEmpty()) {
       log.debug("No uploads to process");
       return false;
     }
 
     List<PageredirectsRecord> sqlNewRedirects = new ArrayList<>();
-    for (RecieveMessage<ScraperUpload> successMessage : recieveMessages) {
+    for (RecieveRequest<ScraperUpload> successMessage : recieveRequests) {
       ScraperUpload success = successMessage.obj();
       log.debug("Writing " + success.pageId().toString() + " response and header");
       try {
@@ -139,7 +139,7 @@ public class PageManager implements Closeable {
       dbStorage.insertPageRedirects(sqlNewRedirects);
     }
 
-    sqsManager.deleteUploadRequests(recieveMessages);
+    sqsManager.deleteUploadRequests(recieveRequests);
 
     return true;
   }
@@ -322,17 +322,6 @@ public class PageManager implements Closeable {
             SqsManager.getQueueName(entry.getKey()));
         sqsManager.sendDownloadRequests(entry.getKey(), scraperDownloads);
       }
-    }
-  }
-
-  private static class SpiderWarningException extends RuntimeException {
-
-    public SpiderWarningException(String message) {
-      super(message);
-    }
-
-    public SpiderWarningException(String message, Throwable cause) {
-      super(message, cause);
     }
   }
 
