@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
+import java.net.http.HttpClient.Redirect;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
@@ -21,7 +22,8 @@ public class Utils {
   private Utils() {}
 
   public static final Logger log = LoggerFactory.getLogger(Utils.class);
-  public static final HttpClient httpClient = HttpClient.newHttpClient();
+  public static final HttpClient httpClient =
+      HttpClient.newBuilder().followRedirects(Redirect.ALWAYS).build();
   public static final ObjectMapper jsonMapper = new ObjectMapper();
 
   public static String BACKEND_SERVER;

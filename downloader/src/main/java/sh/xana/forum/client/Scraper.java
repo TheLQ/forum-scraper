@@ -98,32 +98,24 @@ public class Scraper implements Closeable {
       HttpResponse<byte[]> response = null;
       try {
         URI url = scraperRequest.url();
-        while (true) {
-          log.debug("Requesting {} url {}", scraperRequest.pageId(), scraperRequest.url());
-          HttpRequest request =
-              HttpRequest.newBuilder()
-                  // Fix VERY annoying forum that gives different html without this, breaking parser
-                  .header("User-Agent", config.get(config.ARG_CLIENT_USERAGENT))
-                  .uri(url)
-                  .timeout(Duration.ofSeconds(60))
-                  .build();
-          response = Utils.httpClient.send(request, BodyHandlers.ofByteArray());
+        log.debug("Requesting {} url {}", scraperRequest.pageId(), scraperRequest.url());
+        HttpRequest request =
+            HttpRequest.newBuilder()
+                // Fix VERY annoying forum that gives different html without this, breaking parser
+                .header("User-Agent", config.get(config.ARG_CLIENT_USERAGENT))
+                .uri(url)
+                .timeout(Duration.ofSeconds(60))
+                .build();
+        response = Utils.httpClient.send(request, BodyHandlers.ofByteArray());
 
-          if (response.statusCode() == 301 || response.statusCode() == 302) {
-            redirectList.add(url);
-            url =
-                new URI(
-                    response
-                        .headers()
-                        .firstValue("Location")
-                        .orElseThrow(() -> new RuntimeException("Missing location")));
-          } else {
-            break;
-          }
+        HttpResponse<byte[]> previousResponse = response.previousResponse().orElse(null);
+        while (previousResponse != null) {
+          redirectList.add(0, previousResponse.uri());
+          previousResponse = previousResponse.previousResponse().orElse(null);
         }
         if (!redirectList.isEmpty()) {
-          // add last url as final destination url
-          redirectList.add(url);
+          // add final destination url
+          redirectList.add(response.uri());
         }
       } catch (InterruptedException e) {
         throw e;
