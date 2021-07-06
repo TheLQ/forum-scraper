@@ -30,8 +30,6 @@ import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sh.xana.forum.client.Scraper;
-import sh.xana.forum.common.ipc.NodeResponse.ScraperEntry;
 import sh.xana.forum.common.ipc.ScraperDownload;
 import sh.xana.forum.server.ServerConfig;
 import sh.xana.forum.server.db.tables.records.PageredirectsRecord;
@@ -77,21 +75,14 @@ public class DatabaseStorage {
   }
 
   /** Stage: init client */
-  public List<ScraperEntry> getScraperDomainsIPC() {
-    var pages = context.selectDistinct(PAGES.DOMAIN).from(PAGES).fetchInto(PagesRecord.class);
-
-    List<ScraperEntry> resultList = new ArrayList<>(pages.size());
-    for (PagesRecord page : pages) {
-      resultList.add(new ScraperEntry(page.getDomain()));
-    }
-
-    return resultList;
+  public List<String> getScraperDomainsIPC() {
+    return context.selectDistinct(PAGES.DOMAIN).from(PAGES).fetch(PAGES.DOMAIN);
   }
 
   /** Stage: Load pages to be downloaded by Scraper */
-  public List<ScraperDownload.SiteEntry> movePageQueuedToDownloadIPC(String domain) {
+  public List<ScraperDownload> movePageQueuedToDownloadIPC(String domain, int size) {
     // TODO: VERY SUSPICIOUS RACE. Seems multiple clients can request the page,
-    List<ScraperDownload.SiteEntry> pages =
+    List<ScraperDownload> pages =
         context
             .select()
             .from(PAGES)
@@ -100,12 +91,12 @@ public class DatabaseStorage {
             .and(PAGES.EXCEPTION.isNull())
             // Select ForumList first, which alphabetically is before TopicPage
             .orderBy(PAGES.PAGETYPE)
-            .limit(Scraper.URL_QUEUE_REFILL_SIZE)
+            .limit(size)
             .fetch()
-            .map(r -> new ScraperDownload.SiteEntry(r.get(PAGES.PAGEID), r.get(PAGES.PAGEURL)));
+            .map(r -> new ScraperDownload(r.get(PAGES.PAGEID), r.get(PAGES.PAGEURL)));
 
     setPageStatus(
-        pages.stream().map(ScraperDownload.SiteEntry::pageId).collect(Collectors.toList()),
+        pages.stream().map(ScraperDownload::pageId).collect(Collectors.toList()),
         DlStatus.Download);
 
     return pages;
@@ -210,7 +201,10 @@ public class DatabaseStorage {
     return context
         .select()
         .from(PAGES)
-        .where(PAGES.EXCEPTION.isNotNull(), PAGES.EXCEPTION.notLike("%LoginRequired%"))
+        .where(
+            PAGES.EXCEPTION.isNotNull(),
+            PAGES.EXCEPTION.notLike("%LoginRequired%"),
+            PAGES.EXCEPTION.notLike("%Soft500Exception%"))
         .orderBy(PAGES.PAGEUPDATED)
         .fetchInto(PagesRecord.class);
   }

@@ -12,11 +12,6 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.Utils;
-import sh.xana.forum.common.ipc.NodeInitRequest;
-import sh.xana.forum.common.ipc.NodeResponse;
-import sh.xana.forum.common.ipc.ScraperDownload;
-import sh.xana.forum.common.ipc.ScraperDownload.SiteEntry;
-import sh.xana.forum.common.ipc.ScraperUpload;
 import sh.xana.forum.server.db.tables.Pages;
 import sh.xana.forum.server.db.tables.records.PagesRecord;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
@@ -72,10 +67,6 @@ public class WebServer extends NanoHTTPD {
           return newFixedLengthResponse(pageAddSite(session));
         case PAGE_OVERVIEW:
           return newFixedLengthResponse(pageOverview());
-        case PAGE_CLIENT_NODEINIT:
-          return newFixedLengthResponse(pageClientNodeInit(session));
-        case PAGE_CLIENT_BUFFER:
-          return newFixedLengthResponse(pageClientBuffer(session));
         case PAGE_OVERVIEW_PAGE:
           return newFixedLengthResponse(pageOverviewPage(session));
         case PAGE_OVERVIEW_ERRORS:
@@ -232,57 +223,11 @@ public class WebServer extends NanoHTTPD {
 
     PagesRecord page = dbStorage.getPage(pageId);
     if (page.getDlstatus().equals(DlStatus.Parse)) {
-      pageManager.signalSpider();
+      // TODO: What do?
+      // pageManager.signalSpider();
       return "ok and queued parse page";
     }
     return "ok";
-  }
-
-  public static final String PAGE_CLIENT_NODEINIT = "/client/nodeinit";
-
-  String pageClientNodeInit(NanoHTTPD.IHTTPSession session) throws IOException {
-    assertAuth(session);
-    byte[] input = readPostInput(session);
-    NodeInitRequest request = Utils.jsonMapper.readValue(input, NodeInitRequest.class);
-    // UUID nodeId = nodeManager.registerNode(request.ip(), request.hostname());
-    UUID nodeId = UUID.randomUUID();
-
-    NodeResponse response =
-        new NodeResponse(
-            nodeId, dbStorage.getScraperDomainsIPC().toArray(new NodeResponse.ScraperEntry[0]));
-
-    return Utils.jsonMapper.writeValueAsString(response);
-  }
-
-  public static final String PAGE_CLIENT_BUFFER = "/client/buffer";
-
-  String pageClientBuffer(NanoHTTPD.IHTTPSession session) throws IOException, InterruptedException {
-    assertAuth(session);
-    byte[] input = readPostInput(session);
-    ScraperUpload scraperUpload = Utils.jsonMapper.readValue(input, ScraperUpload.class);
-
-    List<ScraperDownload.SiteEntry> requests;
-    synchronized (pageManager.PROCESSOR_LOCK) {
-      pageManager.processResponses(scraperUpload);
-      if (scraperUpload.requestMore()) {
-        requests = dbStorage.movePageQueuedToDownloadIPC(scraperUpload.domain());
-      } else {
-        requests = List.of();
-      }
-    }
-
-    for (SiteEntry entry : requests) {
-      log.debug("Rquesting download of {} url {}", entry.pageId(), entry.url());
-    }
-    ScraperDownload download = new ScraperDownload(requests);
-
-    log.info(
-        "client - {} download success {} download error {} sent because {}",
-        scraperUpload.successes().size(),
-        scraperUpload.errors().size(),
-        requests.size(),
-        scraperUpload.requestMore());
-    return Utils.jsonMapper.writeValueAsString(download);
   }
 
   public static final String PAGE_FILE = "/file";

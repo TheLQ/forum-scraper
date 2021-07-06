@@ -9,13 +9,15 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sh.xana.forum.common.SqsManager;
+import sh.xana.forum.common.SqsManager.RecieveMessage;
 import sh.xana.forum.common.Utils;
 import sh.xana.forum.common.ipc.ScraperDownload;
 import sh.xana.forum.common.ipc.ScraperUpload;
-import sh.xana.forum.server.WebServer;
 
 /**
  * Each scraper handles 1 site. Scrapers are distributed among multiple nodes on different IPs
@@ -28,26 +30,26 @@ import sh.xana.forum.server.WebServer;
  */
 public class Scraper implements Closeable {
   public static final Logger log = LoggerFactory.getLogger(Scraper.class);
-  /** Number of URLs to request, and size when to do a request. Should be between SIZE - 2xSIZE */
-  public static final int URL_QUEUE_REFILL_SIZE = 10;
 
   private static final int CYCLE_SECONDS = 10;
   private static int INSTANCE_COUNTER = 0;
 
   private final ClientConfig config;
-
-  private final String domain;
-  private final List<ScraperDownload.SiteEntry> scraperRequests = new ArrayList<>();
-  private final List<ScraperUpload.Success> responseSuccess = new ArrayList<>();
-  private final List<ScraperUpload.Error> responseError = new ArrayList<>();
+  private final SqsManager sqsManager;
+  private final URI queue;
+  private final List<RecieveMessage<ScraperDownload>> scraperDownloads = new ArrayList<>();
+  /** Message is from the original ScraperDownload */
+  private final List<RecieveMessage<ScraperUpload>> scraperUploads = new ArrayList<>();
 
   private final Thread thread;
 
-  public Scraper(ClientConfig config, String domain) {
+  public Scraper(ClientConfig config, SqsManager sqsManager, URI queue) {
     this.config = config;
-    this.domain = domain;
+    this.sqsManager = sqsManager;
+    this.queue = queue;
     this.thread = new Thread(this::downloadThread);
-    thread.setName("Scraper" + (INSTANCE_COUNTER++));
+
+    thread.setName(SqsManager.getQueueName(queue));
   }
 
   public void startThread() {
@@ -77,22 +79,24 @@ public class Scraper implements Closeable {
    * @return isClosing should stop thread
    */
   private boolean mainLoopCycle() throws InterruptedException {
-    if (scraperRequests.size() < URL_QUEUE_REFILL_SIZE) {
+    if (scraperDownloads.size() < SqsManager.QUEUE_SIZE) {
       boolean isClosing = refillQueue(true);
       if (isClosing) {
         return true;
       }
     }
 
-    if (scraperRequests.size() == 0) {
+    if (scraperDownloads.size() == 0) {
       log.info("Queue is empty, not doing anything");
     } else {
       // pop request and fetch content
-      ScraperDownload.SiteEntry scraperRequest = scraperRequests.remove(0);
-      try {
-        List<URI> redirectList = new ArrayList<>();
+      var scraperRequestMessage = scraperDownloads.remove(0);
+      ScraperDownload scraperRequest = scraperRequestMessage.obj();
 
-        HttpResponse<byte[]> response;
+      List<URI> redirectList = new ArrayList<>();
+      Exception caughtException = null;
+      HttpResponse<byte[]> response = null;
+      try {
         URI url = scraperRequest.url();
         while (true) {
           log.debug("Requesting {} url {}", scraperRequest.pageId(), scraperRequest.url());
@@ -121,26 +125,28 @@ public class Scraper implements Closeable {
           // add last url as final destination url
           redirectList.add(url);
         }
-
-        responseSuccess.add(
-            new ScraperUpload.Success(
-                scraperRequest.pageId(),
-                scraperRequest.url(),
-                redirectList,
-                response.body(),
-                response.headers().map(),
-                response.statusCode()));
       } catch (InterruptedException e) {
         throw e;
       } catch (Exception e) {
         log.debug("exception during run", e);
-        responseError.add(
-            new ScraperUpload.Error(scraperRequest.pageId(), ExceptionUtils.getStackTrace(e)));
+        caughtException = e;
       }
+
+      scraperUploads.add(
+          new RecieveMessage<>(
+              scraperRequestMessage.message(),
+              new ScraperUpload(
+                  scraperRequest.pageId(),
+                  caughtException == null ? null : ExceptionUtils.getStackTrace(caughtException),
+                  scraperRequest.url(),
+                  redirectList,
+                  response == null ? null : response.body(),
+                  response == null ? null : response.headers().map(),
+                  response == null ? 0 : response.statusCode())));
     }
 
     // sleep then continue for the next cycle
-    log.debug("Queued {} urls, sleeping {} seconds", scraperRequests.size(), CYCLE_SECONDS);
+    log.debug("Queued {} urls, sleeping {} seconds", scraperDownloads.size(), CYCLE_SECONDS);
     try {
       TimeUnit.SECONDS.sleep(CYCLE_SECONDS);
     } catch (InterruptedException e) {
@@ -154,24 +160,20 @@ public class Scraper implements Closeable {
   /** Fetch new batch of URLs to process, and submit completedBuffer */
   private boolean refillQueue(boolean requestMore) {
     log.info(
-        "-- Refill, {} requests, {} response success, {} response error {} request more",
-        scraperRequests.size(),
-        responseSuccess.size(),
-        responseError.size(),
+        "-- Refill, {} downloads, {} pending upload, {} request more",
+        scraperDownloads.size(),
+        scraperUploads.size(),
         requestMore);
     try {
-      ScraperUpload request =
-          new ScraperUpload(
-              ClientMain.NODE_ID, this.domain, requestMore, responseSuccess, responseError);
-      String newRequestsJSON =
-          Utils.serverPostBackend(
-              WebServer.PAGE_CLIENT_BUFFER, Utils.jsonMapper.writeValueAsString(request));
+      if (!scraperUploads.isEmpty()) {
+        sqsManager.sendUploadRequests(
+            scraperUploads.stream().map(RecieveMessage::obj).collect(Collectors.toList()));
+        // deleted the processed scraperDownload messages that we copied to the scraperUpload list
+        sqsManager.deleteQueueMessage(queue, scraperUploads);
+      }
+      scraperDownloads.addAll(sqsManager.receiveDownloadRequests(queue));
 
-      ScraperDownload response = Utils.jsonMapper.readValue(newRequestsJSON, ScraperDownload.class);
-      scraperRequests.addAll(response.entries());
-
-      responseSuccess.clear();
-      responseError.clear();
+      scraperUploads.clear();
     } catch (Exception e) {
       throw new RuntimeException("failed to parse buffer json", e);
     }

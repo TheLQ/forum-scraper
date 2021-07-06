@@ -11,6 +11,9 @@ public class CommonConfig {
   public static final String PROPERTY_LOGBACK_TYPE = "logbackType";
   public final String ARG_SERVER_AUTH = "server.auth";
 
+  public final String ARG_QUEUE_S3 = "queue.s3";
+  public final String ARG_QUEUE_UPLOADNAME = "queue.uploadName";
+
   private final Properties map = new Properties();
 
   public CommonConfig(Path specificPropertiesFile) throws IOException {

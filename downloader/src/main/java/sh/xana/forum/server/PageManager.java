@@ -9,15 +9,20 @@ import java.nio.file.Path;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map.Entry;
+import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.jooq.Record7;
 import org.jooq.Result;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sh.xana.forum.common.SqsManager;
+import sh.xana.forum.common.SqsManager.RecieveMessage;
 import sh.xana.forum.common.Utils;
 import sh.xana.forum.common.ipc.ParserResult;
+import sh.xana.forum.common.ipc.ScraperDownload;
 import sh.xana.forum.common.ipc.ScraperUpload;
 import sh.xana.forum.server.db.tables.Pages;
 import sh.xana.forum.server.db.tables.Sites;
@@ -35,24 +40,16 @@ public class PageManager implements Closeable {
 
   private final DatabaseStorage dbStorage;
   private final ServerConfig config;
+  private final SqsManager sqsManager;
   private final Thread spiderThread;
-  /**
-   * Capacity should be infinite to avoid OOM, but shouldn't be too small or pageSpiderThread will
-   * deadlock itself on init/load
-   */
-  private final ArrayBlockingQueue<Boolean> spiderSignal = new ArrayBlockingQueue<>(10);
-  /**
-   * Very carefully lock all DlStatus state changes to avoid races, especially as the database grows
-   * and individual queries take longer
-   */
-  public final Object PROCESSOR_LOCK = new Object();
 
   private final Path fileCachePath;
   private final PageParser pageParser;
 
-  public PageManager(DatabaseStorage dbStorage, ServerConfig config) {
+  public PageManager(DatabaseStorage dbStorage, ServerConfig config, SqsManager sqsManager) {
     this.dbStorage = dbStorage;
     this.config = config;
+    this.sqsManager = sqsManager;
 
     this.spiderThread = new Thread(this::pageSpiderThread);
     this.spiderThread.setName("ProcessorSpider");
@@ -63,16 +60,20 @@ public class PageManager implements Closeable {
   }
 
   /** Process responses the download scraper collected */
-  public void processResponses(ScraperUpload response) throws IOException, InterruptedException {
-    // TODO: ALSO VERY RACY
-    for (ScraperUpload.Error error : response.errors()) {
-      log.debug("Found error for {} {}", error.id(), error.exception());
-      dbStorage.setPageException(error.id(), error.exception());
+  public void processUploads() throws IOException {
+    while(_processUploads()) {}
+  }
+
+  public boolean _processUploads() throws IOException {
+    List<RecieveMessage<ScraperUpload>> recieveMessages = sqsManager.receiveUploadRequests();
+    if (recieveMessages.isEmpty()) {
+      log.debug("No uploads to process");
+      return false;
     }
 
     List<PageredirectsRecord> sqlNewRedirects = new ArrayList<>();
-
-    for (ScraperUpload.Success success : response.successes()) {
+    for (RecieveMessage<ScraperUpload> successMessage : recieveMessages) {
+      ScraperUpload success = successMessage.obj();
       log.debug("Writing " + success.pageId().toString() + " response and header");
       try {
         PagesRecord page = dbStorage.getPage(success.pageId());
@@ -80,7 +81,7 @@ public class PageManager implements Closeable {
           throw new RuntimeException("que?");
         }
       } catch (Exception e) {
-        throw new RuntimeException(
+        log.error(
             "Failed to get page "
                 + success.pageId()
                 + " url "
@@ -88,6 +89,7 @@ public class PageManager implements Closeable {
                 + " headers "
                 + success.headers(),
             e);
+        continue;
       }
       Files.write(fileCachePath.resolve(success.pageId() + ".response"), success.body());
       Files.writeString(
@@ -115,20 +117,20 @@ public class PageManager implements Closeable {
           }
         }
       }
+
+      if (success.exception() != null) {
+        dbStorage.setPageException(success.pageId(), success.exception());
+      }
     }
 
     if (!sqlNewRedirects.isEmpty()) {
       log.debug("dbsync redirect");
       dbStorage.insertPageRedirects(sqlNewRedirects);
     }
-    if (!response.successes().isEmpty()) {
-      signalSpider();
-    }
-  }
 
-  public void signalSpider() throws InterruptedException {
-    // insert request but do not block to avoid deadlocking PROCESSOR_LOCK
-    spiderSignal.offer(true);
+    sqsManager.deleteUploadRequests(recieveMessages);
+
+    return true;
   }
 
   public void startSpiderThread() {
@@ -137,9 +139,15 @@ public class PageManager implements Closeable {
 
   /** */
   private void pageSpiderThread() {
+    boolean first = true;
+
     while (true) {
       boolean result;
       try {
+        if (first) {
+          createDownloadQueues();
+          first = false;
+        }
         result = pageSpiderCycle();
       } catch (Exception e) {
         log.error("Caught exception in mainLoop, stopping", e);
@@ -153,20 +161,30 @@ public class PageManager implements Closeable {
     log.info("main loop ended");
   }
 
-  private boolean pageSpiderCycle() throws InterruptedException {
-    Result<Record7<UUID, UUID, URI, PageType, String, URI, ForumType>> parserPages;
-    synchronized (PROCESSOR_LOCK) {
-      parserPages = dbStorage.getParserPages();
-    }
-    if (parserPages.size() == 0) {
-      log.debug("Waiting for next signal");
-      // wait until we get signaled there is stuff to do, then restart
-      spiderSignal.take();
-      return true;
-    }
+  private boolean pageSpiderCycle() throws InterruptedException, IOException {
+    processUploads();
 
-    // wipe out remaining triggers
-    spiderSignal.clear();
+    refillDownloadQueues();
+
+    spider();
+
+    log.debug("sleep...");
+    TimeUnit.SECONDS.sleep(10);
+
+    // TODO
+    return true;
+  }
+
+  private void spider() throws InterruptedException {
+    while (_spider()) {}
+  }
+
+  private boolean _spider() throws InterruptedException {
+    Result<Record7<UUID, UUID, URI, PageType, String, URI, ForumType>> parserPages;
+    parserPages = dbStorage.getParserPages();
+    if (parserPages.isEmpty()) {
+      return false;
+    }
 
     List<UUID> sqlDone = new ArrayList<>(parserPages.size());
     List<PagesRecord> sqlNewPages = new ArrayList<>();
@@ -246,6 +264,53 @@ public class PageManager implements Closeable {
     log.debug("dbsync done");
 
     return true;
+  }
+
+  private void createDownloadQueues() {
+    log.info("Init domain queues");
+    // Create queues for new domains
+    List<String> domainsToAdd = dbStorage.getScraperDomainsIPC();
+
+    for (URI queue : sqsManager.getDownloadQueueUrls()) {
+      String domain = SqsManager.getQueueDomain(queue);
+      domain = SqsManager.getQueueNameSafeOrig(domain);
+      domainsToAdd.remove(domain);
+    }
+
+    boolean updated = false;
+    for (String domain : domainsToAdd) {
+      log.info("Creating queue for " + domain);
+      sqsManager.newDownloadQueue(domain);
+      updated = true;
+    }
+    if (updated) {
+      sqsManager.updateDownloadQueueUrls();
+    } else {
+      log.info("All queues already created for domains");
+    }
+  }
+
+  private void refillDownloadQueues() {
+    final int expectedQueueSize = SqsManager.QUEUE_SIZE * 10;
+    Set<Entry<URI, Integer>> entries = sqsManager.getDownloadQueueSizes().entrySet();
+    log.info("found {} queuss", entries.size());
+    for (var entry : entries) {
+      if (entry.getValue() > expectedQueueSize) {
+        continue;
+      }
+      String domain = SqsManager.getQueueDomain(entry.getKey());
+      domain = SqsManager.getQueueNameSafeOrig(domain);
+      List<ScraperDownload> scraperDownloads =
+          dbStorage.movePageQueuedToDownloadIPC(domain, expectedQueueSize);
+      log.debug("domain " + domain);
+      if (!scraperDownloads.isEmpty()) {
+        log.debug(
+            "Pushing {} download requests for {}",
+            scraperDownloads.size(),
+            SqsManager.getQueueName(entry.getKey()));
+        sqsManager.sendDownloadRequests(entry.getKey(), scraperDownloads);
+      }
+    }
   }
 
   private static class SpiderWarningException extends RuntimeException {

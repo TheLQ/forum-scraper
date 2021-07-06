@@ -18,6 +18,8 @@ public interface AbstractForum {
     return Jsoup.parse(rawHtml, baseUrl);
   }
 
+  default void preProcessing(SourcePage sourcePage) {}
+
   boolean detectLoginRequired(SourcePage sourcePage);
 
   @Nonnull

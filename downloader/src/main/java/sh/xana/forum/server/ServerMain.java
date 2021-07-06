@@ -7,7 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 import sh.xana.forum.client.ClientMain;
-import sh.xana.forum.common.CommonConfig;
+import sh.xana.forum.common.SqsManager;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
 
 public class ServerMain {
@@ -20,7 +20,7 @@ public class ServerMain {
     SLF4JBridgeHandler.removeHandlersForRootLogger();
     SLF4JBridgeHandler.install();
 
-    boolean debugMode = System.getProperty(CommonConfig.PROPERTY_LOGBACK_TYPE) == null;
+    boolean debugMode = false; //System.getProperty(CommonConfig.PROPERTY_LOGBACK_TYPE) == null;
     if (debugMode) {
       log.warn("DEBUG MODE, not starting processor");
     } else {
@@ -49,8 +49,14 @@ public class ServerMain {
                   }
                 }));
 
+    SqsManager sqsManager = new SqsManager(config);
     DatabaseStorage dbStorage = new DatabaseStorage(config);
-    pageManager = new PageManager(dbStorage, config);
+//    if (true) {
+//      PagesRecord page = dbStorage.getPage(UUID.fromString("036afcb1-3f90-4569-a3e6-96dcffd5f3c9"));
+//      log.info(page.toString());
+//      return;
+//    }
+    pageManager = new PageManager(dbStorage, config, sqsManager);
     NodeManager nodeManager = new NodeManager();
 
     WebServer server = new WebServer(dbStorage, pageManager, nodeManager, config);
@@ -60,7 +66,7 @@ public class ServerMain {
     if (!debugMode) {
       pageManager.startSpiderThread();
       debugThread.start();
-      ClientMain.main(new String[0]);
+      // ClientMain.main(new String[0]);
     }
   }
 
