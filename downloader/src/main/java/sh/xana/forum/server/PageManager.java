@@ -122,6 +122,7 @@ public class PageManager implements Closeable {
               && e.getCause().getMessage().contains("Duplicate entry")) {
             // we have redirected to an existing page. So we don't need this anymore
             dbStorage.deletePage(success.pageId());
+            continue;
           } else {
             throw e;
           }
@@ -310,8 +311,9 @@ public class PageManager implements Closeable {
       }
       String domain = SqsManager.getQueueDomain(entry.getKey());
       domain = SqsManager.getQueueNameSafeOrig(domain);
+      // Give the queues sufficient lead time
       List<ScraperDownload> scraperDownloads =
-          dbStorage.movePageQueuedToDownloadIPC(domain, expectedQueueSize);
+          dbStorage.movePageQueuedToDownloadIPC(domain, expectedQueueSize * 5);
       log.debug("domain " + domain);
       if (!scraperDownloads.isEmpty()) {
         log.debug(
