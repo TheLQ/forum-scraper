@@ -143,7 +143,8 @@ public class DatabaseStorage {
             .from(PAGES)
             .join(SITES)
             .on(PAGES.SITEID.eq(SITES.SITEID))
-            .groupBy(PAGES.DLSTATUS, PAGES.DOMAIN)
+            // SITEID is redundant but mysql doesn't like the free floating column
+            .groupBy(PAGES.DLSTATUS, PAGES.DOMAIN, PAGES.SITEID)
             .fetch();
 
     List<OverviewEntry> result = new ArrayList<>();
