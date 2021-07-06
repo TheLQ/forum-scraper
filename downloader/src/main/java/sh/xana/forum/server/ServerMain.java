@@ -20,7 +20,7 @@ public class ServerMain {
     SLF4JBridgeHandler.removeHandlersForRootLogger();
     SLF4JBridgeHandler.install();
 
-    boolean debugMode = false; //System.getProperty(CommonConfig.PROPERTY_LOGBACK_TYPE) == null;
+    boolean debugMode = false; // System.getProperty(CommonConfig.PROPERTY_LOGBACK_TYPE) == null;
     if (debugMode) {
       log.warn("DEBUG MODE, not starting processor");
     } else {
@@ -51,11 +51,12 @@ public class ServerMain {
 
     SqsManager sqsManager = new SqsManager(config);
     DatabaseStorage dbStorage = new DatabaseStorage(config);
-//    if (true) {
-//      PagesRecord page = dbStorage.getPage(UUID.fromString("036afcb1-3f90-4569-a3e6-96dcffd5f3c9"));
-//      log.info(page.toString());
-//      return;
-//    }
+    //    if (true) {
+    //      PagesRecord page =
+    // dbStorage.getPage(UUID.fromString("036afcb1-3f90-4569-a3e6-96dcffd5f3c9"));
+    //      log.info(page.toString());
+    //      return;
+    //    }
     pageManager = new PageManager(dbStorage, config, sqsManager);
     NodeManager nodeManager = new NodeManager();
 

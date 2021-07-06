@@ -61,7 +61,7 @@ public class PageManager implements Closeable {
 
   /** Process responses the download scraper collected */
   public void processUploads() throws IOException {
-    while(_processUploads()) {}
+    while (_processUploads()) {}
   }
 
   public boolean _processUploads() throws IOException {
@@ -91,10 +91,20 @@ public class PageManager implements Closeable {
             e);
         continue;
       }
-      Files.write(fileCachePath.resolve(success.pageId() + ".response"), success.body());
-      Files.writeString(
-          fileCachePath.resolve(success.pageId() + ".headers"),
-          Utils.jsonMapper.writeValueAsString(success.headers()));
+
+      // Body and headers can be null if the request just failed
+      byte[] body = success.body();
+      body = body == null ? new byte[0] : body;
+
+      String headers;
+      if (success.headers() == null) {
+        headers = "";
+      } else {
+        headers = Utils.jsonMapper.writeValueAsString(success.headers());
+      }
+
+      Files.write(fileCachePath.resolve(success.pageId() + ".response"), body);
+      Files.writeString(fileCachePath.resolve(success.pageId() + ".headers"), headers);
 
       dbStorage.movePageDownloadToParse(success.pageId(), success.responseCode());
 

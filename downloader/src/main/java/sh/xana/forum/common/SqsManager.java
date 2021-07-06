@@ -56,7 +56,7 @@ public class SqsManager {
   }
 
   public void tmp(URI pageUrl) {
-    sqsClient.setQueueAttributes(pageUrl.toString(), Map.of("VisibilityTimeout", "" + 60*10));
+    sqsClient.setQueueAttributes(pageUrl.toString(), Map.of("VisibilityTimeout", "" + 60 * 10));
   }
 
   public void updateDownloadQueueUrls() {
@@ -117,27 +117,27 @@ public class SqsManager {
   private void send(URI queueUrl, List<? extends IScraperRequest> sends, boolean singlate) {
     try {
       if (singlate) {
-      for (IScraperRequest send : sends) {
-        String json = Utils.jsonMapper.writeValueAsString(send);
-        sqsClient.sendMessage(queueUrl.toString(), json);
-      }
+        for (IScraperRequest send : sends) {
+          String json = Utils.jsonMapper.writeValueAsString(send);
+          sqsClient.sendMessage(queueUrl.toString(), json);
+        }
       } else {
-      List<SendMessageBatchRequestEntry> messages = new ArrayList<>();
-      for (IScraperRequest entry : sends) {
-        String json = Utils.jsonMapper.writeValueAsString(entry);
-        messages.add(
-            new SendMessageBatchRequestEntry()
-                .withMessageBody(json)
-                .withId(entry.pageId().toString()));
-        if (messages.size() == 10) {
+        List<SendMessageBatchRequestEntry> messages = new ArrayList<>();
+        for (IScraperRequest entry : sends) {
+          String json = Utils.jsonMapper.writeValueAsString(entry);
+          messages.add(
+              new SendMessageBatchRequestEntry()
+                  .withMessageBody(json)
+                  .withId(entry.pageId().toString()));
+          if (messages.size() == 10) {
+            sqsClient.sendMessageBatch(queueUrl.toString(), messages);
+            messages.clear();
+          }
+        }
+        if (!messages.isEmpty()) {
           sqsClient.sendMessageBatch(queueUrl.toString(), messages);
-          messages.clear();
         }
       }
-      if (!messages.isEmpty()) {
-        sqsClient.sendMessageBatch(queueUrl.toString(), messages);
-      }
-        }
     } catch (Exception e) {
       throw new RuntimeException("Failed to process for queue " + queueUrl, e);
     }
