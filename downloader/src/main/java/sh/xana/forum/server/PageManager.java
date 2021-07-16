@@ -157,6 +157,8 @@ public class PageManager implements Closeable {
       try {
         if (first) {
           createDownloadQueues();
+          // fill so downloaders work while we process the upload queue
+          refillDownloadQueues();
           first = false;
         }
         result = pageSpiderCycle();
