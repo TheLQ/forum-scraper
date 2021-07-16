@@ -2,19 +2,15 @@ package sh.xana.forum.server.parser;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -28,6 +24,7 @@ import sh.xana.forum.common.ipc.ParserResult.ParserEntry;
 import sh.xana.forum.server.ServerConfig;
 import sh.xana.forum.server.db.tables.Pages;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
+import sh.xana.forum.server.dbutil.DatabaseStorage.PageId;
 import sh.xana.forum.server.dbutil.DatabaseStorage.ValidationRecord;
 import sh.xana.forum.server.dbutil.DlStatus;
 
@@ -68,7 +65,8 @@ public class Auditor {
       Thread.sleep(5000);
 
       log.info("Fetching page ids...");
-      Set<UUID> pagesIds = dbStorage.getPagesIds();
+      List<UUID> pagesIds =
+          dbStorage.getPagesIds().stream().map(PageId::pageId).collect(Collectors.toList());
       log.info("Fetched {} page ids", pagesIds.size());
 
       log.info("Listing directory");
@@ -102,13 +100,10 @@ public class Auditor {
     }
 
     log.info("query start");
-    Set<UUID> pages =
+    List<PageId> pages =
         dbStorage.getPagesIds(
-            //
-            //
-            // Pages.PAGES.SITEID.eq(UUID.fromString("df613af3-caca-439a-b881-f8cbc34d779c")),
             Pages.PAGES.EXCEPTION.isNull(), Pages.PAGES.DLSTATUS.eq(DlStatus.Done));
-    log.info("query end");
+    log.info("query end for " + pages.size());
 
     switch (args[0]) {
       case "simple" -> start_simple(pages);
@@ -118,22 +113,22 @@ public class Auditor {
     }
   }
 
-  public static void start_simple(Collection<UUID> pages) {
+  public static void start_simple(Collection<PageId> pages) {
     AtomicInteger counter = new AtomicInteger();
     pages.parallelStream()
         .forEach(
-            pageId -> {
+            page -> {
               int idx = counter.incrementAndGet();
               if (idx % 1000 == 0) {
                 log.info("{} of {}", idx, pages.size());
               }
               try {
-                byte[] data = Files.readAllBytes(parser.getPagePath(pageId));
+                byte[] data = Files.readAllBytes(parser.getPagePath(page.pageId()));
                 ParserResult result =
-                    parser.parsePage(data, pageId, dbStorage.getPageDomain(pageId).toString());
-                postValidator(pageId, result);
+                    parser.parsePage(data, page.pageId(), page.siteUrl().toString());
+                postValidator(page.pageId(), result);
               } catch (Exception e) {
-                log.error("FAIL ON " + pageId, e);
+                log.error("FAIL ON " + page, e);
                 System.exit(1);
               }
             });
@@ -157,7 +152,7 @@ public class Auditor {
     }
   }
 
-  public static void start_thread(Collection<UUID> pages) {
+  public static void start_thread(Collection<PageId> pages) {
     int threads = 16;
     ThreadPoolExecutor threadPoolExecutor =
         new ThreadPoolExecutor(
@@ -165,7 +160,7 @@ public class Auditor {
     //    threadPoolExecutor.setRejectedExecutionHandler();
 
     AtomicInteger counter = new AtomicInteger();
-    for (UUID pageId : pages) {
+    for (PageId page : pages) {
       threadPoolExecutor.submit(
           (Callable<Void>)
               () -> {
@@ -174,64 +169,84 @@ public class Auditor {
                   log.info("{} of {}", idx, pages.size());
                 }
 
-                byte[] data = Files.readAllBytes(parser.getPagePath(pageId));
+                byte[] data = Files.readAllBytes(parser.getPagePath(page.pageId()));
                 ParserResult result =
-                    parser.parsePage(data, pageId, dbStorage.getPageDomain(pageId).toString());
-                postValidator(pageId, result);
+                    parser.parsePage(data, page.pageId(), page.siteUrl().toString());
+                postValidator(page.pageId(), result);
                 return null;
               });
     }
   }
 
-  private record QueueEntry(InputStream in, UUID pageId, String baseUrl) {}
+  private record QueueEntry(byte[] in, UUID pageId, String baseUrl) {}
 
-  public static void start_preopen(Collection<UUID> pages) {
-    BlockingQueue<QueueEntry> open = new ArrayBlockingQueue<>(100);
+  public static void start_preopen(List<PageId> pages) throws InterruptedException {
+    BlockingQueue<QueueEntry> open = new ArrayBlockingQueue<>(5000);
 
     AtomicInteger counter = new AtomicInteger();
-    ExecutorService executorService =
-        Executors.newFixedThreadPool(
-            Runtime.getRuntime().availableProcessors(),
-            r ->
-                new Thread(
-                    () -> {
-                      log.info("STARTING THREAD");
-                      while (true) {
-                        int idx = counter.incrementAndGet();
-                        if (idx % 1000 == 0) {
-                          log.info("{} of {}", idx, pages.size());
-                        }
+    threadRunner(
+        Runtime.getRuntime().availableProcessors(),
+        "processor-",
+        () -> {
+          log.info("STARTING THREAD");
+          while (true) {
+            int idx = counter.incrementAndGet();
+            if (idx % 100 == 0) {
+              log.info("{} of {}", idx, pages.size());
+            }
 
-                        try {
-                          QueueEntry take = open.take();
-                          ParserResult result =
-                              parser.parsePage(
-                                  take.in().readAllBytes(), take.pageId(), take.baseUrl());
-                          postValidator(take.pageId(), result);
-                        } catch (Exception e) {
-                          log.error("FAILED TO PARSE", e);
-                          System.exit(1);
-                        }
-                      }
-                    }));
-    for (int i = 0; i < Runtime.getRuntime().availableProcessors(); i++) {
-      executorService.submit(() -> log.info("WHY ARE YOU CALLING ME"));
-    }
-
-    pages.parallelStream()
-        .forEach(
-            pageId -> {
-              try {
-                open.put(
-                    new QueueEntry(
-                        new FileInputStream(parser.getPagePath(pageId).toFile()),
-                        pageId,
-                        dbStorage.getPageDomain(pageId).toString()));
-              } catch (Exception e) {
-                log.error("FAILED TO PUT", e);
-                System.exit(1);
+            try {
+              QueueEntry take = open.take();
+              if (new String(take.in()).trim().equals("")) {
+                log.warn("Page " + take.pageId() + " is empty");
               }
-            });
+              ParserResult result = parser.parsePage(take.in(), take.pageId(), take.baseUrl());
+              //postValidator(take.pageId(), result);
+            } catch (Exception e) {
+              log.error("FAILED TO PARSE", e);
+              // System.exit(1);
+            }
+          }
+        });
+
+    AtomicInteger readCounter = new AtomicInteger();
+    threadRunner(
+        Runtime.getRuntime().availableProcessors() * 4,
+        "reader-",
+        () -> {
+          while (true) {
+            int idx = readCounter.getAndIncrement();
+            try {
+              PageId page = pages.get(idx);
+              if (idx % 100 == 0) {
+                log.info("read {} of {} - size {}", idx, pages.size(), open.size());
+              }
+
+              open.put(
+                  new QueueEntry(
+                      new FileInputStream(parser.getPagePath(page.pageId()).toFile())
+                          .readAllBytes(),
+                      page.pageId(),
+                      page.siteUrl().toString()));
+            } catch (Exception e) {
+              log.error("FAILED TO PUT", e);
+              System.exit(1);
+            }
+          }
+        });
+
+    while (readCounter.get() != pages.size()) {
+      TimeUnit.MINUTES.sleep(1);
+    }
+  }
+
+  private static void threadRunner(int threads, String namePrefix, Runnable runner) {
+    for (int i = 0; i < threads; i++) {
+      Thread thread = new Thread(runner);
+      thread.setName(namePrefix + i);
+      thread.setDaemon(false);
+      thread.start();
+    }
   }
 
   private static void postValidator(UUID pageId, ParserResult result) {

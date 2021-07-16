@@ -35,6 +35,10 @@ public class PageParser {
   }
 
   public ParserResult parsePage(byte[] data, UUID pageId, String baseUrl) {
+    if (new String(data).trim().equals("")) {
+      log.warn("Page " + pageId + " is empty");
+    }
+
     ForumType forumType = null;
     try {
       String rawHtml = new String(data);
