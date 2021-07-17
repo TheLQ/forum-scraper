@@ -65,7 +65,7 @@ public class ServerMain {
 
     debugThread = new RuntimeDebugThread();
     if (!debugMode) {
-      pageManager.startSpiderThread();
+      pageManager.startThreads();
       debugThread.start();
       // ClientMain.main(new String[0]);
     }

@@ -42,6 +42,8 @@ public class PageManager implements Closeable {
   private final ServerConfig config;
   private final SqsManager sqsManager;
   private final Thread spiderThread;
+  private final Thread uploadsThread;
+  private final Thread downloadsThread;
 
   private final PageParser pageParser;
 
@@ -51,24 +53,56 @@ public class PageManager implements Closeable {
     this.sqsManager = sqsManager;
 
     this.spiderThread = new Thread(this::pageSpiderThread);
-    this.spiderThread.setName("ProcessorSpider");
+    this.spiderThread.setName("PageSpider");
 
+    this.uploadsThread = new Thread(this::uploadsThread);
+    this.uploadsThread.setName("PageUploads");
+
+    this.downloadsThread = new Thread(this::downloadsThread);
+    this.downloadsThread.setName("PageDownloads");
 
     this.pageParser = new PageParser(config);
   }
 
-  /** Process responses the download scraper collected */
-  public void processUploads() throws IOException {
-    while (_processUploads()) {}
+  public void startThreads() {
+    this.spiderThread.start();
+    this.uploadsThread.start();
+    this.downloadsThread.start();
   }
 
-  public boolean _processUploads() throws IOException {
-    List<RecieveRequest<ScraperUpload>> recieveRequests = sqsManager.receiveUploadRequests();
-    if (recieveRequests.isEmpty()) {
-      log.debug("No uploads to process");
-      return false;
+  public void uploadsThread() {
+    while (true) {
+      boolean result;
+      try {
+        result = processUploads();
+      } catch (Exception e) {
+        log.error("Caught exception in mainLoop, stopping", e);
+        break;
+      }
+      if (!result) {
+        log.warn("mainLoop returned false, stopping");
+        break;
+      }
+    }
+    log.info("main loop ended");
+  }
+
+  /** Process responses the download scraper collected */
+  public boolean processUploads() throws IOException, InterruptedException {
+    while(true) {
+      List<RecieveRequest<ScraperUpload>> recieveRequests = sqsManager.receiveUploadRequests();
+      if (recieveRequests.isEmpty()) {
+        log.debug("No uploads to process");
+        sleep();
+        return true;
+      }
+
+      _processUploads(recieveRequests);
     }
 
+  }
+
+  public void  _processUploads(List<RecieveRequest<ScraperUpload>> recieveRequests) throws IOException, InterruptedException {
     List<PageredirectsRecord> sqlNewRedirects = new ArrayList<>();
     for (RecieveRequest<ScraperUpload> successMessage : recieveRequests) {
       ScraperUpload success = successMessage.obj();
@@ -138,28 +172,14 @@ public class PageManager implements Closeable {
     }
 
     sqsManager.deleteUploadRequests(recieveRequests);
-
-    return true;
-  }
-
-  public void startSpiderThread() {
-    this.spiderThread.start();
   }
 
   /** */
   private void pageSpiderThread() {
-    boolean first = true;
-
     while (true) {
       boolean result;
       try {
-        if (first) {
-          createDownloadQueues();
-          // fill so downloaders work while we process the upload queue
-          refillDownloadQueues();
-          first = false;
-        }
-        result = pageSpiderCycle();
+        result = spider();
       } catch (Exception e) {
         log.error("Caught exception in mainLoop, stopping", e);
         break;
@@ -172,22 +192,11 @@ public class PageManager implements Closeable {
     log.info("main loop ended");
   }
 
-  private boolean pageSpiderCycle() throws InterruptedException, IOException {
-    processUploads();
-
-    refillDownloadQueues();
-
-    spider();
-
-    log.debug("sleep...");
-    TimeUnit.SECONDS.sleep(10);
-
-    // TODO
-    return true;
-  }
-
-  private void spider() throws InterruptedException {
+  private boolean spider() throws InterruptedException {
     while (_spider()) {}
+
+    sleep();
+    return true;
   }
 
   private boolean _spider() throws InterruptedException {
@@ -277,6 +286,31 @@ public class PageManager implements Closeable {
     return true;
   }
 
+  private void downloadsThread() {
+    boolean first = true;
+
+    while (true) {
+      boolean result;
+      try {
+        if (first) {
+          createDownloadQueues();
+          // fill so downloaders work while we process the upload queue
+          refillDownloadQueues();
+          first = false;
+        }
+        result = refillDownloadQueues();
+      } catch (Exception e) {
+        log.error("Caught exception in mainLoop, stopping", e);
+        break;
+      }
+      if (!result) {
+        log.warn("mainLoop returned false, stopping");
+        break;
+      }
+    }
+    log.info("main loop ended");
+  }
+
   private void createDownloadQueues() {
     // clear out old domains
     log.info("Updating download queues...");
@@ -318,7 +352,7 @@ public class PageManager implements Closeable {
     }
   }
 
-  private void refillDownloadQueues() {
+  private boolean refillDownloadQueues() throws InterruptedException {
     final int expectedQueueSize = SqsManager.QUEUE_SIZE * 10;
     Set<Entry<URI, Integer>> entries = sqsManager.getDownloadQueueSizes().entrySet();
     log.info("found {} queuss", entries.size());
@@ -340,6 +374,14 @@ public class PageManager implements Closeable {
         sqsManager.sendDownloadRequests(entry.getKey(), scraperDownloads);
       }
     }
+
+    sleep();
+    return true;
+  }
+
+  public void sleep() throws InterruptedException {
+    log.debug("sleep...");
+    TimeUnit.SECONDS.sleep(60);
   }
 
   @Override
