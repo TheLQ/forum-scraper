@@ -5,7 +5,6 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +28,7 @@ import sh.xana.forum.server.db.tables.Sites;
 import sh.xana.forum.server.db.tables.records.PageredirectsRecord;
 import sh.xana.forum.server.db.tables.records.PagesRecord;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
+import sh.xana.forum.server.dbutil.DatabaseStorage.OverviewEntry;
 import sh.xana.forum.server.dbutil.DlStatus;
 import sh.xana.forum.server.dbutil.ForumType;
 import sh.xana.forum.server.dbutil.PageType;
@@ -43,7 +43,6 @@ public class PageManager implements Closeable {
   private final SqsManager sqsManager;
   private final Thread spiderThread;
 
-  private final Path fileCachePath;
   private final PageParser pageParser;
 
   public PageManager(DatabaseStorage dbStorage, ServerConfig config, SqsManager sqsManager) {
@@ -54,7 +53,6 @@ public class PageManager implements Closeable {
     this.spiderThread = new Thread(this::pageSpiderThread);
     this.spiderThread.setName("ProcessorSpider");
 
-    this.fileCachePath = Path.of(config.get(config.ARG_FILE_CACHE));
 
     this.pageParser = new PageParser(config);
   }
@@ -103,8 +101,8 @@ public class PageManager implements Closeable {
         headers = Utils.jsonMapper.writeValueAsString(success.headers());
       }
 
-      Files.write(fileCachePath.resolve(success.pageId() + ".response"), body);
-      Files.writeString(fileCachePath.resolve(success.pageId() + ".headers"), headers);
+      Files.write(pageParser.getPagePath(success.pageId()), body);
+      Files.writeString(pageParser.getPageHeaderPath(success.pageId()), headers);
 
       dbStorage.movePageDownloadToParse(success.pageId(), success.responseCode());
 
@@ -280,22 +278,39 @@ public class PageManager implements Closeable {
   }
 
   private void createDownloadQueues() {
-    log.info("Init domain queues");
-    // Create queues for new domains
-    List<String> domainsToAdd = dbStorage.getScraperDomainsIPC();
-
-    for (URI queue : sqsManager.getDownloadQueueUrls()) {
-      String domain = SqsManager.getQueueDomain(queue);
-      domain = SqsManager.getQueueNameSafeOrig(domain);
-      domainsToAdd.remove(domain);
-    }
-
+    // clear out old domains
+    log.info("Updating download queues...");
     boolean updated = false;
-    for (String domain : domainsToAdd) {
-      log.info("Creating queue for " + domain);
-      sqsManager.newDownloadQueue(domain);
-      updated = true;
+    for (OverviewEntry overviewEntry : dbStorage.getOverviewSites()) {
+      String queueNameSafe = SqsManager.getQueueNameSafe(overviewEntry.siteUrl().getHost());
+      if (overviewEntry.dlStatusCount().get(DlStatus.Queued) == null
+          && overviewEntry.dlStatusCount().get(DlStatus.Download) == null) {
+        // delete if queue exists because it's empty
+        URI uri =
+            sqsManager.getDownloadQueueUrls().stream()
+                .filter(e -> e.toString().contains(queueNameSafe))
+                .findFirst()
+                .orElse(null);
+        if (uri != null) {
+          log.info("Deleting queue " + uri);
+          sqsManager.deleteQueue(uri);
+          updated = true;
+        }
+      } else {
+        // create if queue doesn't exist because we have work
+        URI queue =
+            sqsManager.getDownloadQueueUrls().stream()
+                .filter(e -> e.toString().contains(queueNameSafe))
+                .findFirst()
+                .orElse(null);
+        if (queue == null) {
+          log.info("New queue " + overviewEntry.siteUrl().getHost());
+          sqsManager.newDownloadQueue(overviewEntry.siteUrl().getHost());
+          updated = true;
+        }
+      }
     }
+
     if (updated) {
       sqsManager.updateDownloadQueueUrls();
     } else {

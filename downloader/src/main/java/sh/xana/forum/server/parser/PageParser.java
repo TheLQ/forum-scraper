@@ -48,6 +48,12 @@ public class PageParser {
         config.get(config.ARG_FILE_CACHE), "" + pageIdStr.charAt(0), pageIdStr + ".response");
   }
 
+  public Path getPageHeaderPath(UUID pageId) {
+    String pageIdStr = pageId.toString();
+    return Path.of(
+        config.get(config.ARG_FILE_CACHE), "" + pageIdStr.charAt(0), pageIdStr + ".headers");
+  }
+
   public ParserResult parsePage(byte[] data, UUID pageId, String baseUrl) {
     if (new String(data).trim().equals("")) {
       log.warn("Page " + pageId + " is empty");
