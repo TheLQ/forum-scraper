@@ -127,25 +127,26 @@ public class DatabaseStorage {
                 SITES.SITEURL,
                 SITES.FORUMTYPE)
             .from(PAGES)
-            .join(SITES)
+            .innerJoin(SITES)
             .on(PAGES.SITEID.eq(SITES.SITEID))
             .where(PAGES.DLSTATUS.eq(DlStatus.Parse), PAGES.EXCEPTION.isNull())
-            .limit(100);
+            .limit(1000);
+    log.info(query.toString());
     return query.fetch();
   }
 
   /** Stage: reporting monitor */
   public List<OverviewEntry> getOverviewSites() {
-    var pages =
+    var query =
         context
             .select(DSL.count(PAGES.PAGEID), PAGES.DLSTATUS, PAGES.SITEID, SITES.SITEURL)
             .from(PAGES)
-            .join(SITES)
+            .innerJoin(SITES)
             .on(PAGES.SITEID.eq(SITES.SITEID))
             // SITEID is redundant but mysql doesn't like the free floating column
-            .groupBy(PAGES.DLSTATUS, PAGES.DOMAIN, PAGES.SITEID)
-            .fetch();
-
+            .groupBy(PAGES.DLSTATUS, PAGES.DOMAIN, PAGES.SITEID);
+    log.info("QUERY " + query);
+    var pages = query.fetch();
     List<OverviewEntry> result = new ArrayList<>();
     while (!pages.isEmpty()) {
       Map<DlStatus, Integer> counter = new HashMap<>();
@@ -234,8 +235,8 @@ public class DatabaseStorage {
   public List<PageId> getPagesIds(Condition... conditions) {
     return context
         .select(PAGES.PAGEID, SITES.SITEURL)
-        .from(SITES)
-        .join(PAGES)
+        .from(PAGES)
+        .innerJoin(SITES)
         .on(PAGES.SITEID.eq(SITES.SITEID))
         .where(conditions)
         .fetch()
@@ -245,12 +246,14 @@ public class DatabaseStorage {
   public record PageUrl(URI pageUrl, URI siteUrl, ForumType forumType) {}
 
   public List<PageUrl> getPageUrls(Condition... conditions) {
-    return context
+    var query = context
         .select(PAGES.PAGEURL, SITES.SITEURL, SITES.FORUMTYPE)
-        .from(SITES)
-        .join(PAGES)
+        .from(PAGES)
+        .innerJoin(SITES)
         .on(PAGES.SITEID.eq(SITES.SITEID))
-        .where(conditions)
+        .where(conditions);
+    log.info(query.toString());
+      return query
         .fetch()
         .map(e -> new PageUrl(e.component1(), e.component2(), e.component3()));
   }
@@ -276,8 +279,8 @@ public class DatabaseStorage {
   public URI getPageDomain(UUID pageId) {
     return context
         .select(SITES.SITEURL)
-        .from(SITES)
-        .join(PAGES)
+        .from(PAGES)
+        .innerJoin(SITES)
         .on(PAGES.SITEID.eq(SITES.SITEID))
         .where(PAGES.PAGEID.eq(pageId))
         .fetchOne(SITES.SITEURL);
