@@ -146,7 +146,7 @@ public class vBulletin implements AbstractForum {
         // The infinite scroll plugin uses a ?ispreloading magic url
         newUrl = newUrl.replace("?ispreloading=1", "");
 
-        if (newUrl.endsWith("&")) {
+        if (newUrl.endsWith("&") || newUrl.endsWith("?")) {
           newUrl = newUrl.substring(0, newUrl.length() - 1);
         }
 
@@ -167,7 +167,7 @@ public class vBulletin implements AbstractForum {
         Pattern.compile("forumdisplay.php\\?f=[0-9]+(&order=desc)?(&page=[0-9]+)?"),
         // forumdisplay.php?5-cars
         Pattern.compile(
-            "forumdisplay.php\\?[0-9]+-TOPIC_TPL(/page[0-9]+)?"
+            "forumdisplay.php[?|/][0-9]+-TOPIC_TPL(/page[0-9]+)?"
                 .replace("TOPIC_TPL", PATTERN_TOPIC_TPL)),
         // cars-2/page9/
         Pattern.compile("[a-zA-Z0-9\\-]+-[0-9]+/(page[0-9]+/)?"),
@@ -175,7 +175,7 @@ public class vBulletin implements AbstractForum {
         Pattern.compile("showthread.php\\?t=[0-9]+(&page=[0-9]+)?"),
         // showthread.php?9-my-topic/page7 (-my-topic is optional...)
         Pattern.compile(
-            "showthread.php\\?[0-9]+(-TOPIC_TPL)?(/page[0-9]+)?"
+            "showthread.php[?|/][0-9]+(-TOPIC_TPL)?(/page[0-9]+)?"
                 .replace("TOPIC_TPL", PATTERN_TOPIC_TPL)),
         // cars-2/my-topic-9/page5
         Pattern.compile(
