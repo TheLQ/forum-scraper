@@ -84,11 +84,9 @@ public class PageParser {
         addAnchorSubpage(
             parser.getSubforumAnchors(sourcePage),
             subpages,
-            PageType.ForumList,
-            baseUri,
-            forumType);
+            PageType.ForumList);
         addAnchorSubpage(
-            parser.getTopicAnchors(sourcePage), subpages, PageType.TopicPage, baseUri, forumType);
+            parser.getTopicAnchors(sourcePage), subpages, PageType.TopicPage);
         if (!subpages.isEmpty()) {
           pageType = PageType.ForumList;
         }
@@ -112,12 +110,17 @@ public class PageParser {
           }
         }
 
-        addAnchorSubpage(parser.getPageLinks(sourcePage), subpages, pageType, baseUri, forumType);
+        addAnchorSubpage(parser.getPageLinks(sourcePage), subpages, pageType);
 
         pageType = parser.postForcePageType(sourcePage, pageType);
 
         ParserResult result = new ParserResult(false, pageType, forumType, subpages);
         parser.postProcessing(sourcePage, result);
+
+        for (var subpage : result.subpages()) {
+            validateUrl(Utils.toURI(subpage.url()), baseUri, forumType);
+        }
+
         return result;
       }
     } catch (ParserException e) {
@@ -131,9 +134,7 @@ public class PageParser {
   private void addAnchorSubpage(
       Collection<Element> elements,
       List<ParserEntry> subpages,
-      PageType pageType,
-      URI baseUri,
-      ForumType forumType) {
+      PageType pageType) {
     for (Element element : elements) {
       if (ForumUtils.anchorIsNotNavLink(element)) {
         continue;
@@ -142,13 +143,6 @@ public class PageParser {
       String url = element.absUrl("href");
       if (StringUtils.isBlank(url)) {
         throw new RuntimeException("href blank in " + element.outerHtml());
-      }
-
-      URI pageUri = Utils.toURI(url);
-      try {
-        validateUrl(pageUri, baseUri, forumType);
-      } catch (Exception e) {
-        throw new RuntimeException("Failed in element " + element.outerHtml(), e);
       }
 
       ParserEntry parser = new ParserEntry(element.text(), url.trim(), pageType);
