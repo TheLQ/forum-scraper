@@ -20,6 +20,8 @@
 
   <logger name="org.jooq.tools.LoggerListener" level="info"/>
   <logger name="org.jooq.impl.DefaultBinding" level="info"/>
+  <logger name="org.jooq.tools.Convert" level="info"/>
+
   <logger name="com.amazonaws" level="info"/>
   <logger name="software.amazon.awssdk" level="info"/>
   <!-- .wire is super chatty in debug, .headers is less but still annoying. Just block all of it -->

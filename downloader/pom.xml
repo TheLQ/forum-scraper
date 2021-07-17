@@ -40,7 +40,7 @@
     <dependency>
       <groupId>org.jooq</groupId>
       <artifactId>jooq</artifactId>
-      <version>3.14.11</version>
+      <version>3.15.1</version>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
@@ -164,7 +164,7 @@
       <plugin>
         <groupId>org.jooq</groupId>
         <artifactId>jooq-codegen-maven</artifactId>
-        <version>3.14.11</version>
+        <version>3.15.1</version>
         <configuration>
           <configurationFile>src/jooq.xml</configurationFile>
         </configuration>
