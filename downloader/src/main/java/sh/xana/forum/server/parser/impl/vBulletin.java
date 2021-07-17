@@ -159,4 +159,34 @@ public class vBulletin implements AbstractForum {
       }
     }
   }
+
+  private static final String PATTERN_TOPIC_TPL = "[a-zA-Z0-9\\-%_\\(\\)!\\*\\?']+";
+  private static final Pattern[] PATTERN_URI =
+      new Pattern[] {
+        // forumdisplay.php?f=3&order=desc&page=4
+        Pattern.compile("forumdisplay.php\\?f=[0-9]+(&order=desc)?(&page=[0-9]+)?"),
+        // forumdisplay.php?5-cars
+        Pattern.compile(
+            "forumdisplay.php\\?[0-9]+-TOPIC_TPL(/page[0-9]+)?"
+                .replace("TOPIC_TPL", PATTERN_TOPIC_TPL)),
+        // cars-2/page9/
+        Pattern.compile("[a-zA-Z0-9\\-]+-[0-9]+/(page[0-9]+/)?"),
+        // showthread.php?t=5&page=5
+        Pattern.compile("showthread.php\\?t=[0-9]+(&page=[0-9]+)?"),
+        // showthread.php?9-my-topic/page7 (-my-topic is optional...)
+        Pattern.compile(
+            "showthread.php\\?[0-9]+(-TOPIC_TPL)?(/page[0-9]+)?"
+                .replace("TOPIC_TPL", PATTERN_TOPIC_TPL)),
+        // cars-2/my-topic-9/page5
+        Pattern.compile(
+            "[a-zA-Z0-9\\-]+-[0-9]+/TOPIC_TPL-[0-9]+/(page[0-9]+/)?"
+                .replace("TOPIC_TPL", PATTERN_TOPIC_TPL)),
+        // marketplace/parts/search/page-42
+        Pattern.compile("marketplace/[a-z]+/search/(page-[0-9]+/)?")
+      };
+
+  @Override
+  public Pattern[] validateUrl() {
+    return PATTERN_URI;
+  }
 }

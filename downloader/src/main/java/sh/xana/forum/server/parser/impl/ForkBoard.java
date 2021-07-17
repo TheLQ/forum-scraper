@@ -1,6 +1,7 @@
 package sh.xana.forum.server.parser.impl;
 
 import java.util.Collection;
+import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
 import org.jsoup.nodes.Element;
 import sh.xana.forum.common.ipc.ParserResult;
@@ -59,4 +60,19 @@ public class ForkBoard implements AbstractForum {
 
   @Override
   public void postProcessing(SourcePage sourcePage, ParserResult result) {}
+
+  private static final Pattern[] PATTERN_URI =
+      new Pattern[] {
+        // home page
+        Pattern.compile("home.php"),
+        // forum/?page=3
+        Pattern.compile("[a-z0-9\\-]+/(\\?page=[0-9]+)?"),
+        // forum/!434-my-topic.html?page=4
+        Pattern.compile("[a-z0-9\\-]+/![0-9]+-[a-zA-Z0-9\\-]*.html(\\?page=[0-9]+)?"),
+      };
+
+  @Override
+  public Pattern[] validateUrl() {
+    return PATTERN_URI;
+  }
 }

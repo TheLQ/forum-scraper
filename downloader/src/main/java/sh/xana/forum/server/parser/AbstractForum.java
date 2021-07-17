@@ -1,6 +1,7 @@
 package sh.xana.forum.server.parser;
 
 import java.util.Collection;
+import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.jsoup.Jsoup;
@@ -39,4 +40,8 @@ public interface AbstractForum {
   }
 
   void postProcessing(SourcePage sourcePage, ParserResult result);
+
+  default Pattern[] validateUrl() {
+    throw new UnsupportedOperationException();
+  }
 }

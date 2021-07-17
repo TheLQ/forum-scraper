@@ -117,4 +117,21 @@ public class SMF implements AbstractForum {
       }
     }
   }
+
+  private static final Pattern[] PATTERN_URI =
+      new Pattern[] {
+        // index.php?board,.24.html
+        Pattern.compile("index.php/board,[0-9]+\\.[0-9]+.html"),
+        // forum/ (the pages are matched by greedy topic regex)
+        Pattern.compile("[a-zA-Z0-9\\-]+/"),
+        // index.php?topic,323.24.html
+        Pattern.compile("index.php/topic,[0-9]+\\.[0-9]+.html"),
+        // forum/topic/231/
+        Pattern.compile("[a-zA-Z0-9\\-]+/[a-zA-Z0-9_!\\-()$*~']+/([0-9]+/)?"),
+      };
+
+  @Override
+  public Pattern[] validateUrl() {
+    return PATTERN_URI;
+  }
 }

@@ -1,6 +1,7 @@
 package sh.xana.forum.server.parser.impl;
 
 import java.util.Collection;
+import java.util.regex.Pattern;
 import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.jsoup.nodes.Element;
@@ -69,4 +70,21 @@ public class XenForo implements AbstractForum {
 
   @Override
   public void postProcessing(SourcePage sourcePage, ParserResult result) {}
+
+  private static final Pattern[] PATTERN_URI =
+      new Pattern[] {
+        // forums/general.4/page-55
+        Pattern.compile("forums/[a-zA-Z0-9\\-%]+\\.[0-9]+/(page-[0-9]+)?"),
+        // threads/my-topic.234/page-163
+        Pattern.compile("threads/[a-zA-Z0-9\\-%_]+\\.[0-9]+/(page-[0-9]+)?"),
+        // threads/my-topic.234/page-163
+        Pattern.compile("threads/[0-9]+/(page-[0-9]+)?"),
+        // Plain /forums/ link on special XenForo platform
+        Pattern.compile("forums/"),
+      };
+
+  @Override
+  public Pattern[] validateUrl() {
+    return PATTERN_URI;
+  }
 }

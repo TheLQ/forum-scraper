@@ -242,6 +242,19 @@ public class DatabaseStorage {
         .map(e -> new PageId(e.get(PAGES.PAGEID), e.get(SITES.SITEURL)));
   }
 
+  public record PageUrl(URI pageUrl, URI siteUrl, ForumType forumType) {}
+
+  public List<PageUrl> getPageUrls(Condition... conditions) {
+    return context
+        .select(PAGES.PAGEURL, SITES.SITEURL, SITES.FORUMTYPE)
+        .from(SITES)
+        .join(PAGES)
+        .on(PAGES.SITEID.eq(SITES.SITEID))
+        .where(conditions)
+        .fetch()
+        .map(e -> new PageUrl(e.component1(), e.component2(), e.component3()));
+  }
+
   public record ValidationRecord(UUID pageId, URI url, boolean isRedirect) {}
 
   public List<ValidationRecord> getPageByUrl(List<String> url) {
