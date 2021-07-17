@@ -183,16 +183,22 @@ public class Auditor {
   public static void start_preopen(List<PageId> pages) throws InterruptedException {
     BlockingQueue<QueueEntry> open = new ArrayBlockingQueue<>(5000);
 
+    long start = System.currentTimeMillis();
     AtomicInteger counter = new AtomicInteger();
     threadRunner(
-        Runtime.getRuntime().availableProcessors(),
+        Runtime.getRuntime().availableProcessors() * 16,
         "processor-",
         () -> {
           log.info("STARTING THREAD");
           while (true) {
             int idx = counter.incrementAndGet();
             if (idx % 100 == 0) {
-              log.info("{} of {}", idx, pages.size());
+              log.info(
+                  "{} of {} - open {} /sec {}",
+                  idx,
+                  pages.size(),
+                  open.size(),
+                  idx / ((System.currentTimeMillis() - start) / 1000));
             }
 
             try {
@@ -201,7 +207,7 @@ public class Auditor {
                 log.warn("Page " + take.pageId() + " is empty");
               }
               ParserResult result = parser.parsePage(take.in(), take.pageId(), take.baseUrl());
-              //postValidator(take.pageId(), result);
+              postValidator(take.pageId(), result);
             } catch (Exception e) {
               log.error("FAILED TO PARSE", e);
               // System.exit(1);
@@ -219,7 +225,8 @@ public class Auditor {
             try {
               PageId page = pages.get(idx);
               if (idx % 100 == 0) {
-                log.info("read {} of {} - size {}", idx, pages.size(), open.size());
+                //                log.info("read {} of {} - size {}", idx, pages.size(),
+                // open.size());
               }
 
               open.put(
@@ -240,7 +247,7 @@ public class Auditor {
     }
   }
 
-  private static void threadRunner(int threads, String namePrefix, Runnable runner) {
+  public static void threadRunner(int threads, String namePrefix, Runnable runner) {
     for (int i = 0; i < threads; i++) {
       Thread thread = new Thread(runner);
       thread.setName(namePrefix + i);
