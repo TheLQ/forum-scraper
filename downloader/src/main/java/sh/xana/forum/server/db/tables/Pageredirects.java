@@ -4,9 +4,12 @@
 package sh.xana.forum.server.db.tables;
 
 import java.net.URI;
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Index;
 import org.jooq.Name;
 import org.jooq.Record;
 import org.jooq.Row3;
@@ -18,6 +21,7 @@ import org.jooq.impl.DSL;
 import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
 import sh.xana.forum.server.db.ForumScrape;
+import sh.xana.forum.server.db.Indexes;
 import sh.xana.forum.server.db.tables.records.PageredirectsRecord;
 import sh.xana.forum.server.dbutil.UriConverter;
 import sh.xana.forum.server.dbutil.UuidConverter;
@@ -84,7 +88,12 @@ public class Pageredirects extends TableImpl<PageredirectsRecord> {
 
   @Override
   public Schema getSchema() {
-    return ForumScrape.FORUM_SCRAPE;
+    return aliased() ? null : ForumScrape.FORUM_SCRAPE;
+  }
+
+  @Override
+  public List<Index> getIndexes() {
+    return Arrays.asList(Indexes.PAGEREDIRECTS_REDIRECTURL);
   }
 
   @Override

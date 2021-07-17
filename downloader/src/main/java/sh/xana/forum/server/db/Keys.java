@@ -3,13 +3,20 @@
  */
 package sh.xana.forum.server.db;
 
+import org.jooq.ForeignKey;
 import org.jooq.TableField;
 import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
 import org.jooq.impl.Internal;
+import sh.xana.forum.server.db.tables.Filedata;
+import sh.xana.forum.server.db.tables.Forums;
 import sh.xana.forum.server.db.tables.Pages;
+import sh.xana.forum.server.db.tables.Posts;
 import sh.xana.forum.server.db.tables.Sites;
+import sh.xana.forum.server.db.tables.records.FiledataRecord;
+import sh.xana.forum.server.db.tables.records.ForumsRecord;
 import sh.xana.forum.server.db.tables.records.PagesRecord;
+import sh.xana.forum.server.db.tables.records.PostsRecord;
 import sh.xana.forum.server.db.tables.records.SitesRecord;
 
 /** A class modelling foreign key relationships and constraints of tables in forum-scrape. */
@@ -20,16 +27,54 @@ public class Keys {
   // UNIQUE and PRIMARY KEY definitions
   // -------------------------------------------------------------------------
 
+  public static final UniqueKey<FiledataRecord> KEY_FILEDATA_PRIMARY =
+      Internal.createUniqueKey(
+          Filedata.FILEDATA,
+          DSL.name("KEY_FileData_PRIMARY"),
+          new TableField[] {Filedata.FILEDATA.PAGEID},
+          true);
   public static final UniqueKey<PagesRecord> KEY_PAGES_PRIMARY =
       Internal.createUniqueKey(
           Pages.PAGES, DSL.name("KEY_Pages_PRIMARY"), new TableField[] {Pages.PAGES.PAGEID}, true);
   public static final UniqueKey<PagesRecord> KEY_PAGES_URL =
       Internal.createUniqueKey(
           Pages.PAGES, DSL.name("KEY_Pages_url"), new TableField[] {Pages.PAGES.PAGEURL}, true);
+  public static final UniqueKey<PostsRecord> KEY_POSTS_PRIMARY =
+      Internal.createUniqueKey(
+          Posts.POSTS, DSL.name("KEY_Posts_PRIMARY"), new TableField[] {Posts.POSTS.POSTID}, true);
   public static final UniqueKey<SitesRecord> KEY_SITES_PRIMARY =
       Internal.createUniqueKey(
           Sites.SITES, DSL.name("KEY_Sites_PRIMARY"), new TableField[] {Sites.SITES.SITEID}, true);
   public static final UniqueKey<SitesRecord> KEY_SITES_URL =
       Internal.createUniqueKey(
           Sites.SITES, DSL.name("KEY_Sites_url"), new TableField[] {Sites.SITES.SITEURL}, true);
+
+  // -------------------------------------------------------------------------
+  // FOREIGN KEY definitions
+  // -------------------------------------------------------------------------
+
+  public static final ForeignKey<FiledataRecord, PagesRecord> FK_FILEDATA_PAGES =
+      Internal.createForeignKey(
+          Filedata.FILEDATA,
+          DSL.name("FK_FileData_Pages"),
+          new TableField[] {Filedata.FILEDATA.PAGEID},
+          Keys.KEY_PAGES_PRIMARY,
+          new TableField[] {Pages.PAGES.PAGEID},
+          true);
+  public static final ForeignKey<ForumsRecord, SitesRecord> FK_FORUMS_SITES =
+      Internal.createForeignKey(
+          Forums.FORUMS,
+          DSL.name("FK_Forums_Sites"),
+          new TableField[] {Forums.FORUMS.SITEID},
+          Keys.KEY_SITES_PRIMARY,
+          new TableField[] {Sites.SITES.SITEID},
+          true);
+  public static final ForeignKey<PagesRecord, SitesRecord> FK_PAGES_SITES =
+      Internal.createForeignKey(
+          Pages.PAGES,
+          DSL.name("FK_Pages_Sites"),
+          new TableField[] {Pages.PAGES.SITEID},
+          Keys.KEY_SITES_PRIMARY,
+          new TableField[] {Sites.SITES.SITEID},
+          true);
 }

@@ -27,6 +27,6 @@ public class DefaultCatalog extends CatalogImpl {
 
   @Override
   public final List<Schema> getSchemas() {
-    return Arrays.<Schema>asList(ForumScrape.FORUM_SCRAPE);
+    return Arrays.asList(ForumScrape.FORUM_SCRAPE);
   }
 }

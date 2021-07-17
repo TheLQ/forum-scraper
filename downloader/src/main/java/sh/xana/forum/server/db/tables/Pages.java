@@ -152,7 +152,7 @@ public class Pages extends TableImpl<PagesRecord> {
 
   @Override
   public Schema getSchema() {
-    return ForumScrape.FORUM_SCRAPE;
+    return aliased() ? null : ForumScrape.FORUM_SCRAPE;
   }
 
   @Override
@@ -161,8 +161,21 @@ public class Pages extends TableImpl<PagesRecord> {
   }
 
   @Override
-  public List<UniqueKey<PagesRecord>> getKeys() {
-    return Arrays.<UniqueKey<PagesRecord>>asList(Keys.KEY_PAGES_PRIMARY, Keys.KEY_PAGES_URL);
+  public List<UniqueKey<PagesRecord>> getUniqueKeys() {
+    return Arrays.asList(Keys.KEY_PAGES_URL);
+  }
+
+  @Override
+  public List<ForeignKey<PagesRecord, ?>> getReferences() {
+    return Arrays.asList(Keys.FK_PAGES_SITES);
+  }
+
+  private transient Sites _sites;
+
+  public Sites sites() {
+    if (_sites == null) _sites = new Sites(this, Keys.FK_PAGES_SITES);
+
+    return _sites;
   }
 
   @Override

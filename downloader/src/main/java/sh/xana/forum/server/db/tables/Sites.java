@@ -104,7 +104,7 @@ public class Sites extends TableImpl<SitesRecord> {
 
   @Override
   public Schema getSchema() {
-    return ForumScrape.FORUM_SCRAPE;
+    return aliased() ? null : ForumScrape.FORUM_SCRAPE;
   }
 
   @Override
@@ -113,8 +113,8 @@ public class Sites extends TableImpl<SitesRecord> {
   }
 
   @Override
-  public List<UniqueKey<SitesRecord>> getKeys() {
-    return Arrays.<UniqueKey<SitesRecord>>asList(Keys.KEY_SITES_PRIMARY, Keys.KEY_SITES_URL);
+  public List<UniqueKey<SitesRecord>> getUniqueKeys() {
+    return Arrays.asList(Keys.KEY_SITES_URL);
   }
 
   @Override
