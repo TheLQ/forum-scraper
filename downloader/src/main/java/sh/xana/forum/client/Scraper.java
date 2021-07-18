@@ -31,7 +31,7 @@ import sh.xana.forum.common.ipc.ScraperUpload;
 public class Scraper implements Closeable {
   public static final Logger log = LoggerFactory.getLogger(Scraper.class);
 
-  private static final int CYCLE_SECONDS = 10;
+  private static final int CYCLE_SECONDS = 2;
   private static int INSTANCE_COUNTER = 0;
 
   private final ClientConfig config;

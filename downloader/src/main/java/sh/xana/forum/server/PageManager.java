@@ -89,7 +89,7 @@ public class PageManager implements Closeable {
 
   /** Process responses the download scraper collected */
   public boolean processUploads() throws IOException, InterruptedException {
-    while(true) {
+    while (true) {
       List<RecieveRequest<ScraperUpload>> recieveRequests = sqsManager.receiveUploadRequests();
       if (recieveRequests.isEmpty()) {
         log.debug("No uploads to process");
@@ -99,10 +99,10 @@ public class PageManager implements Closeable {
 
       _processUploads(recieveRequests);
     }
-
   }
 
-  public void  _processUploads(List<RecieveRequest<ScraperUpload>> recieveRequests) throws IOException, InterruptedException {
+  public void _processUploads(List<RecieveRequest<ScraperUpload>> recieveRequests)
+      throws IOException, InterruptedException {
     List<PageredirectsRecord> sqlNewRedirects = new ArrayList<>();
     for (RecieveRequest<ScraperUpload> successMessage : recieveRequests) {
       ScraperUpload success = successMessage.obj();
@@ -364,7 +364,7 @@ public class PageManager implements Closeable {
       domain = SqsManager.getQueueNameSafeOrig(domain);
       // Give the queues sufficient lead time
       List<ScraperDownload> scraperDownloads =
-          dbStorage.movePageQueuedToDownloadIPC(domain, expectedQueueSize * 5);
+          dbStorage.movePageQueuedToDownloadIPC(domain, expectedQueueSize * 10);
       log.debug("domain " + domain);
       if (!scraperDownloads.isEmpty()) {
         log.debug(
