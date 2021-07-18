@@ -36,7 +36,7 @@ public class vBulletin implements AbstractForum {
 
   @Override
   public @Nonnull Collection<Element> getPageLinks(SourcePage sourcePage) {
-    return sourcePage.doc().select(".pagenav a, .pagination a, link[rel='next']");
+    return sourcePage.doc().select(".pagenav a, .threadpagenav .pagination a, link[rel='next']");
   }
 
   @Override
