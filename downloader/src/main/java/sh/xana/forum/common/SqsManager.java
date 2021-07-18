@@ -9,6 +9,7 @@ import com.amazonaws.services.sqs.model.CreateQueueRequest;
 import com.amazonaws.services.sqs.model.DeleteMessageBatchRequestEntry;
 import com.amazonaws.services.sqs.model.ListQueuesResult;
 import com.amazonaws.services.sqs.model.Message;
+import com.amazonaws.services.sqs.model.QueueDoesNotExistException;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
@@ -17,12 +18,17 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.ipc.IScraperRequest;
 import sh.xana.forum.common.ipc.ScraperDownload;
 import sh.xana.forum.common.ipc.ScraperUpload;
 
 public class SqsManager {
+  private static final Logger log = LoggerFactory.getLogger(SqsManager.class);
+
   public static final int QUEUE_SIZE = 10;
   public static final String QUEUE_DOWNLOAD_PREFIX = "forumDownload-";
   private final CommonConfig config;
@@ -72,12 +78,19 @@ public class SqsManager {
   public Map<URI, Integer> getDownloadQueueSizes() {
     var result = new HashMap<URI, Integer>();
     for (URI queueUrl : getDownloadQueueUrls()) {
-      int isize =
-          Integer.parseInt(
-              sqsClient
-                  .getQueueAttributes(queueUrl.toString(), List.of("ApproximateNumberOfMessages"))
-                  .getAttributes()
-                  .get("ApproximateNumberOfMessages"));
+      int isize;
+      try {
+        isize =
+            Integer.parseInt(
+                sqsClient
+                    .getQueueAttributes(queueUrl.toString(), List.of("ApproximateNumberOfMessages"))
+                    .getAttributes()
+                    .get("ApproximateNumberOfMessages"));
+      } catch (QueueDoesNotExistException e) {
+        // silently catch, deleted queues can appear in subsequent list
+        log.warn("Failed to get queue " + queueUrl + " might of been deleted", e);
+        continue;
+      }
       result.put(queueUrl, isize);
     }
     return result;
@@ -128,7 +141,8 @@ public class SqsManager {
           messages.add(
               new SendMessageBatchRequestEntry()
                   .withMessageBody(json)
-                  .withId(entry.pageId().toString()));
+                  // TODO: Need to force unique id's because getMessageId is duplicated?
+                  .withId(UUID.randomUUID().toString()));
           if (messages.size() == 10) {
             sqsClient.sendMessageBatch(queueUrl.toString(), messages);
             messages.clear();
@@ -145,8 +159,18 @@ public class SqsManager {
 
   private <T> List<RecieveRequest<T>> receive(URI queueUrl, Class<T> clazz) {
     try {
-      final ReceiveMessageRequest receiveMessageRequest =
-          new ReceiveMessageRequest().withQueueUrl(queueUrl.toString()).withMaxNumberOfMessages(10);
+      ReceiveMessageRequest receiveMessageRequest = null;
+      for (int i = 0; i < 5; i++) {
+        try {
+          receiveMessageRequest =
+              new ReceiveMessageRequest()
+                  .withQueueUrl(queueUrl.toString())
+                  .withMaxNumberOfMessages(10);
+        } catch (Exception e) {
+          log.warn("FAIL TO FETCH, retrying", e);
+        }
+      }
+
       ReceiveMessageResult receiveMessageResult = sqsClient.receiveMessage(receiveMessageRequest);
 
       List<RecieveRequest<T>> result = new ArrayList<>();
@@ -165,7 +189,11 @@ public class SqsManager {
         queueUrl.toString(),
         message.stream()
             .map(RecieveRequest::message)
-            .map(e -> new DeleteMessageBatchRequestEntry(e.getMessageId(), e.getReceiptHandle()))
+            // TODO: Need to force unique id's because getMessageId is duplicated?
+            .map(
+                e ->
+                    new DeleteMessageBatchRequestEntry(
+                        UUID.randomUUID().toString(), e.getReceiptHandle()))
             .collect(Collectors.toList()));
   }
 
