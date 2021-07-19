@@ -32,6 +32,7 @@ import sh.xana.forum.server.dbutil.DatabaseStorage.OverviewEntry;
 import sh.xana.forum.server.dbutil.DlStatus;
 import sh.xana.forum.server.dbutil.ForumType;
 import sh.xana.forum.server.dbutil.PageType;
+import sh.xana.forum.server.parser.Auditor;
 import sh.xana.forum.server.parser.PageParser;
 
 /** Parse stage. Extract further URLs for downloading */
@@ -42,7 +43,7 @@ public class PageManager implements Closeable {
   private final ServerConfig config;
   private final SqsManager sqsManager;
   private final Thread spiderThread;
-  private final Thread uploadsThread;
+  //  private final Thread uploadsThread;
   private final Thread downloadsThread;
 
   private final PageParser pageParser;
@@ -55,8 +56,9 @@ public class PageManager implements Closeable {
     this.spiderThread = new Thread(this::pageSpiderThread);
     this.spiderThread.setName("PageSpider");
 
-    this.uploadsThread = new Thread(this::uploadsThread);
-    this.uploadsThread.setName("PageUploads");
+    //    this.uploadsThread = new Thread(this::uploadsThread);
+    //    this.uploadsThread.setName("PageUploads");
+    Auditor.threadRunner(2, "PageUploads-", this::uploadsThread);
 
     this.downloadsThread = new Thread(this::downloadsThread);
     this.downloadsThread.setName("PageDownloads");
@@ -66,7 +68,7 @@ public class PageManager implements Closeable {
 
   public void startThreads() {
     this.spiderThread.start();
-    this.uploadsThread.start();
+    //    this.uploadsThread.start();
     this.downloadsThread.start();
   }
 
@@ -268,7 +270,7 @@ public class PageManager implements Closeable {
         // same thing as below, just don't spam the log file
         dbStorage.setPageException(pageId, ExceptionUtils.getStackTrace(e));
       } catch (Exception e) {
-        log.warn("Failed in parser", e);
+//        log.warn("Failed in parser", e);
         dbStorage.setPageException(pageId, ExceptionUtils.getStackTrace(e));
       }
     }

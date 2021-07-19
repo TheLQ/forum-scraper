@@ -246,16 +246,15 @@ public class DatabaseStorage {
   public record PageUrl(URI pageUrl, URI siteUrl, ForumType forumType) {}
 
   public List<PageUrl> getPageUrls(Condition... conditions) {
-    var query = context
-        .select(PAGES.PAGEURL, SITES.SITEURL, SITES.FORUMTYPE)
-        .from(PAGES)
-        .innerJoin(SITES)
-        .on(PAGES.SITEID.eq(SITES.SITEID))
-        .where(conditions);
+    var query =
+        context
+            .select(PAGES.PAGEURL, SITES.SITEURL, SITES.FORUMTYPE)
+            .from(PAGES)
+            .innerJoin(SITES)
+            .on(PAGES.SITEID.eq(SITES.SITEID))
+            .where(conditions);
     log.info(query.toString());
-      return query
-        .fetch()
-        .map(e -> new PageUrl(e.component1(), e.component2(), e.component3()));
+    return query.fetch().map(e -> new PageUrl(e.component1(), e.component2(), e.component3()));
   }
 
   public record ValidationRecord(UUID pageId, URI url, boolean isRedirect) {}
