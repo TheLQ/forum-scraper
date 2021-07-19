@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+  <script>
+    google.charts.load('current', {packages: ['corechart', 'bar']});
+    //google.charts.load('current', {'packages':['corechart']});
+    google.charts.setOnLoadCallback(drawBasic);
+
+    const rawData = {
+	"table": "Pages",
+	"rows":
+	[
+		{
+			"COUNT(*)": 249851,
+			"day": "2021-06-19"
+		},
+		{
+			"COUNT(*)": 68917,
+			"day": "2021-06-20"
+		},
+		{
+			"COUNT(*)": 77650,
+			"day": "2021-06-21"
+		},
+		{
+			"COUNT(*)": 78812,
+			"day": "2021-06-22"
+		},
+		{
+			"COUNT(*)": 50807,
+			"day": "2021-06-23"
+		},
+		{
+			"COUNT(*)": 17589,
+			"day": "2021-06-24"
+		},
+		{
+			"COUNT(*)": 301,
+			"day": "2021-06-25"
+		},
+		{
+			"COUNT(*)": 1414,
+			"day": "2021-06-26"
+		},
+		{
+			"COUNT(*)": 22441,
+			"day": "2021-06-27"
+		},
+		{
+			"COUNT(*)": 8563,
+			"day": "2021-06-28"
+		},
+		{
+			"COUNT(*)": 62776,
+			"day": "2021-06-29"
+		},
+		{
+			"COUNT(*)": 55303,
+			"day": "2021-06-30"
+		},
+		{
+			"COUNT(*)": 1714,
+			"day": "2021-07-01"
+		},
+		{
+			"COUNT(*)": 11270,
+			"day": "2021-07-05"
+		},
+		{
+			"COUNT(*)": 174630,
+			"day": "2021-07-06"
+		},
+		{
+			"COUNT(*)": 119505,
+			"day": "2021-07-07"
+		},
+		{
+			"COUNT(*)": 155061,
+			"day": "2021-07-08"
+		},
+		{
+			"COUNT(*)": 13501,
+			"day": "2021-07-10"
+		},
+		{
+			"COUNT(*)": 14173,
+			"day": "2021-07-11"
+		},
+		{
+			"COUNT(*)": 87709,
+			"day": "2021-07-17"
+		},
+		{
+			"COUNT(*)": 175076,
+			"day": "2021-07-18"
+		}
+	]
+}
+    function drawBasic() {
+
+      // const data = google.visualization.arrayToDataTable(input);
+      const data = new google.visualization.DataTable();
+      data.addColumn('date', 'date');
+      data.addColumn('number', 'pop');
+      const input = []
+      let total = 0;
+      for (const row of rawData.rows) {
+        total += row["COUNT(*)"]
+        const inputRow = [
+          new Date(row["day"]),
+          total,
+        ]
+        input.push(inputRow)
+      }
+      data.addRows(input)
+      console.log("input", input)
+
+
+
+      var options = {
+        title: 'Total downloaded pages',
+        chartArea: {
+          width: '50%'
+        },
+        hAxis: {
+          // format: 'd/M/yy',
+          title: 'Day',
+        },
+        vAxis: {
+
+          title: 'Pages'
+        }
+      };
+
+      var chart = new google.visualization.LineChart(document.getElementById('chart_div'));
+
+      chart.draw(data, options);
+    }
+  </script>
+</head>
+<body>
+<div id="chart_div"></div>
+</body>
+</html>
