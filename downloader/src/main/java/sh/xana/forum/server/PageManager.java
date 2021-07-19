@@ -222,9 +222,7 @@ public class PageManager implements Closeable {
         ParserResult results =
             pageParser.parsePage(
                 Files.readAllBytes(pageParser.getPagePath(pageId)), pageId, siteBaseUrl.toString());
-        if (results.loginRequired()) {
-          throw new SpiderWarningException("LoginRequired");
-        }
+
         if (!results.pageType().equals(pageType)) {
           throw new SpiderWarningException(
               "Expected pageType " + pageType + " got " + results.pageType());

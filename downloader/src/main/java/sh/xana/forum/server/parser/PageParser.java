@@ -78,15 +78,11 @@ public class PageParser {
         parser.preProcessing(sourcePage);
 
         if (parser.detectLoginRequired(sourcePage)) {
-          return new ParserResult(true, pageType, forumType, subpages);
+          throw new ParserException("LoginRequired", pageId);
         }
 
-        addAnchorSubpage(
-            parser.getSubforumAnchors(sourcePage),
-            subpages,
-            PageType.ForumList);
-        addAnchorSubpage(
-            parser.getTopicAnchors(sourcePage), subpages, PageType.TopicPage);
+        addAnchorSubpage(parser.getSubforumAnchors(sourcePage), subpages, PageType.ForumList);
+        addAnchorSubpage(parser.getTopicAnchors(sourcePage), subpages, PageType.TopicPage);
         if (!subpages.isEmpty()) {
           pageType = PageType.ForumList;
         }
@@ -114,11 +110,11 @@ public class PageParser {
 
         pageType = parser.postForcePageType(sourcePage, pageType);
 
-        ParserResult result = new ParserResult(false, pageType, forumType, subpages);
+        ParserResult result = new ParserResult(pageType, forumType, subpages);
         parser.postProcessing(sourcePage, result);
 
         for (var subpage : result.subpages()) {
-            validateUrl(Utils.toURI(subpage.url()), baseUri, forumType);
+          validateUrl(Utils.toURI(subpage.url()), baseUri, forumType);
         }
 
         return result;
@@ -132,9 +128,7 @@ public class PageParser {
   }
 
   private void addAnchorSubpage(
-      Collection<Element> elements,
-      List<ParserEntry> subpages,
-      PageType pageType) {
+      Collection<Element> elements, List<ParserEntry> subpages, PageType pageType) {
     for (Element element : elements) {
       if (ForumUtils.anchorIsNotNavLink(element)) {
         continue;
