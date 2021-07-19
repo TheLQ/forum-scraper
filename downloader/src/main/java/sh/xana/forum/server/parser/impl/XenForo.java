@@ -2,6 +2,7 @@ package sh.xana.forum.server.parser.impl;
 
 import java.util.Collection;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.jsoup.nodes.Element;
@@ -65,7 +66,24 @@ public class XenForo implements AbstractForum {
   @Override
   public @NotNull Collection<Element> getTopicAnchors(SourcePage sourcePage) {
     // return sourcePage.doc().select("a[qid=\"thread-item-title\"]");
-    return sourcePage.doc().select(".title a, .structItem-title a");
+    Elements elements = sourcePage.doc().select(".title a, .structItem-title a");
+    return elements.stream()
+        // filter "Similar Threads" widget on topics
+        .filter(
+            e -> {
+              for (Element parent : e.parents()) {
+                if (parent.hasAttr("data-widget-key")
+                    && parent
+                        .attr("data-widget-key")
+                        .equals("xfes_thread_view_below_quick_reply_similar_threads")) {
+                  return false;
+                } else if (parent.hasClass("similarThreads")) {
+                  return false;
+                }
+              }
+              return true;
+            })
+        .collect(Collectors.toList());
   }
 
   @Override
