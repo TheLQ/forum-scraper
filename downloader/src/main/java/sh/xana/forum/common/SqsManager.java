@@ -2,8 +2,10 @@ package sh.xana.forum.common;
 
 import com.amazon.sqs.javamessaging.AmazonSQSExtendedClient;
 import com.amazon.sqs.javamessaging.ExtendedClientConfiguration;
+import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.CreateQueueRequest;
 import com.amazonaws.services.sqs.model.DeleteMessageBatchRequestEntry;
@@ -179,6 +181,13 @@ public class SqsManager {
             new RecieveRequest<T>(message, Utils.jsonMapper.readValue(message.getBody(), clazz)));
       }
       return result;
+    } catch (AmazonServiceException e) {
+      if (e.getCause() instanceof AmazonS3Exception) {
+        log.warn("S3 failure, retrying", e);
+        return receive(queueUrl, clazz);
+      } else {
+        throw e;
+      }
     } catch (Exception e) {
       throw new RuntimeException("Failed to process for queue " + queueUrl, e);
     }
