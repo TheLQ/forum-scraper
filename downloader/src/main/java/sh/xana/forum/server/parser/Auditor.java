@@ -1,7 +1,7 @@
 package sh.xana.forum.server.parser;
 
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -24,9 +24,11 @@ import sh.xana.forum.common.ipc.ParserResult.ParserEntry;
 import sh.xana.forum.server.ServerConfig;
 import sh.xana.forum.server.db.tables.Pages;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
-import sh.xana.forum.server.dbutil.DatabaseStorage.PageId;
 import sh.xana.forum.server.dbutil.DatabaseStorage.ValidationRecord;
 import sh.xana.forum.server.dbutil.DlStatus;
+import sh.xana.forum.server.dbutil.ForumType;
+import sh.xana.forum.server.dbutil.PageType;
+import sh.xana.forum.server.dbutil.ParserPage;
 
 /** Audits complete file cache */
 public class Auditor {
@@ -42,18 +44,29 @@ public class Auditor {
     if (args.length == 0) {
       throw new RuntimeException("no args");
     } else if (args[0].equals("file")) {
-      String pathArg = args[1];
-      Path path = Path.of(pathArg);
-      UUID pageId = null;
-      String domain = "http://1/";
-      if (!Files.exists(path)) {
-        pageId = UUID.fromString(pathArg);
+      if (args.length != 5) {
+        System.out.println("file <path> <baseUrl> <forumType> <pageType>");
+      }
+      Path path = Path.of(args[0]);
+
+      ParserPage page;
+      if (Files.exists(path)) {
+        page =
+            new ParserPage(
+                UUID.fromString("00000000-0000-0000-0000-000000000000"),
+                PageType.valueOf(args[4]),
+                200,
+                UUID.fromString("00000000-0000-0000-0000-000000000000"),
+                URI.create(args[2]),
+                ForumType.valueOf(args[3]));
+      } else {
+        UUID pageId = UUID.fromString(args[1]);
+        page = dbStorage.getParserPages(true, Pages.PAGES.PAGEID.eq(pageId)).get(0);
         path = parser.getPagePath(pageId);
-        domain = dbStorage.getPageDomain(pageId).toString();
       }
 
-      ParserResult result = parser.parsePage(Files.readAllBytes(path), pageId, domain);
-      postValidator(pageId, result);
+      ParserResult result = parser.parsePage(Files.readAllBytes(path), page);
+      postValidator(page.pageId(), result);
       log.info(
           "result {}",
           Utils.jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(result));
@@ -66,7 +79,9 @@ public class Auditor {
 
       log.info("Fetching page ids...");
       List<UUID> pagesIds =
-          dbStorage.getPagesIds().stream().map(PageId::pageId).collect(Collectors.toList());
+          dbStorage.getParserPages(false, Pages.PAGES.DLSTATUS.eq(DlStatus.Parse)).stream()
+              .map(ParserPage::pageId)
+              .collect(Collectors.toList());
       log.info("Fetched {} page ids", pagesIds.size());
 
       log.info("Listing directory");
@@ -100,9 +115,9 @@ public class Auditor {
     }
 
     log.info("query start");
-    List<PageId> pages =
-        dbStorage.getPagesIds(
-            Pages.PAGES.EXCEPTION.isNull(), Pages.PAGES.DLSTATUS.eq(DlStatus.Done));
+    List<ParserPage> pages =
+        dbStorage.getParserPages(
+            false, Pages.PAGES.EXCEPTION.isNull(), Pages.PAGES.DLSTATUS.eq(DlStatus.Done));
     log.info("query end for " + pages.size());
 
     switch (args[0]) {
@@ -113,7 +128,7 @@ public class Auditor {
     }
   }
 
-  public static void start_simple(Collection<PageId> pages) {
+  public static void start_simple(Collection<ParserPage> pages) {
     AtomicInteger counter = new AtomicInteger();
     pages.parallelStream()
         .forEach(
@@ -124,8 +139,7 @@ public class Auditor {
               }
               try {
                 byte[] data = Files.readAllBytes(parser.getPagePath(page.pageId()));
-                ParserResult result =
-                    parser.parsePage(data, page.pageId(), page.siteUrl().toString());
+                ParserResult result = parser.parsePage(data, page);
                 postValidator(page.pageId(), result);
               } catch (Exception e) {
                 log.error("FAIL ON " + page, e);
@@ -152,7 +166,7 @@ public class Auditor {
     }
   }
 
-  public static void start_thread(Collection<PageId> pages) {
+  public static void start_thread(Collection<ParserPage> pages) {
     int threads = 16;
     ThreadPoolExecutor threadPoolExecutor =
         new ThreadPoolExecutor(
@@ -160,7 +174,7 @@ public class Auditor {
     //    threadPoolExecutor.setRejectedExecutionHandler();
 
     AtomicInteger counter = new AtomicInteger();
-    for (PageId page : pages) {
+    for (ParserPage page : pages) {
       threadPoolExecutor.submit(
           (Callable<Void>)
               () -> {
@@ -170,17 +184,16 @@ public class Auditor {
                 }
 
                 byte[] data = Files.readAllBytes(parser.getPagePath(page.pageId()));
-                ParserResult result =
-                    parser.parsePage(data, page.pageId(), page.siteUrl().toString());
+                ParserResult result = parser.parsePage(data, page);
                 postValidator(page.pageId(), result);
                 return null;
               });
     }
   }
 
-  private record QueueEntry(byte[] in, UUID pageId, String baseUrl) {}
+  private record QueueEntry(byte[] in, ParserPage pageId) {}
 
-  public static void start_preopen(List<PageId> pages) throws InterruptedException {
+  public static void start_preopen(List<ParserPage> pages) throws InterruptedException {
     BlockingQueue<QueueEntry> open = new ArrayBlockingQueue<>(5000);
 
     long start = System.currentTimeMillis();
@@ -206,8 +219,8 @@ public class Auditor {
               if (new String(take.in()).trim().equals("")) {
                 log.warn("Page " + take.pageId() + " is empty");
               }
-              ParserResult result = parser.parsePage(take.in(), take.pageId(), take.baseUrl());
-              postValidator(take.pageId(), result);
+              ParserResult result = parser.parsePage(take.in(), take.pageId());
+              postValidator(take.pageId().pageId(), result);
             } catch (Exception e) {
               log.error("FAILED TO PARSE", e);
               // System.exit(1);
@@ -223,18 +236,13 @@ public class Auditor {
           while (true) {
             int idx = readCounter.getAndIncrement();
             try {
-              PageId page = pages.get(idx);
+              ParserPage page = pages.get(idx);
               if (idx % 100 == 0) {
                 //                log.info("read {} of {} - size {}", idx, pages.size(),
                 // open.size());
               }
 
-              open.put(
-                  new QueueEntry(
-                      new FileInputStream(parser.getPagePath(page.pageId()).toFile())
-                          .readAllBytes(),
-                      page.pageId(),
-                      page.siteUrl().toString()));
+              open.put(new QueueEntry(Files.readAllBytes(parser.getPagePath(page.pageId())), page));
             } catch (Exception e) {
               log.error("FAILED TO PUT", e);
               System.exit(1);

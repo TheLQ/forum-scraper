@@ -23,8 +23,6 @@ import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Query;
-import org.jooq.Record7;
-import org.jooq.Result;
 import org.jooq.SQLDialect;
 import org.jooq.conf.Settings;
 import org.jooq.conf.ThrowExceptions;
@@ -120,28 +118,40 @@ public class DatabaseStorage {
     executeOneRow(query);
   }
 
+  public List<ParserPage> getParserPages(boolean limited) {
+    return getParserPages(limited, PAGES.DLSTATUS.eq(DlStatus.Parse), PAGES.EXCEPTION.isNull());
+  }
+
   /** Stage: Load pages for Parser */
-  public Result<Record7<UUID, UUID, URI, PageType, String, URI, ForumType>> getParserPages() {
+  public List<ParserPage> getParserPages(boolean limited, Condition... conditions) {
     var query =
         context
             .select(
                 PAGES.PAGEID,
                 PAGES.SITEID,
-                PAGES.PAGEURL,
                 PAGES.PAGETYPE,
-                PAGES.DOMAIN,
+                PAGES.DLSTATUSCODE,
                 SITES.SITEURL,
                 SITES.FORUMTYPE)
             .from(PAGES)
             .innerJoin(SITES)
             .on(PAGES.SITEID.eq(SITES.SITEID))
-            .where(
-                PAGES.DLSTATUS.eq(DlStatus.Parse),
-                PAGES.EXCEPTION.isNull(),
-                PAGES.PAGEID.eq(UUID.fromString("58cf6358-e896-4372-8026-327d3ab0e145")))
-            .limit(1000);
+            .where(conditions);
+    if (limited) {
+      query.limit(1000);
+    }
     log.info(query.toString());
-    return query.fetch();
+    return query
+        .fetch()
+        .map(
+            e ->
+                new ParserPage(
+                    e.get(PAGES.PAGEID),
+                    e.get(PAGES.PAGETYPE),
+                    e.get(PAGES.DLSTATUSCODE),
+                    e.get(PAGES.SITEID),
+                    e.get(SITES.SITEURL),
+                    e.get(SITES.FORUMTYPE)));
   }
 
   /** Stage: reporting monitor */
@@ -238,20 +248,6 @@ public class DatabaseStorage {
     return context.select().from(PAGES).where(conditions).fetchInto(PagesRecord.class);
   }
 
-  public record PageId(UUID pageId, URI siteUrl) {}
-  ;
-
-  public List<PageId> getPagesIds(Condition... conditions) {
-    return context
-        .select(PAGES.PAGEID, SITES.SITEURL)
-        .from(PAGES)
-        .innerJoin(SITES)
-        .on(PAGES.SITEID.eq(SITES.SITEID))
-        .where(conditions)
-        .fetch()
-        .map(e -> new PageId(e.get(PAGES.PAGEID), e.get(SITES.SITEURL)));
-  }
-
   public record PageUrl(URI pageUrl, URI siteUrl, ForumType forumType) {}
 
   public List<PageUrl> getPageUrls(Condition... conditions) {
@@ -282,16 +278,6 @@ public class DatabaseStorage {
       result.add(new ValidationRecord(obj.value1(), obj.value2(), true));
     }
     return result;
-  }
-
-  public URI getPageDomain(UUID pageId) {
-    return context
-        .select(SITES.SITEURL)
-        .from(PAGES)
-        .innerJoin(SITES)
-        .on(PAGES.SITEID.eq(SITES.SITEID))
-        .where(PAGES.PAGEID.eq(pageId))
-        .fetchOne(SITES.SITEURL);
   }
 
   public PagesRecord getPage(UUID pageId) {

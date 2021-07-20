@@ -13,25 +13,21 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.jooq.Record7;
-import org.jooq.Result;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.RecieveRequest;
 import sh.xana.forum.common.SqsManager;
 import sh.xana.forum.common.Utils;
 import sh.xana.forum.common.ipc.ParserResult;
+import sh.xana.forum.common.ipc.ParserResult.ParserEntry;
 import sh.xana.forum.common.ipc.ScraperDownload;
 import sh.xana.forum.common.ipc.ScraperUpload;
-import sh.xana.forum.server.db.tables.Pages;
-import sh.xana.forum.server.db.tables.Sites;
 import sh.xana.forum.server.db.tables.records.PageredirectsRecord;
 import sh.xana.forum.server.db.tables.records.PagesRecord;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
 import sh.xana.forum.server.dbutil.DatabaseStorage.OverviewEntry;
 import sh.xana.forum.server.dbutil.DlStatus;
-import sh.xana.forum.server.dbutil.ForumType;
-import sh.xana.forum.server.dbutil.PageType;
+import sh.xana.forum.server.dbutil.ParserPage;
 import sh.xana.forum.server.parser.Auditor;
 import sh.xana.forum.server.parser.PageParser;
 
@@ -43,7 +39,6 @@ public class PageManager implements Closeable {
   private final ServerConfig config;
   private final SqsManager sqsManager;
   private final Thread spiderThread;
-  //  private final Thread uploadsThread;
   private final Thread downloadsThread;
 
   private final PageParser pageParser;
@@ -56,9 +51,6 @@ public class PageManager implements Closeable {
     this.spiderThread = new Thread(this::pageSpiderThread);
     this.spiderThread.setName("PageSpider");
 
-    //    this.uploadsThread = new Thread(this::uploadsThread);
-    //    this.uploadsThread.setName("PageUploads");
-
     this.downloadsThread = new Thread(this::downloadsThread);
     this.downloadsThread.setName("PageDownloads");
 
@@ -68,7 +60,6 @@ public class PageManager implements Closeable {
   public void startThreads() {
     this.spiderThread.start();
     Auditor.threadRunner(2, "PageUploads-", this::uploadsThread);
-    //    this.uploadsThread.start();
     this.downloadsThread.start();
   }
 
@@ -202,57 +193,26 @@ public class PageManager implements Closeable {
   }
 
   private boolean _spider() throws InterruptedException {
-    Result<Record7<UUID, UUID, URI, PageType, String, URI, ForumType>> parserPages;
-    parserPages = dbStorage.getParserPages();
+    List<ParserPage> parserPages = dbStorage.getParserPages(true);
     if (parserPages.isEmpty()) {
       return false;
     }
 
     List<UUID> sqlDone = new ArrayList<>(parserPages.size());
     List<DatabaseStorage.InsertPage> sqlNewPages = new ArrayList<>();
-    for (var page : parserPages) {
-      UUID pageId = page.get(Pages.PAGES.PAGEID);
-      URI siteBaseUrl = page.get(Sites.SITES.SITEURL);
-      PageType pageType = page.get(Pages.PAGES.PAGETYPE);
-      UUID siteId = page.get(Pages.PAGES.SITEID);
-      URI pageUrl = page.get(Pages.PAGES.PAGEURL);
-
-      log.info("processing page {} {}", pageUrl, pageId);
+    for (ParserPage page : parserPages) {
+      UUID pageId = page.pageId();
+      log.info("processing page {}", pageId);
 
       String output = null;
       try {
         ParserResult results =
-            pageParser.parsePage(
-                Files.readAllBytes(pageParser.getPagePath(pageId)), pageId, siteBaseUrl.toString());
+            pageParser.parsePage(Files.readAllBytes(pageParser.getPagePath(pageId)), page);
 
-        if (!results.pageType().equals(pageType)) {
-          throw new SpiderWarningException(
-              "Expected pageType " + pageType + " got " + results.pageType());
-        }
-
-        ForumType siteType = page.get(Sites.SITES.FORUMTYPE);
-        if (!results.forumType().equals(siteType)) {
-          throw new SpiderWarningException(
-              "Expected forumType " + siteType + " got " + results.forumType());
-        }
-
-        String pageDomain = page.get(Pages.PAGES.DOMAIN);
-        for (ParserResult.ParserEntry result : results.subpages()) {
-          if (!result.url().startsWith("http://" + pageDomain + "/")
-              && !result.url().startsWith("https://" + pageDomain + "/")) {
-            log.warn(
-                "Got prefix {} expected https://{}/ for pageId {}",
-                result.url(),
-                pageDomain,
-                pageId);
-          }
-          URI url = new URI(result.url());
-          if (!pageDomain.equals(url.getHost())) {
-            throw new SpiderWarningException(
-                "Expected domain " + pageDomain + " got " + url.getHost() + " for url " + url);
-          }
-
-          sqlNewPages.add(new DatabaseStorage.InsertPage(pageId, siteId, url, pageType));
+        for (ParserEntry subpage : results.subpages()) {
+          sqlNewPages.add(
+              new DatabaseStorage.InsertPage(
+                  pageId, page.siteId(), Utils.toURI(subpage.url()), subpage.pageType()));
         }
 
         sqlDone.add(pageId);

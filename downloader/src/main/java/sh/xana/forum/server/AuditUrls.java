@@ -58,7 +58,9 @@ public class AuditUrls {
   private static void eval(PageUrl pageUrlEntry) {
     try {
       PageParser.validateUrl(
-          pageUrlEntry.pageUrl(), pageUrlEntry.siteUrl(), pageUrlEntry.forumType());
+          pageUrlEntry.pageUrl().toString(),
+          pageUrlEntry.siteUrl().toString(),
+          pageUrlEntry.forumType());
     } catch (Exception e) {
       log.error("FAIL " + e.getMessage());
     }
