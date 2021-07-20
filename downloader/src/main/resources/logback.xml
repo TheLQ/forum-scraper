@@ -24,6 +24,7 @@
 
   <logger name="com.amazonaws" level="info"/>
   <logger name="software.amazon.awssdk" level="info"/>
+  <logger name="software.amazon.payloadoffloading.S3Dao" level="off"/>
   <!-- .wire is super chatty in debug, .headers is less but still annoying. Just block all of it -->
   <logger name="org.apache.http" level="info"/>
 

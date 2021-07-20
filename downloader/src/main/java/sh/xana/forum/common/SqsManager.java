@@ -160,6 +160,10 @@ public class SqsManager {
   }
 
   private <T> List<RecieveRequest<T>> receive(URI queueUrl, Class<T> clazz) {
+    return _receive(queueUrl, clazz, 0);
+  }
+
+  private <T> List<RecieveRequest<T>> _receive(URI queueUrl, Class<T> clazz, int index) {
     try {
       ReceiveMessageRequest receiveMessageRequest = null;
       for (int i = 0; i < 5; i++) {
@@ -183,8 +187,8 @@ public class SqsManager {
       return result;
     } catch (AmazonServiceException e) {
       if (e.getCause() instanceof AmazonS3Exception) {
-        log.warn("S3 failure, retrying", e);
-        return receive(queueUrl, clazz);
+        log.warn("S3 failure for queue " + queueUrl + ", retry " + index, e);
+        return _receive(queueUrl, clazz, ++index);
       } else {
         throw e;
       }
