@@ -15,6 +15,7 @@ import sh.xana.forum.common.Utils;
 import sh.xana.forum.server.db.tables.Pages;
 import sh.xana.forum.server.db.tables.records.PagesRecord;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
+import sh.xana.forum.server.dbutil.DatabaseStorage.InsertPage;
 import sh.xana.forum.server.dbutil.DlStatus;
 import sh.xana.forum.server.dbutil.ForumType;
 import sh.xana.forum.server.dbutil.PageType;
@@ -99,7 +100,8 @@ public class WebServer extends NanoHTTPD {
 
     UUID siteId = dbStorage.insertSite(siteUrl, ForumType.valueOf(forumType));
 
-    dbStorage.insertPageQueued(siteId, List.of(siteUrl), PageType.ForumList, null);
+    dbStorage.insertPagesQueued(
+        List.of(new InsertPage(null, siteId, siteUrl, PageType.ForumList)), false);
 
     return siteId.toString();
   }

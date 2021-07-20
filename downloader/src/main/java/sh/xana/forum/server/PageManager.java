@@ -58,7 +58,6 @@ public class PageManager implements Closeable {
 
     //    this.uploadsThread = new Thread(this::uploadsThread);
     //    this.uploadsThread.setName("PageUploads");
-    Auditor.threadRunner(2, "PageUploads-", this::uploadsThread);
 
     this.downloadsThread = new Thread(this::downloadsThread);
     this.downloadsThread.setName("PageDownloads");
@@ -68,6 +67,7 @@ public class PageManager implements Closeable {
 
   public void startThreads() {
     this.spiderThread.start();
+    Auditor.threadRunner(2, "PageUploads-", this::uploadsThread);
     //    this.uploadsThread.start();
     this.downloadsThread.start();
   }
@@ -209,13 +209,15 @@ public class PageManager implements Closeable {
     }
 
     List<UUID> sqlDone = new ArrayList<>(parserPages.size());
-    List<PagesRecord> sqlNewPages = new ArrayList<>();
+    List<DatabaseStorage.InsertPage> sqlNewPages = new ArrayList<>();
     for (var page : parserPages) {
       UUID pageId = page.get(Pages.PAGES.PAGEID);
       URI siteBaseUrl = page.get(Sites.SITES.SITEURL);
       PageType pageType = page.get(Pages.PAGES.PAGETYPE);
+      UUID siteId = page.get(Pages.PAGES.SITEID);
+      URI pageUrl = page.get(Pages.PAGES.PAGEURL);
 
-      log.info("processing page {} {}", page.get(Pages.PAGES.PAGEURL), pageId);
+      log.info("processing page {} {}", pageUrl, pageId);
 
       String output = null;
       try {
@@ -250,14 +252,7 @@ public class PageManager implements Closeable {
                 "Expected domain " + pageDomain + " got " + url.getHost() + " for url " + url);
           }
 
-          PagesRecord newPage = new PagesRecord();
-          newPage.setSiteid(page.get(Pages.PAGES.SITEID));
-          newPage.setPageurl(url);
-          newPage.setPagetype(result.pageType());
-          newPage.setDlstatus(DlStatus.Queued);
-          newPage.setDomain(pageDomain);
-          newPage.setSourcepageid(pageId);
-          sqlNewPages.add(newPage);
+          sqlNewPages.add(new DatabaseStorage.InsertPage(pageId, siteId, url, pageType));
         }
 
         sqlDone.add(pageId);
@@ -268,7 +263,7 @@ public class PageManager implements Closeable {
         // same thing as below, just don't spam the log file
         dbStorage.setPageException(pageId, ExceptionUtils.getStackTrace(e));
       } catch (Exception e) {
-//        log.warn("Failed in parser", e);
+        //        log.warn("Failed in parser", e);
         dbStorage.setPageException(pageId, ExceptionUtils.getStackTrace(e));
       }
     }
@@ -279,7 +274,7 @@ public class PageManager implements Closeable {
     }
     if (!sqlNewPages.isEmpty()) {
       log.debug("dbsync insert");
-      dbStorage.insertPages(sqlNewPages, true);
+      dbStorage.insertPagesQueued(sqlNewPages, true);
     }
     log.debug("dbsync done");
 

@@ -26,6 +26,8 @@ import org.jooq.Query;
 import org.jooq.Record7;
 import org.jooq.Result;
 import org.jooq.SQLDialect;
+import org.jooq.conf.Settings;
+import org.jooq.conf.ThrowExceptions;
 import org.jooq.impl.DSL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,7 +71,11 @@ public class DatabaseStorage {
     // jdbc DataSource
     PoolingDataSource<PoolableConnection> dataSource = new PoolingDataSource<>(connectionPool);
 
-    context = DSL.using(dataSource, SQLDialect.MARIADB);
+    context =
+        DSL.using(
+            dataSource,
+            SQLDialect.MARIADB,
+            new Settings().withThrowExceptions(ThrowExceptions.THROW_ALL));
     log.info("Connected to database");
   }
 
@@ -129,7 +135,10 @@ public class DatabaseStorage {
             .from(PAGES)
             .innerJoin(SITES)
             .on(PAGES.SITEID.eq(SITES.SITEID))
-            .where(PAGES.DLSTATUS.eq(DlStatus.Parse), PAGES.EXCEPTION.isNull())
+            .where(
+                PAGES.DLSTATUS.eq(DlStatus.Parse),
+                PAGES.EXCEPTION.isNull(),
+                PAGES.PAGEID.eq(UUID.fromString("58cf6358-e896-4372-8026-327d3ab0e145")))
             .limit(1000);
     log.info(query.toString());
     return query.fetch();
@@ -308,50 +317,32 @@ public class DatabaseStorage {
     return id;
   }
 
-  /**
-   * New page to be queued for later download
-   *
-   * @return pageId
-   */
-  public List<UUID> insertPageQueued(UUID siteId, List<URI> urls, PageType type, UUID sourceId) {
-    List<UUID> result = new ArrayList<>(urls.size());
+  public record InsertPage(UUID sourcePageId, UUID siteId, URI pageUrl, PageType type) {}
 
-    var query =
-        context.insertInto(
-            PAGES,
-            PAGES.PAGEID,
-            PAGES.SITEID,
-            PAGES.PAGEURL,
-            PAGES.PAGETYPE,
-            PAGES.DLSTATUS,
-            PAGES.PAGEUPDATED,
-            PAGES.DOMAIN,
-            PAGES.SOURCEPAGEID);
+  public void insertPagesQueued(List<InsertPage> pages, boolean ignoreDuplicates) {
+    /*
+    PageParser just grabs every URL, but some may have been processed already
 
-    for (URI entry : urls) {
-      UUID id = UUID.randomUUID();
-      result.add(id);
+    ON CONFLICT is SQLite specific
+    onDuplicateKeyIgnore / INSERT IGNORE is dangerous because URLs are silently(!!) truncated
 
-      query.values(
-          id, siteId, entry, type, DlStatus.Queued, LocalDateTime.now(), entry.getHost(), sourceId);
+    So SELECT to filter out duplicates before INSERT
+    */
+    if (ignoreDuplicates) {
+      List<URI> existingUrls =
+          context
+              .select(PAGES.PAGEURL)
+              .from(PAGES)
+              .where(
+                  PAGES.PAGEURL.in(
+                      pages.stream().map(InsertPage::pageUrl).collect(Collectors.toList())))
+              .fetch(PAGES.PAGEURL);
+      pages =
+          pages.stream()
+              .filter(e -> !existingUrls.contains(e.pageUrl()))
+              .collect(Collectors.toList());
     }
 
-    executeRows(query, urls.size());
-
-    return result;
-  }
-
-  public void insertPages(List<PagesRecord> pages, boolean ignoreDuplicates) {
-    //    try {
-    //      var query = context.loadInto(PAGES);
-    //      if (ignoreDuplicates) {
-    //        query.onDuplicateKeyIgnore();
-    //      }
-    //      query.loadRecords(pages).fieldsCorresponding().execute();
-    //    } catch (Exception e) {
-    //      throw new RuntimeException("IO Exception?", e);
-    //    }
-
     var query =
         context.insertInto(
             PAGES,
@@ -364,20 +355,18 @@ public class DatabaseStorage {
             PAGES.DOMAIN,
             PAGES.SOURCEPAGEID);
 
-    if (ignoreDuplicates) query.onDuplicateKeyIgnore();
-
-    for (PagesRecord page : pages) {
+    for (InsertPage page : pages) {
       UUID id = UUID.randomUUID();
 
       query.values(
           id,
-          page.getSiteid(),
-          page.getPageurl(),
-          page.getPagetype(),
-          page.getDlstatus(),
+          page.siteId(),
+          page.pageUrl(),
+          page.type(),
+          DlStatus.Queued,
           LocalDateTime.now(),
-          page.getPageurl().getHost(),
-          page.getSourcepageid());
+          page.pageUrl().getHost(),
+          page.sourcePageId());
     }
 
     query.execute();
