@@ -169,11 +169,12 @@ public class SqsManager {
       ReceiveMessageResult receiveMessageResult = null;
       for (int i = 0; i < 5; i++) {
         try {
+          // given numbers are maximum supported
           ReceiveMessageRequest receiveMessageRequest =
               new ReceiveMessageRequest()
                   .withQueueUrl(queueUrl.toString())
                   .withMaxNumberOfMessages(10)
-                  .withWaitTimeSeconds(60 * 5);
+                  .withWaitTimeSeconds(20);
 
           receiveMessageResult = sqsClient.receiveMessage(receiveMessageRequest);
           break;

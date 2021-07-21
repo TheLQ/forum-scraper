@@ -47,7 +47,7 @@ public class Auditor {
       if (args.length != 5) {
         System.out.println("file <path> <baseUrl> <forumType> <pageType>");
       }
-      Path path = Path.of(args[0]);
+      Path path = Path.of(args[1]);
 
       ParserPage page;
       if (Files.exists(path)) {
@@ -60,6 +60,7 @@ public class Auditor {
                 URI.create(args[2]),
                 ForumType.valueOf(args[3]));
       } else {
+        log.info("file exists for {} is {}", path, Files.exists(path));
         UUID pageId = UUID.fromString(args[1]);
         page = dbStorage.getParserPages(true, Pages.PAGES.PAGEID.eq(pageId)).get(0);
         path = parser.getPagePath(pageId);

@@ -28,7 +28,6 @@ import sh.xana.forum.server.dbutil.DatabaseStorage;
 import sh.xana.forum.server.dbutil.DatabaseStorage.OverviewEntry;
 import sh.xana.forum.server.dbutil.DlStatus;
 import sh.xana.forum.server.dbutil.ParserPage;
-import sh.xana.forum.server.parser.Auditor;
 import sh.xana.forum.server.parser.PageParser;
 
 /** Parse stage. Extract further URLs for downloading */
@@ -228,13 +227,13 @@ public class PageManager implements Closeable {
       }
     }
 
-    if (!sqlDone.isEmpty()) {
-      log.debug("dbsync dlstatus done");
-      dbStorage.setPageStatus(sqlDone, DlStatus.Done);
-    }
     if (!sqlNewPages.isEmpty()) {
       log.debug("dbsync insert");
       dbStorage.insertPagesQueued(sqlNewPages, true);
+    }
+    if (!sqlDone.isEmpty()) {
+      log.debug("dbsync dlstatus done");
+      dbStorage.setPageStatus(sqlDone, DlStatus.Done);
     }
     log.debug("dbsync done");
 
