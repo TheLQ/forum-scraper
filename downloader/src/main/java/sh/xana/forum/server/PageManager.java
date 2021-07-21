@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
@@ -28,6 +29,7 @@ import sh.xana.forum.server.dbutil.DatabaseStorage;
 import sh.xana.forum.server.dbutil.DatabaseStorage.OverviewEntry;
 import sh.xana.forum.server.dbutil.DlStatus;
 import sh.xana.forum.server.dbutil.ParserPage;
+import sh.xana.forum.server.parser.Auditor;
 import sh.xana.forum.server.parser.PageParser;
 
 /** Parse stage. Extract further URLs for downloading */

@@ -325,21 +325,65 @@ public class DatabaseStorage {
     onDuplicateKeyIgnore / INSERT IGNORE is dangerous because URLs are silently(!!) truncated
 
     So SELECT to filter out duplicates before INSERT
+
+    Also for some reason need toString
     */
+    if (true) {
+      // lazy fix, idk why the select isn't working
+      for (InsertPage page : pages) {
+        UUID id = UUID.randomUUID();
+        try {
+        context.insertInto(
+            PAGES,
+            PAGES.PAGEID,
+            PAGES.SITEID,
+            PAGES.PAGEURL,
+            PAGES.PAGETYPE,
+            PAGES.DLSTATUS,
+            PAGES.PAGEUPDATED,
+            PAGES.DOMAIN,
+            PAGES.SOURCEPAGEID)
+        .values(id,
+            page.siteId(),
+            page.pageUrl(),
+            page.type(),
+            DlStatus.Queued,
+            LocalDateTime.now(),
+            page.pageUrl().getHost(),
+            page.sourcePageId())
+        .execute();
+        } catch (Exception e) {
+          Throwable root = e;
+          while (root.getCause() != null) {
+            root = root.getCause();
+          }
+          if (root.getMessage().startsWith("Duplicate entry") && root.getMessage().endsWith("for key 'url'")) {
+            // silently ignore...
+          } else if (root.getMessage().startsWith("Data too long for column 'pageUrl'")) {
+            String pageUrl = page.pageUrl().toString();
+            log.warn("+++ pageUrl too long size {} url {}", pageUrl.length(), pageUrl);
+          } else {
+            throw e;
+          }
+        }
+      }
+
+      return;
+    }
+
+    int initSize = pages.size();
     if (ignoreDuplicates) {
-      List<URI> existingUrls =
+      List<String> existingUrls =
           context
               .select(PAGES.PAGEURL)
               .from(PAGES)
               .where(
                   PAGES.PAGEURL.in(
                       pages.stream().map(InsertPage::pageUrl).collect(Collectors.toList())))
-              .fetch(PAGES.PAGEURL);
-      pages =
-          pages.stream()
-              .filter(e -> !existingUrls.contains(e.pageUrl()))
-              .collect(Collectors.toList());
+              .fetch(e -> e.get(PAGES.PAGEURL).toString());
+      pages.removeIf(e -> existingUrls.contains(e.pageUrl().toString()));
     }
+    log.info("init size {} new size {} ", initSize, pages.size());
 
     var query =
         context.insertInto(
