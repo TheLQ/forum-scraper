@@ -85,10 +85,18 @@ public class PageParser {
         if (detectedParser == parser) {
           continue;
         }
-        ForumType detectedForumType = parser.detectForumType(rawHtml);
+        ForumType detectedForumType = detectedParser.detectForumType(rawHtml);
         if (detectedForumType != null) {
           throw new ParserException(
-              "Expected forumType " + forumType + " got " + detectedForumType, pageId);
+              "Expected forumType "
+                  + forumType
+                  + " got "
+                  + detectedForumType
+                  + " for "
+                  + parser
+                  + " and "
+                  + detectedParser,
+              pageId);
         }
       }
 
