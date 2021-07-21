@@ -23,6 +23,7 @@ import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Query;
+import org.jooq.Record2;
 import org.jooq.SQLDialect;
 import org.jooq.conf.Settings;
 import org.jooq.conf.ThrowExceptions;
@@ -227,6 +228,17 @@ public class DatabaseStorage {
             PAGES.EXCEPTION.notLike("%Soft500Exception%"))
         .orderBy(PAGES.PAGEUPDATED)
         .fetchInto(PagesRecord.class);
+  }
+
+
+  public Map<String, Integer> getOverviewToParse() {
+    return context
+        .select(DSL.count(PAGES), PAGES.DOMAIN)
+        .from(PAGES)
+        .where(PAGES.DLSTATUS.eq(DlStatus.Parse), PAGES.EXCEPTION.isNotNull(), PAGES.EXCEPTION.notLike("%LoginRequired%"))
+        .groupBy(PAGES.DOMAIN)
+        .fetch()
+        .intoMap(Record2::component2, Record2::component1);
   }
 
   // **************************** Utils ******************

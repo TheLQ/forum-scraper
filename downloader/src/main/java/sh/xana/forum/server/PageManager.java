@@ -268,11 +268,17 @@ public class PageManager implements Closeable {
   private void createDownloadQueues() {
     // clear out old domains
     log.info("Updating download queues...");
+
+    Map<String, Integer> overviewToParse = dbStorage.getOverviewToParse();
+
     boolean updated = false;
     for (OverviewEntry overviewEntry : dbStorage.getOverviewSites()) {
-      String queueNameSafe = SqsManager.getQueueNameSafe(overviewEntry.siteUrl().getHost());
+      String domain = overviewEntry.siteUrl().getHost();
+      String queueNameSafe = SqsManager.getQueueNameSafe(domain);
+      Integer parseCount = overviewToParse.get(domain);
       if (overviewEntry.dlStatusCount().get(DlStatus.Queued) == null
-          && overviewEntry.dlStatusCount().get(DlStatus.Download) == null) {
+          && overviewEntry.dlStatusCount().get(DlStatus.Download) == null
+          && (parseCount == null || parseCount == 0)) {
         // delete if queue exists because it's empty
         URI uri =
             sqsManager.getDownloadQueueUrls().stream()
