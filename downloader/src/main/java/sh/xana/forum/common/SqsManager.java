@@ -165,19 +165,38 @@ public class SqsManager {
 
   private <T> List<RecieveRequest<T>> _receive(URI queueUrl, Class<T> clazz, int index) {
     try {
-      ReceiveMessageRequest receiveMessageRequest = null;
+      Exception receiveException = null;
+      ReceiveMessageResult receiveMessageResult = null;
       for (int i = 0; i < 5; i++) {
         try {
-          receiveMessageRequest =
+          ReceiveMessageRequest receiveMessageRequest =
               new ReceiveMessageRequest()
                   .withQueueUrl(queueUrl.toString())
-                  .withMaxNumberOfMessages(10);
-        } catch (Exception e) {
-          log.warn("FAIL TO FETCH, retrying", e);
+                  .withMaxNumberOfMessages(10)
+                  .withWaitTimeSeconds(60 * 5);
+
+          receiveMessageResult = sqsClient.receiveMessage(receiveMessageRequest);
+          break;
+        } catch (AmazonServiceException e) {
+          receiveException = e;
+          if (e.getCause() instanceof AmazonS3Exception) {
+            log.warn(
+                "S3 failure for queue "
+                    + queueUrl
+                    + ", retry "
+                    + index
+                    + " - "
+                    + e.getMessage()
+                    + " - "
+                    + e.getCause().getMessage());
+          } else {
+            throw e;
+          }
         }
       }
-
-      ReceiveMessageResult receiveMessageResult = sqsClient.receiveMessage(receiveMessageRequest);
+      if (receiveMessageResult == null) {
+        throw new RuntimeException("Final fail", receiveException);
+      }
 
       List<RecieveRequest<T>> result = new ArrayList<>();
       for (Message message : receiveMessageResult.getMessages()) {
@@ -185,13 +204,6 @@ public class SqsManager {
             new RecieveRequest<T>(message, Utils.jsonMapper.readValue(message.getBody(), clazz)));
       }
       return result;
-    } catch (AmazonServiceException e) {
-      if (e.getCause() instanceof AmazonS3Exception) {
-        log.warn("S3 failure for queue " + queueUrl + ", retry " + index, e);
-        return _receive(queueUrl, clazz, ++index);
-      } else {
-        throw e;
-      }
     } catch (Exception e) {
       throw new RuntimeException("Failed to process for queue " + queueUrl, e);
     }
