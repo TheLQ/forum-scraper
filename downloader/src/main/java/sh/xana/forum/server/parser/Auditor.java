@@ -256,13 +256,16 @@ public class Auditor {
     }
   }
 
-  public static void threadRunner(int threads, String namePrefix, Runnable runner) {
-    for (int i = 0; i < threads; i++) {
+  public static List<Thread> threadRunner(int numThreads, String namePrefix, Runnable runner) {
+    List<Thread> threads = new ArrayList<>();
+    for (int i = 0; i < numThreads; i++) {
       Thread thread = new Thread(runner);
       thread.setName(namePrefix + i);
       thread.setDaemon(false);
       thread.start();
+      threads.add(thread);
     }
+    return threads;
   }
 
   private static void postValidator(UUID pageId, ParserResult result) {

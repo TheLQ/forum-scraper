@@ -1,5 +1,7 @@
 package sh.xana.forum.server;
 
+import static sh.xana.forum.server.db.tables.Pages.PAGES;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.Closeable;
 import java.io.IOException;
@@ -12,7 +14,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,18 +43,24 @@ public class PageManager implements Closeable {
   private final DatabaseStorage dbStorage;
   private final ServerConfig config;
   private final SqsManager sqsManager;
-  private final Thread spiderThread;
+  private final Thread spiderFeederThread;
   private final Thread downloadsThread;
-
   private final PageParser pageParser;
+  private final List<Thread> workerThreads = new ArrayList<>();
+
+  private static final int SPIDER_THREAD_SIZE = 100;
+  private static final int SPIDER_THREADS = 8;
+  private final ArrayBlockingQueue<ParserPage> spiderQueue =
+      new ArrayBlockingQueue<>(SPIDER_THREAD_SIZE * SPIDER_THREADS * 4);
+  private final List<ParserPage> spiderWIP = new ArrayList<>();
 
   public PageManager(DatabaseStorage dbStorage, ServerConfig config, SqsManager sqsManager) {
     this.dbStorage = dbStorage;
     this.config = config;
     this.sqsManager = sqsManager;
 
-    this.spiderThread = new Thread(this::pageSpiderThread);
-    this.spiderThread.setName("PageSpider");
+    this.spiderFeederThread = new Thread(this::pageSpiderFeederThread);
+    this.spiderFeederThread.setName("PageSpiderFeeder");
 
     this.downloadsThread = new Thread(this::downloadsThread);
     this.downloadsThread.setName("PageDownloads");
@@ -59,8 +69,12 @@ public class PageManager implements Closeable {
   }
 
   public void startThreads() {
-    this.spiderThread.start();
-    Auditor.threadRunner(2, "PageUploads-", this::uploadsThread);
+    List<Thread> spiderThreads =
+        Auditor.threadRunner(SPIDER_THREADS, "PageSpider-", this::pageSpiderThread);
+    this.workerThreads.addAll(spiderThreads);
+    this.spiderFeederThread.start();
+    List<Thread> uploadThreads = Auditor.threadRunner(2, "PageUploads-", this::uploadsThread);
+    this.workerThreads.addAll(uploadThreads);
     this.downloadsThread.start();
   }
 
@@ -168,40 +182,95 @@ public class PageManager implements Closeable {
     sqsManager.deleteUploadRequests(recieveRequests);
   }
 
-  /** */
-  private void pageSpiderThread() {
+  private void pageSpiderFeederThread() {
     while (true) {
-      boolean result;
       try {
-        result = spider();
+        pageSpiderFeederCycle();
       } catch (Exception e) {
         log.error("Caught exception in mainLoop, stopping", e);
-        break;
-      }
-      if (!result) {
-        log.warn("mainLoop returned false, stopping");
         break;
       }
     }
     log.info("main loop ended");
   }
 
-  private boolean spider() throws InterruptedException {
-    while (_spider()) {}
+  private void pageSpiderFeederCycle() throws InterruptedException {
+    /*
+    Problem: getParserPages can be slow when lots of other traffic going on, starving the
+    spiderThread in large audit runs.
 
-    sleep();
-    return true;
+    Do not want to grab an unlimited number of pages due to memory constraints. However if you call
+    getParser multiple times consecutively you'll get the same pages. WHERE pageId > x ORDER BY pageId
+    is too heavy on the DB. So track what's Work in Progress (WIP) and exclude from queries.
+     */
+    List<UUID> wipIds;
+    synchronized (spiderWIP) {
+      wipIds = spiderWIP.stream().map(ParserPage::pageId).collect(Collectors.toList());
+    }
+    log.info("Loading pages");
+    List<ParserPage> parserPages =
+        dbStorage.getParserPages(
+            true,
+            PAGES.DLSTATUS.eq(DlStatus.Parse),
+            PAGES.EXCEPTION.isNull(),
+            PAGES.PAGEID.notIn(wipIds));
+    if (parserPages.isEmpty()) {
+      sleep();
+      return;
+    }
+    synchronized (spiderWIP) {
+      spiderWIP.addAll(parserPages);
+    }
+    // This is the flow control, will block until spiderQueue is free
+    for (ParserPage parserPage : parserPages) {
+      spiderQueue.put(parserPage);
+    }
   }
 
-  private boolean _spider() throws InterruptedException {
-    List<ParserPage> parserPages = dbStorage.getParserPages(true);
-    if (parserPages.isEmpty()) {
-      return false;
+  /** */
+  private void pageSpiderThread() {
+
+    try {
+      spider();
+    } catch (Exception e) {
+      log.error("Caught exception in mainLoop, stopping", e);
     }
 
-    List<UUID> sqlDone = new ArrayList<>(parserPages.size());
+    log.info("main loop ended");
+  }
+
+  private void spider() throws InterruptedException {
+    List<ParserPage> processedPages = new ArrayList<>();
+    List<UUID> sqlDone = new ArrayList<>(SPIDER_THREAD_SIZE);
     List<DatabaseStorage.InsertPage> sqlNewPages = new ArrayList<>();
-    for (ParserPage page : parserPages) {
+    while (true) {
+      ParserPage page = spiderQueue.poll();
+      if (processedPages.size() == SPIDER_THREAD_SIZE
+          || (page == null && !processedPages.isEmpty())) {
+        // flush but not unnecessarily when empty
+        if (!sqlNewPages.isEmpty()) {
+          log.debug("dbsync insert");
+          dbStorage.insertPagesQueued(sqlNewPages, true);
+          sqlNewPages.clear();
+        }
+        if (!sqlDone.isEmpty()) {
+          log.debug("dbsync dlstatus done");
+          dbStorage.setPageStatus(sqlDone, DlStatus.Done);
+          sqlDone.clear();
+        }
+        synchronized (spiderWIP) {
+          spiderWIP.removeAll(processedPages);
+          processedPages.clear();
+        }
+        log.debug("dbsync done");
+      }
+      if (page == null) {
+        // already flushed above, wait till new requests come in
+        log.info("Waiting for new requests...");
+        page = spiderQueue.take();
+      }
+      processedPages.add(page);
+
       UUID pageId = page.pageId();
       log.info("processing page {}", pageId);
 
@@ -228,18 +297,6 @@ public class PageManager implements Closeable {
         dbStorage.setPageException(pageId, ExceptionUtils.getStackTrace(e));
       }
     }
-
-    if (!sqlNewPages.isEmpty()) {
-      log.debug("dbsync insert");
-      dbStorage.insertPagesQueued(sqlNewPages, true);
-    }
-    if (!sqlDone.isEmpty()) {
-      log.debug("dbsync dlstatus done");
-      dbStorage.setPageStatus(sqlDone, DlStatus.Done);
-    }
-    log.debug("dbsync done");
-
-    return true;
   }
 
   private void downloadsThread() {
@@ -349,8 +406,16 @@ public class PageManager implements Closeable {
   @Override
   public void close() throws IOException {
     log.info("close called, stopping thread");
-    if (spiderThread.isAlive()) {
-      spiderThread.interrupt();
+    for (Thread workerThread : workerThreads) {
+      closeThread(workerThread);
+    }
+    closeThread(downloadsThread);
+    closeThread(spiderFeederThread);
+  }
+
+  private void closeThread(Thread thread) {
+    if (thread.isAlive()) {
+      thread.interrupt();
     }
   }
 }

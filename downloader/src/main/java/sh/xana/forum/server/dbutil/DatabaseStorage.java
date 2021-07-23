@@ -119,10 +119,6 @@ public class DatabaseStorage {
     executeOneRow(query);
   }
 
-  public List<ParserPage> getParserPages(boolean limited) {
-    return getParserPages(limited, PAGES.DLSTATUS.eq(DlStatus.Parse), PAGES.EXCEPTION.isNull());
-  }
-
   /** Stage: Load pages for Parser */
   public List<ParserPage> getParserPages(boolean limited, Condition... conditions) {
     var query =
@@ -139,9 +135,9 @@ public class DatabaseStorage {
             .on(PAGES.SITEID.eq(SITES.SITEID))
             .where(conditions);
     if (limited) {
-      query.limit(1000);
+      query.limit(8000);
     }
-    log.info(query.toString());
+    //    log.info(query.toString());
     return query
         .fetch()
         .map(
@@ -230,12 +226,14 @@ public class DatabaseStorage {
         .fetchInto(PagesRecord.class);
   }
 
-
   public Map<String, Integer> getOverviewToParse() {
     return context
         .select(DSL.count(PAGES), PAGES.DOMAIN)
         .from(PAGES)
-        .where(PAGES.DLSTATUS.eq(DlStatus.Parse), PAGES.EXCEPTION.isNotNull(), PAGES.EXCEPTION.notLike("%LoginRequired%"))
+        .where(
+            PAGES.DLSTATUS.eq(DlStatus.Parse),
+            PAGES.EXCEPTION.isNotNull(),
+            PAGES.EXCEPTION.notLike("%LoginRequired%"))
         .groupBy(PAGES.DOMAIN)
         .fetch()
         .intoMap(Record2::component2, Record2::component1);
@@ -333,31 +331,34 @@ public class DatabaseStorage {
       for (InsertPage page : pages) {
         UUID id = UUID.randomUUID();
         try {
-        context.insertInto(
-            PAGES,
-            PAGES.PAGEID,
-            PAGES.SITEID,
-            PAGES.PAGEURL,
-            PAGES.PAGETYPE,
-            PAGES.DLSTATUS,
-            PAGES.PAGEUPDATED,
-            PAGES.DOMAIN,
-            PAGES.SOURCEPAGEID)
-        .values(id,
-            page.siteId(),
-            page.pageUrl(),
-            page.type(),
-            DlStatus.Queued,
-            LocalDateTime.now(),
-            page.pageUrl().getHost(),
-            page.sourcePageId())
-        .execute();
+          context
+              .insertInto(
+                  PAGES,
+                  PAGES.PAGEID,
+                  PAGES.SITEID,
+                  PAGES.PAGEURL,
+                  PAGES.PAGETYPE,
+                  PAGES.DLSTATUS,
+                  PAGES.PAGEUPDATED,
+                  PAGES.DOMAIN,
+                  PAGES.SOURCEPAGEID)
+              .values(
+                  id,
+                  page.siteId(),
+                  page.pageUrl(),
+                  page.type(),
+                  DlStatus.Queued,
+                  LocalDateTime.now(),
+                  page.pageUrl().getHost(),
+                  page.sourcePageId())
+              .execute();
         } catch (Exception e) {
           Throwable root = e;
           while (root.getCause() != null) {
             root = root.getCause();
           }
-          if (root.getMessage().startsWith("Duplicate entry") && root.getMessage().endsWith("for key 'url'")) {
+          if (root.getMessage().startsWith("Duplicate entry")
+              && root.getMessage().endsWith("for key 'url'")) {
             // silently ignore...
           } else if (root.getMessage().startsWith("Data too long for column 'pageUrl'")) {
             String pageUrl = page.pageUrl().toString();
