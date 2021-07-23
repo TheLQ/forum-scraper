@@ -22,7 +22,7 @@ public class vBulletin implements AbstractForum {
 
   @Override
   public ForumType detectForumType(String rawHtml) {
-    if (rawHtml.contains("vBulletin_init();")) {
+    if (rawHtml.contains("vBulletin_init();") || rawHtml.contains("vBulletin Version")) {
       return ForumType.vBulletin;
     } else {
       return null;
@@ -54,9 +54,16 @@ public class vBulletin implements AbstractForum {
     return result;
   }
 
+  private final Pattern PATTERN_SUBFORUM1 = Pattern.compile("id=\"(?<id>f(orum)?_?[0-9]+)\"");
+  private final Pattern PATTERN_SUBFORUM2 =
+      Pattern.compile("class=\"[a-zA-Z ] (?<id>forum[0-9]+\")");
+
   @Override
   public @Nonnull Collection<Element> getSubforumAnchors(SourcePage sourcePage) {
-    Matcher matcher = Pattern.compile("id=\"(?<id>f(orum)?[0-9]+)\"").matcher(sourcePage.rawHtml());
+    // id="f266"
+    // id="forum266"
+    // class="forum_266"
+    Matcher matcher = PATTERN_SUBFORUM1.matcher(sourcePage.rawHtml());
 
     List<Element> result = new ArrayList<>();
     while (matcher.find()) {
@@ -71,20 +78,37 @@ public class vBulletin implements AbstractForum {
               "for forum " + id);
       result.addAll(anchors);
     }
+
+    // v2
+    if (!sourcePage.doc().select(".forum").isEmpty()) {
+      Elements forumsAnchors =
+          ForumUtils.selectOneOrMore(sourcePage.doc(), "a[class='forum']", "v2");
+      result.addAll(forumsAnchors);
+    }
+
     return result;
   }
 
+  private static final Pattern PATTERN_TOPIC =
+      Pattern.compile("id=\"(?<id>thread(_title_)?[0-9]+)\"");
+
   @Override
   public @Nonnull Collection<Element> getTopicAnchors(SourcePage sourcePage) {
-    Matcher matcher =
-        Pattern.compile("id=\"(?<id>thread_title_[0-9]+)\"").matcher(sourcePage.rawHtml());
+    Matcher matcher = PATTERN_TOPIC.matcher(sourcePage.rawHtml());
 
     List<Element> result = new ArrayList<>();
     while (matcher.find()) {
       String id = ForumUtils.assertNotBlank(matcher.group("id"));
-      Element anchor = ForumUtils.selectOnlyOne(sourcePage.doc(), "#" + id, "for topic " + id);
+      Element anchor =
+          ForumUtils.selectOnlyOne(
+              sourcePage.doc(), "a#ID, #ID .thread_title".replaceAll("ID", id), "for topic " + id);
       result.add(anchor);
     }
+
+    //    if (!sourcePage.doc().select("#threadlist").isEmpty()) {
+    //      ForumUtils.selectOneOrMore(sourcePage.doc(), ".threadlist .thread")
+    //    }
+
     return result;
   }
 
@@ -164,15 +188,20 @@ public class vBulletin implements AbstractForum {
   private static final Pattern[] PATTERN_URI =
       new Pattern[] {
         // forumdisplay.php?f=3&order=desc&page=4
-        Pattern.compile("forumdisplay.php\\?f=[0-9]+(&order=desc)?(&page=[0-9]+)?"),
+        // forumdisplay.php?forumid=3&order=desc&page=4
+        Pattern.compile("forumdisplay.php\\?(f|forumid)=[0-9]+(&order=desc)?(&page=[0-9]+)?"),
         // forumdisplay.php?5-cars
         Pattern.compile(
             "forumdisplay.php[?|/][0-9]+-TOPIC_TPL(/page[0-9]+)?"
                 .replace("TOPIC_TPL", PATTERN_TOPIC_TPL)),
         // cars-2/page9/
         Pattern.compile("[a-zA-Z0-9\\-]+-[0-9]+/(page[0-9]+/)?"),
+        // forums/46-myforum/page2?order=desc
+        Pattern.compile(
+            "forums/[0-9]+-TOPIC_TPL(/page[0-9]+)?(\\?order=desc)?"
+                .replace("TOPIC_TPL", PATTERN_TOPIC_TPL)),
         // showthread.php?t=5&page=5
-        Pattern.compile("showthread.php\\?t=[0-9]+(&page=[0-9]+)?"),
+        Pattern.compile("showthread.php\\?(t|threadid)=[0-9]+(&page=[0-9]+)?"),
         // showthread.php?9-my-topic/page7 (-my-topic is optional...)
         Pattern.compile(
             "showthread.php[?|/][0-9]+(-TOPIC_TPL)?(/page[0-9]+)?"
@@ -180,6 +209,10 @@ public class vBulletin implements AbstractForum {
         // cars-2/my-topic-9/page5
         Pattern.compile(
             "[a-zA-Z0-9\\-]+-[0-9]+/TOPIC_TPL-[0-9]+/(page[0-9]+/)?"
+                .replace("TOPIC_TPL", PATTERN_TOPIC_TPL)),
+        // threads/9-mytopic/page2
+        Pattern.compile(
+            "threads/[0-9]+-TOPIC_TPL(/page[0-9]+)?(\\?order=desc)?"
                 .replace("TOPIC_TPL", PATTERN_TOPIC_TPL)),
         // marketplace/parts/search/page-42
         Pattern.compile("marketplace/[a-z]+/search/(page-[0-9]+/)?")

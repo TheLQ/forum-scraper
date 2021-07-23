@@ -87,18 +87,26 @@ public class XenForo implements AbstractForum {
   }
 
   @Override
-  public void postProcessing(SourcePage sourcePage, ParserResult result) {}
+  public void postProcessing(SourcePage sourcePage, ParserResult result) {
+    // filter "forum" that's really a link to a setup guide
+    result.subpages().stream()
+        .filter(e -> e.url().endsWith("/PicturePerfect/"))
+        .findFirst()
+        .ifPresent(e -> result.subpages().remove(e));
+  }
 
   private static final Pattern[] PATTERN_URI =
       new Pattern[] {
         // forums/general.4/page-55
-        Pattern.compile("forums/[a-zA-Z0-9\\-%]+\\.[0-9]+/(page-[0-9]+)?"),
+        // audio for strange site 20e59055-7511-4422-a245-16c1246432d9
+        // link-forums shortcuts spread out on homepage...
+        Pattern.compile("(link-forums|forums|audio)/[a-zA-Z0-9\\-%]+\\.[0-9]+/(page-[0-9]+)?"),
         // threads/my-topic.234/page-163
         Pattern.compile("threads/[a-zA-Z0-9\\-%_]+\\.[0-9]+/(page-[0-9]+)?"),
         // threads/my-topic.234/page-163
         Pattern.compile("threads/[0-9]+/(page-[0-9]+)?"),
         // Plain /forums/ link on special XenForo platform
-        Pattern.compile("forums/"),
+        Pattern.compile("forums/")
       };
 
   @Override
