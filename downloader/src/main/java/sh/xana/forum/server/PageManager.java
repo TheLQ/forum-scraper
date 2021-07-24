@@ -35,6 +35,7 @@ import sh.xana.forum.server.dbutil.DlStatus;
 import sh.xana.forum.server.dbutil.ParserPage;
 import sh.xana.forum.server.parser.Auditor;
 import sh.xana.forum.server.parser.PageParser;
+import sh.xana.forum.server.parser.PageParser.ParserException;
 
 /** Parse stage. Extract further URLs for downloading */
 public class PageManager implements Closeable {
@@ -293,8 +294,11 @@ public class PageManager implements Closeable {
         // same thing as below, just don't spam the log file
         dbStorage.setPageException(pageId, ExceptionUtils.getStackTrace(e));
       } catch (Exception e) {
-        //        log.warn("Failed in parser", e);
-        dbStorage.setPageException(pageId, ExceptionUtils.getStackTrace(e));
+        Throwable loggedException = e;
+        if (e instanceof ParserException && e.getCause() != null) {
+          loggedException = e.getCause();
+        }
+        dbStorage.setPageException(pageId, ExceptionUtils.getStackTrace(loggedException));
       }
     }
   }
