@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.ipc.ParserResult;
 import sh.xana.forum.server.dbutil.ForumType;
 import sh.xana.forum.server.parser.AbstractForum;
+import sh.xana.forum.server.parser.EmptyForumException;
 import sh.xana.forum.server.parser.Soft500Exception;
 import sh.xana.forum.server.parser.SourcePage;
 
@@ -34,7 +35,7 @@ public class XenForo implements AbstractForum {
 
   @Override
   public void preProcessing(SourcePage sourcePage) {
-    Elements messages = sourcePage.doc().select(".blockMessage");
+    Elements messages = sourcePage.doc().select(".blockMessage, .structItem-cell");
     //    log.info("size " + messages.size());
     //    for (Element elem : messages) {
     //        log.info("elem " + elem.outerHtml());
@@ -44,6 +45,10 @@ public class XenForo implements AbstractForum {
       if (lastMessage.equals(
           "Something went wrong. Please try again or contact the administrator.")) {
         throw new Soft500Exception("Something went wrong message");
+      }
+
+      if (lastMessage.equals("There are no threads in this forum.")) {
+        throw new EmptyForumException();
       }
     }
   }
@@ -89,10 +94,9 @@ public class XenForo implements AbstractForum {
   @Override
   public void postProcessing(SourcePage sourcePage, ParserResult result) {
     // filter "forum" that's really a link to a setup guide
-    result.subpages().stream()
-        .filter(e -> e.url().endsWith("/PicturePerfect/"))
-        .findFirst()
-        .ifPresent(e -> result.subpages().remove(e));
+    result
+        .subpages()
+        .removeIf(e -> e.url().endsWith("/PicturePerfect/") || e.url().endsWith("/newsletter/"));
   }
 
   private static final Pattern[] PATTERN_URI =
@@ -100,7 +104,8 @@ public class XenForo implements AbstractForum {
         // forums/general.4/page-55
         // audio for strange site 20e59055-7511-4422-a245-16c1246432d9
         // link-forums shortcuts spread out on homepage...
-        Pattern.compile("(link-forums|forums|audio)/[a-zA-Z0-9\\-%]+\\.[0-9]+/(page-[0-9]+)?"),
+        Pattern.compile(
+            "(categories|link-forums|forums|audio)/[a-zA-Z0-9\\-%]+\\.[0-9]+/(page-[0-9]+)?"),
         // threads/my-topic.234/page-163
         Pattern.compile("threads/[a-zA-Z0-9\\-%_]+\\.[0-9]+/(page-[0-9]+)?"),
         // threads/my-topic.234/page-163

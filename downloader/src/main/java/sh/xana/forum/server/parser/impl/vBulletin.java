@@ -200,6 +200,8 @@ public class vBulletin implements AbstractForum {
         Pattern.compile(
             "forums/[0-9]+-TOPIC_TPL(/page[0-9]+)?(\\?order=desc)?"
                 .replace("TOPIC_TPL", PATTERN_TOPIC_TPL)),
+        // forum/index2.html ...
+        Pattern.compile("TOPIC_TPL/index[0-9]+.html".replace("TOPIC_TPL", PATTERN_TOPIC_TPL)),
         // showthread.php?t=5&page=5
         Pattern.compile("showthread.php\\?(t|threadid)=[0-9]+(&page=[0-9]+)?"),
         // showthread.php?9-my-topic/page7 (-my-topic is optional...)
@@ -214,6 +216,9 @@ public class vBulletin implements AbstractForum {
         Pattern.compile(
             "threads/[0-9]+-TOPIC_TPL(/page[0-9]+)?(\\?order=desc)?"
                 .replace("TOPIC_TPL", PATTERN_TOPIC_TPL)),
+        // forum/484-mytopic.html
+        Pattern.compile(
+            "TOPIC_TPL/[0-9]+-TOPIC_TPL.html".replaceAll("TOPIC_TPL", PATTERN_TOPIC_TPL)),
         // marketplace/parts/search/page-42
         Pattern.compile("marketplace/[a-z]+/search/(page-[0-9]+/)?")
       };
