@@ -49,7 +49,7 @@ public class PageManager implements Closeable {
   private final List<Thread> workerThreads = new ArrayList<>();
 
   private static final int SPIDER_THREAD_SIZE = 100;
-  private static final int SPIDER_THREADS = 8;
+  private static final int SPIDER_THREADS = 2;
   private final ArrayBlockingQueue<ParserPage> spiderQueue =
       new ArrayBlockingQueue<>(SPIDER_THREAD_SIZE * SPIDER_THREADS * 4);
   private final List<ParserPage> spiderWIP = new ArrayList<>();
@@ -332,7 +332,7 @@ public class PageManager implements Closeable {
 
     boolean updated = false;
     for (OverviewEntry overviewEntry : dbStorage.getOverviewSites()) {
-      String domain = overviewEntry.siteUrl().getHost();
+      String domain = overviewEntry.domain();
       String queueNameSafe = SqsManager.getQueueNameSafe(domain);
       Integer parseCount = overviewToParse.get(domain);
       if (overviewEntry.dlStatusCount().get(DlStatus.Queued) == null
@@ -357,8 +357,8 @@ public class PageManager implements Closeable {
                 .findFirst()
                 .orElse(null);
         if (queue == null) {
-          log.info("New queue " + overviewEntry.siteUrl().getHost());
-          sqsManager.newDownloadQueue(overviewEntry.siteUrl().getHost());
+          log.info("New queue " + overviewEntry.domain());
+          sqsManager.newDownloadQueue(overviewEntry.domain());
           updated = true;
         }
       }
@@ -382,9 +382,9 @@ public class PageManager implements Closeable {
       String domain = SqsManager.getQueueDomain(entry.getKey());
       domain = SqsManager.getQueueNameSafeOrig(domain);
       // Give the queues sufficient lead time
+      log.debug("domain " + domain);
       List<ScraperDownload> scraperDownloads =
           dbStorage.movePageQueuedToDownloadIPC(domain, expectedQueueSize * 10);
-      log.debug("domain " + domain);
       if (!scraperDownloads.isEmpty()) {
         log.debug(
             "Pushing {} download requests for {}",

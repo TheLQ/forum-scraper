@@ -151,14 +151,14 @@ public class DatabaseStorage {
                     e.get(SITES.FORUMTYPE)));
   }
 
+  public record OverviewEntry(UUID siteId, String domain, Map<DlStatus, Integer> dlStatusCount) {}
+
   /** Stage: reporting monitor */
   public List<OverviewEntry> getOverviewSites() {
     var query =
         context
-            .select(DSL.count(PAGES.PAGEID), PAGES.DLSTATUS, PAGES.SITEID, SITES.SITEURL)
+            .select(DSL.count(), PAGES.DLSTATUS, PAGES.SITEID, PAGES.DOMAIN)
             .from(PAGES)
-            .innerJoin(SITES)
-            .on(PAGES.SITEID.eq(SITES.SITEID))
             // SITEID is redundant but mysql doesn't like the free floating column
             .groupBy(PAGES.DLSTATUS, PAGES.DOMAIN, PAGES.SITEID);
     log.info("QUERY " + query);
@@ -168,13 +168,13 @@ public class DatabaseStorage {
       Map<DlStatus, Integer> counter = new HashMap<>();
 
       var pageIterator = pages.iterator();
-      URI siteUrl = null;
+      String siteUrl = null;
       UUID siteId = null;
       do {
         var curPage = pageIterator.next();
         if (siteId == null) {
           siteId = curPage.get(PAGES.SITEID);
-          siteUrl = curPage.get(SITES.SITEURL);
+          siteUrl = curPage.get(PAGES.DOMAIN);
         } else if (!curPage.get(PAGES.SITEID).equals(siteId)) {
           continue;
         }
@@ -482,6 +482,4 @@ public class DatabaseStorage {
               + query);
     }
   }
-
-  public record OverviewEntry(UUID siteId, URI siteUrl, Map<DlStatus, Integer> dlStatusCount) {}
 }

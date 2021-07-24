@@ -123,7 +123,7 @@ public class WebServer extends NanoHTTPD {
     for (DatabaseStorage.OverviewEntry entry : dbStorage.getOverviewSites()) {
       result.append("<tr>");
       result.append("<td>").append(entry.siteId()).append("</td>");
-      result.append("<td>").append(entry.siteUrl()).append("</td>");
+      result.append("<td>").append(entry.domain()).append("</td>");
       result.append("<td>").append(entry.dlStatusCount().get(DlStatus.Queued)).append("</td>");
       result.append("<td>").append(entry.dlStatusCount().get(DlStatus.Download)).append("</td>");
       result.append("<td>").append(entry.dlStatusCount().get(DlStatus.Parse)).append("</td>");
