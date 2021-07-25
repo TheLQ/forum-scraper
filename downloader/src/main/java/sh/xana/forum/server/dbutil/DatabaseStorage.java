@@ -47,13 +47,6 @@ public class DatabaseStorage {
     // Hide giant logo it writes to logs on first load
     System.setProperty("org.jooq.no-logo", "true");
 
-    // need to load this since at runtime using cp not modules, DriverManager isn't finding it
-    try {
-      // Class.forName("org.mariadb.jdbc.Driver");
-    } catch (Exception e) {
-      throw new RuntimeException("failed to load class", e);
-    }
-
     // creates actual DB connections
     ConnectionFactory connectionFactory =
         new DriverManagerConnectionFactory(
@@ -125,9 +118,10 @@ public class DatabaseStorage {
         context
             .select(
                 PAGES.PAGEID,
-                PAGES.SITEID,
+                PAGES.PAGEURL,
                 PAGES.PAGETYPE,
                 PAGES.DLSTATUSCODE,
+                PAGES.SITEID,
                 SITES.SITEURL,
                 SITES.FORUMTYPE)
             .from(PAGES)
@@ -143,12 +137,13 @@ public class DatabaseStorage {
         .map(
             e ->
                 new ParserPage(
-                    e.get(PAGES.PAGEID),
-                    e.get(PAGES.PAGETYPE),
-                    e.get(PAGES.DLSTATUSCODE),
-                    e.get(PAGES.SITEID),
-                    e.get(SITES.SITEURL),
-                    e.get(SITES.FORUMTYPE)));
+                    e.value1(),
+                    e.value2(),
+                    e.value3(),
+                    e.value4(),
+                    e.value5(),
+                    e.value6(),
+                    e.value7()));
   }
 
   public record OverviewEntry(UUID siteId, String domain, Map<DlStatus, Integer> dlStatusCount) {}

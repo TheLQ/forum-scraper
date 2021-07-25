@@ -5,6 +5,7 @@ import java.util.UUID;
 
 public record ParserPage(
     UUID pageId,
+    URI pageUri,
     PageType pageType,
     int dlstatusCode,
     UUID siteId,

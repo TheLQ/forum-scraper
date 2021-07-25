@@ -33,9 +33,8 @@ import sh.xana.forum.server.dbutil.DatabaseStorage;
 import sh.xana.forum.server.dbutil.DatabaseStorage.OverviewEntry;
 import sh.xana.forum.server.dbutil.DlStatus;
 import sh.xana.forum.server.dbutil.ParserPage;
-import sh.xana.forum.server.parser.Auditor;
 import sh.xana.forum.server.parser.PageParser;
-import sh.xana.forum.server.parser.PageParser.ParserException;
+import sh.xana.forum.server.parser.ParserException;
 
 /** Parse stage. Extract further URLs for downloading */
 public class PageManager implements Closeable {

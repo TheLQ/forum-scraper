@@ -1,7 +1,9 @@
 package sh.xana.forum.server.parser;
 
-public class EmptyForumException extends RuntimeException {
-  public EmptyForumException() {
-    super();
+import java.util.UUID;
+
+public class EmptyForumException extends ParserException {
+  public EmptyForumException(UUID pageId) {
+    super(pageId);
   }
 }

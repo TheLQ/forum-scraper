@@ -14,14 +14,12 @@ import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.ipc.ParserResult;
 import sh.xana.forum.common.ipc.ParserResult.ParserEntry;
 import sh.xana.forum.server.dbutil.ForumType;
-import sh.xana.forum.server.parser.AbstractForum;
 import sh.xana.forum.server.parser.ForumUtils;
 import sh.xana.forum.server.parser.SourcePage;
 
-public class SMF implements AbstractForum {
+public class SMF /*implements AbstractForum*/ {
   private static final Logger log = LoggerFactory.getLogger(SMF.class);
 
-  @Override
   public ForumType detectForumType(String rawHtml) {
     if (rawHtml.contains("var smf_theme_url")) {
       return ForumType.SMF;
@@ -32,7 +30,6 @@ public class SMF implements AbstractForum {
 
   private final Pattern PATTERN_AD_IFRAME = Pattern.compile("<iframe [a-zA-Z0-9 \"'=:/.;]+>");
 
-  @Override
   public Document newDocument(String rawHtml, String baseUrl) {
     /*
     site 2432457d-49f9-4de3-b2b9-8716a8d51dde has a really broken ad module that randomly injects
@@ -40,20 +37,18 @@ public class SMF implements AbstractForum {
     */
     rawHtml = PATTERN_AD_IFRAME.matcher(rawHtml).replaceAll("");
 
-    return AbstractForum.super.newDocument(rawHtml, baseUrl);
+    throw new UnsupportedOperationException();
+    // TODO    return AbstractForum.super.newDocument(rawHtml, baseUrl);
   }
 
-  @Override
   public boolean detectLoginRequired(SourcePage sourcePage) {
     return sourcePage.rawHtml().contains("document.forms.frmLogin.user.focus");
   }
 
-  @Override
   public @Nonnull Collection<Element> getPageLinks(SourcePage sourcePage) {
     return sourcePage.doc().select(".pagelinks .navPages");
   }
 
-  @Override
   public @Nonnull Collection<Element> getPostElements(SourcePage sourcePage) {
     // both the topiclist entry and the message posts use the same id... so make sure we are on
     // the post page
@@ -63,7 +58,6 @@ public class SMF implements AbstractForum {
     return getMessage(sourcePage, "");
   }
 
-  @Override
   public @Nonnull Collection<Element> getSubforumAnchors(SourcePage sourcePage) {
     Matcher matcher = Pattern.compile("name=\"(?<id>b[0-9]{1,4})\"").matcher(sourcePage.rawHtml());
 
@@ -78,7 +72,6 @@ public class SMF implements AbstractForum {
     return result;
   }
 
-  @Override
   public @Nonnull Collection<Element> getTopicAnchors(SourcePage sourcePage) {
     // both the topiclist entry and the message posts use the same id... so make sure we are on
     // the forumlist page
@@ -105,7 +98,6 @@ public class SMF implements AbstractForum {
 
   private final Pattern PATTERN_SID = Pattern.compile("\\?PHPSESSID=[A-Za-z0-9]+");
 
-  @Override
   public void postProcessing(SourcePage sourcePage, ParserResult result) {
     for (var itr = result.subpages().listIterator(); itr.hasNext(); ) {
       ParserEntry entry = itr.next();
@@ -130,7 +122,6 @@ public class SMF implements AbstractForum {
         Pattern.compile("[a-zA-Z0-9\\-]+/[a-zA-Z0-9_!\\-()$*~']+/([0-9]+/)?"),
       };
 
-  @Override
   public Pattern[] validateUrl() {
     return PATTERN_URI;
   }

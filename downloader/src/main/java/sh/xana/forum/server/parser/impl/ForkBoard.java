@@ -7,12 +7,10 @@ import org.jsoup.nodes.Element;
 import sh.xana.forum.common.ipc.ParserResult;
 import sh.xana.forum.server.dbutil.ForumType;
 import sh.xana.forum.server.dbutil.PageType;
-import sh.xana.forum.server.parser.AbstractForum;
 import sh.xana.forum.server.parser.SourcePage;
 
-public class ForkBoard implements AbstractForum {
+public class ForkBoard /*implements AbstractForum*/ {
 
-  @Override
   public ForumType detectForumType(String rawHtml) {
     if (rawHtml.contains("Powered by ForkBoard")) {
       return ForumType.ForkBoard;
@@ -21,32 +19,26 @@ public class ForkBoard implements AbstractForum {
     }
   }
 
-  @Override
   public boolean detectLoginRequired(SourcePage sourcePage) {
     return false;
   }
 
-  @Override
   public @Nonnull Collection<Element> getPageLinks(SourcePage sourcePage) {
     return sourcePage.doc().select(".page_skip");
   }
 
-  @Override
   public @Nonnull Collection<Element> getPostElements(SourcePage sourcePage) {
     return sourcePage.doc().select(".post_container");
   }
 
-  @Override
   public @Nonnull Collection<Element> getSubforumAnchors(SourcePage sourcePage) {
     return sourcePage.doc().select(".child_section .child_section_title a");
   }
 
-  @Override
   public @Nonnull Collection<Element> getTopicAnchors(SourcePage sourcePage) {
     return sourcePage.doc().select(".thread_details div:first-child a");
   }
 
-  @Override
   public PageType postForcePageType(SourcePage sourcePage, PageType currentType) {
     if (currentType == PageType.Unknown
         && sourcePage.rawHtml().contains("<a href=\"/post_new.php?")) {
@@ -58,7 +50,6 @@ public class ForkBoard implements AbstractForum {
     }
   }
 
-  @Override
   public void postProcessing(SourcePage sourcePage, ParserResult result) {}
 
   private static final Pattern[] PATTERN_URI =
@@ -71,7 +62,6 @@ public class ForkBoard implements AbstractForum {
         Pattern.compile("[a-z0-9\\-]+/![0-9]+-[a-zA-Z0-9\\-]*.html(\\?page=[0-9]+)?"),
       };
 
-  @Override
   public Pattern[] validateUrl() {
     return PATTERN_URI;
   }

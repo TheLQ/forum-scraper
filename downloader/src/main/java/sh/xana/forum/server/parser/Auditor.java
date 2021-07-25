@@ -1,5 +1,6 @@
 package sh.xana.forum.server.parser;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
@@ -15,7 +16,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.Utils;
@@ -54,6 +54,7 @@ public class Auditor {
         page =
             new ParserPage(
                 UUID.fromString("00000000-0000-0000-0000-000000000000"),
+                URI.create("http://google.com/"),
                 PageType.valueOf(args[4]),
                 200,
                 UUID.fromString("00000000-0000-0000-0000-000000000000"),
@@ -115,11 +116,23 @@ public class Auditor {
       return;
     }
 
-    log.info("query start");
-    List<ParserPage> pages =
-        dbStorage.getParserPages(
-            false, Pages.PAGES.EXCEPTION.isNull(), Pages.PAGES.DLSTATUS.eq(DlStatus.Done));
-    log.info("query end for " + pages.size());
+    Path auditorCache = Path.of("auditorCache.json");
+    List<ParserPage> pages;
+    if (Files.exists(auditorCache)) {
+      log.info("Loading query cache");
+      pages =
+          Utils.jsonMapper.readValue(
+              auditorCache.toFile(), new TypeReference<List<ParserPage>>() {});
+    } else {
+      log.info("query start");
+      pages =
+          dbStorage.getParserPages(
+              false, // Pages.PAGES.EXCEPTION.isNull(), Pages.PAGES.DLSTATUS.eq(DlStatus.Done)
+              Pages.PAGES.DOMAIN.eq("www.rx8club.com"),
+              Pages.PAGES.DLSTATUS.in(DlStatus.Parse, DlStatus.Done));
+      Utils.jsonMapper.writeValue(auditorCache.toFile(), pages);
+      log.info("query end for " + pages.size());
+    }
 
     switch (args[0]) {
       case "simple" -> start_simple(pages);
@@ -185,8 +198,7 @@ public class Auditor {
                 }
 
                 byte[] data = Files.readAllBytes(parser.getPagePath(page.pageId()));
-                ParserResult result = parser.parsePage(data, page);
-                postValidator(page.pageId(), result);
+                runParser(data, page);
                 return null;
               });
     }
@@ -206,7 +218,7 @@ public class Auditor {
           log.info("STARTING THREAD");
           while (true) {
             int idx = counter.incrementAndGet();
-            if (idx % 100 == 0) {
+            if (idx % 1000 == 0) {
               log.info(
                   "{} of {} - open {} /sec {}",
                   idx,
@@ -215,17 +227,13 @@ public class Auditor {
                   idx / ((System.currentTimeMillis() - start) / 1000));
             }
 
+            QueueEntry take;
             try {
-              QueueEntry take = open.take();
-              if (new String(take.in()).trim().equals("")) {
-                log.warn("Page " + take.pageId() + " is empty");
-              }
-              ParserResult result = parser.parsePage(take.in(), take.pageId());
-              postValidator(take.pageId().pageId(), result);
-            } catch (Exception e) {
-              log.error("FAILED TO PARSE", e);
-              // System.exit(1);
+              take = open.take();
+            } catch (InterruptedException e) {
+              throw new RuntimeException("inter", e);
             }
+            runParser(take.in(), take.pageId());
           }
         });
 
@@ -266,6 +274,21 @@ public class Auditor {
       threads.add(thread);
     }
     return threads;
+  }
+
+  private static void runParser(byte[] data, ParserPage page) {
+    try {
+      ParserResult result = parser.parsePage(data, page);
+      postValidator(page.pageId(), result);
+    } catch (ParserException e) {
+      if (e.getCause() != null) {
+        log.error("FAILED TO PARSE", e);
+      } else {
+        log.error(e.getClass().getCanonicalName() + " " + e.getMessage());
+      }
+    } catch (Exception e) {
+      log.error("FAILED TO PARSE", e);
+    }
   }
 
   private static void postValidator(UUID pageId, ParserResult result) {

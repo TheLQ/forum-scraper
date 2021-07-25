@@ -1,7 +1,9 @@
 package sh.xana.forum.server.parser;
 
-public class Soft500Exception extends RuntimeException {
-  public Soft500Exception(String message) {
-    super(message);
+import java.util.UUID;
+
+public class Soft500Exception extends ParserException {
+  public Soft500Exception(UUID pageId) {
+    super(pageId);
   }
 }
