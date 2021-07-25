@@ -48,11 +48,7 @@ public class Topics extends TableImpl<TopicsRecord> {
   public final TableField<TopicsRecord, UUID> FORUMID =
       createField(
           DSL.name("forumId"),
-          SQLDataType.BINARY(16)
-              .nullable(false)
-              .defaultValue(
-                  DSL.field(
-                      "'\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0'", SQLDataType.BINARY)),
+          SQLDataType.BINARY(16).nullable(false).defaultValue(DSL.inline("0x", SQLDataType.BINARY)),
           this,
           "",
           new UuidConverter());
@@ -61,26 +57,19 @@ public class Topics extends TableImpl<TopicsRecord> {
   public final TableField<TopicsRecord, UUID> FIRSTPAGEID =
       createField(
           DSL.name("firstPageId"),
-          SQLDataType.BINARY(16)
-              .nullable(false)
-              .defaultValue(
-                  DSL.field(
-                      "'\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0'", SQLDataType.BINARY)),
+          SQLDataType.BINARY(16).nullable(false).defaultValue(DSL.inline("0x", SQLDataType.BINARY)),
           this,
           "",
           new UuidConverter());
 
   /** The column <code>forum-scrape.Topics.origId</code>. */
-  public final TableField<TopicsRecord, byte[]> ORIGID =
+  public final TableField<TopicsRecord, UUID> ORIGID =
       createField(
           DSL.name("origId"),
-          SQLDataType.BINARY(16)
-              .nullable(false)
-              .defaultValue(
-                  DSL.field(
-                      "'\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0'", SQLDataType.BINARY)),
+          SQLDataType.BINARY(16).nullable(false).defaultValue(DSL.inline("0x", SQLDataType.BINARY)),
           this,
-          "");
+          "",
+          new UuidConverter());
 
   /** The column <code>forum-scrape.Topics.name</code>. */
   public final TableField<TopicsRecord, String> NAME =
@@ -145,7 +134,7 @@ public class Topics extends TableImpl<TopicsRecord> {
   // -------------------------------------------------------------------------
 
   @Override
-  public Row5<UUID, UUID, UUID, byte[], String> fieldsRow() {
+  public Row5<UUID, UUID, UUID, UUID, String> fieldsRow() {
     return (Row5) super.fieldsRow();
   }
 }

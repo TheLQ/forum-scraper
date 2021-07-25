@@ -42,11 +42,7 @@ public class Forums extends TableImpl<ForumsRecord> {
   public final TableField<ForumsRecord, UUID> FORUMID =
       createField(
           DSL.name("forumId"),
-          SQLDataType.BINARY(16)
-              .nullable(false)
-              .defaultValue(
-                  DSL.field(
-                      "'\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0'", SQLDataType.BINARY)),
+          SQLDataType.BINARY(16).nullable(false).defaultValue(DSL.inline("0x", SQLDataType.BINARY)),
           this,
           "",
           new UuidConverter());
@@ -55,11 +51,7 @@ public class Forums extends TableImpl<ForumsRecord> {
   public final TableField<ForumsRecord, UUID> PARENTFORUMID =
       createField(
           DSL.name("parentForumId"),
-          SQLDataType.BINARY(16)
-              .nullable(false)
-              .defaultValue(
-                  DSL.field(
-                      "'\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0'", SQLDataType.BINARY)),
+          SQLDataType.BINARY(16).nullable(false).defaultValue(DSL.inline("0x", SQLDataType.BINARY)),
           this,
           "",
           new UuidConverter());
@@ -68,11 +60,7 @@ public class Forums extends TableImpl<ForumsRecord> {
   public final TableField<ForumsRecord, UUID> SITEID =
       createField(
           DSL.name("siteId"),
-          SQLDataType.BINARY(16)
-              .nullable(false)
-              .defaultValue(
-                  DSL.field(
-                      "'\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0'", SQLDataType.BINARY)),
+          SQLDataType.BINARY(16).nullable(false).defaultValue(DSL.inline("0x", SQLDataType.BINARY)),
           this,
           "",
           new UuidConverter());

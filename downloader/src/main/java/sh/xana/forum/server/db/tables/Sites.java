@@ -70,7 +70,7 @@ public class Sites extends TableImpl<SitesRecord> {
   public final TableField<SitesRecord, ForumType> FORUMTYPE =
       createField(
           DSL.name("ForumType"),
-          SQLDataType.VARCHAR(9).nullable(false),
+          SQLDataType.VARCHAR(12).nullable(false),
           this,
           "",
           new EnumConverter<String, ForumType>(String.class, ForumType.class));

@@ -44,7 +44,11 @@ public class Pageredirects extends TableImpl<PageredirectsRecord> {
   /** The column <code>forum-scrape.PageRedirects.pageId</code>. */
   public final TableField<PageredirectsRecord, UUID> PAGEID =
       createField(
-          DSL.name("pageId"), SQLDataType.BLOB.nullable(false), this, "", new UuidConverter());
+          DSL.name("pageId"),
+          SQLDataType.BINARY(16).nullable(false),
+          this,
+          "",
+          new UuidConverter());
 
   /** The column <code>forum-scrape.PageRedirects.redirectUrl</code>. */
   public final TableField<PageredirectsRecord, URI> REDIRECTURL =

@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.UUID;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Index;
 import org.jooq.Name;
 import org.jooq.Record;
 import org.jooq.Row10;
@@ -23,6 +24,7 @@ import org.jooq.impl.EnumConverter;
 import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
 import sh.xana.forum.server.db.ForumScrape;
+import sh.xana.forum.server.db.Indexes;
 import sh.xana.forum.server.db.Keys;
 import sh.xana.forum.server.db.tables.records.PagesRecord;
 import sh.xana.forum.server.dbutil.DlStatus;
@@ -56,12 +58,7 @@ public class Pages extends TableImpl<PagesRecord> {
 
   /** The column <code>forum-scrape.Pages.sourcePageId</code>. */
   public final TableField<PagesRecord, UUID> SOURCEPAGEID =
-      createField(
-          DSL.name("sourcePageId"),
-          SQLDataType.BINARY(16).defaultValue(DSL.field("NULL", SQLDataType.BINARY)),
-          this,
-          "",
-          new UuidConverter());
+      createField(DSL.name("sourcePageId"), SQLDataType.BINARY(16), this, "", new UuidConverter());
 
   /** The column <code>forum-scrape.Pages.siteid</code>. */
   public final TableField<PagesRecord, UUID> SITEID =
@@ -76,7 +73,7 @@ public class Pages extends TableImpl<PagesRecord> {
   public final TableField<PagesRecord, URI> PAGEURL =
       createField(
           DSL.name("pageUrl"),
-          SQLDataType.VARCHAR(250).nullable(false),
+          SQLDataType.VARCHAR(750).nullable(false),
           this,
           "",
           new UriConverter());
@@ -109,19 +106,11 @@ public class Pages extends TableImpl<PagesRecord> {
 
   /** The column <code>forum-scrape.Pages.dlStatusCode</code>. */
   public final TableField<PagesRecord, Integer> DLSTATUSCODE =
-      createField(
-          DSL.name("dlStatusCode"),
-          SQLDataType.INTEGER.defaultValue(DSL.field("NULL", SQLDataType.INTEGER)),
-          this,
-          "");
+      createField(DSL.name("dlStatusCode"), SQLDataType.INTEGER, this, "");
 
   /** The column <code>forum-scrape.Pages.exception</code>. */
   public final TableField<PagesRecord, String> EXCEPTION =
-      createField(
-          DSL.name("exception"),
-          SQLDataType.CLOB.defaultValue(DSL.field("NULL", SQLDataType.CLOB)),
-          this,
-          "");
+      createField(DSL.name("exception"), SQLDataType.CLOB, this, "");
 
   private Pages(Name alias, Table<PagesRecord> aliased) {
     this(alias, aliased, null);
@@ -153,6 +142,11 @@ public class Pages extends TableImpl<PagesRecord> {
   @Override
   public Schema getSchema() {
     return aliased() ? null : ForumScrape.FORUM_SCRAPE;
+  }
+
+  @Override
+  public List<Index> getIndexes() {
+    return Arrays.asList(Indexes.PAGES_DOMAIN_STATUS);
   }
 
   @Override

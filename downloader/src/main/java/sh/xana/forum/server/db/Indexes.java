@@ -8,6 +8,7 @@ import org.jooq.OrderField;
 import org.jooq.impl.DSL;
 import org.jooq.impl.Internal;
 import sh.xana.forum.server.db.tables.Pageredirects;
+import sh.xana.forum.server.db.tables.Pages;
 
 /** A class modelling indexes of tables in forum-scrape. */
 @SuppressWarnings({"all", "unchecked", "rawtypes"})
@@ -17,6 +18,12 @@ public class Indexes {
   // INDEX definitions
   // -------------------------------------------------------------------------
 
+  public static final Index PAGES_DOMAIN_STATUS =
+      Internal.createIndex(
+          DSL.name("domain-status"),
+          Pages.PAGES,
+          new OrderField[] {Pages.PAGES.DLSTATUS, Pages.PAGES.DOMAIN},
+          false);
   public static final Index PAGEREDIRECTS_REDIRECTURL =
       Internal.createIndex(
           DSL.name("redirectUrl"),
