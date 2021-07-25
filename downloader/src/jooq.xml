@@ -9,7 +9,7 @@
 
   <generator>
     <database>
-      <name>org.jooq.meta.mariadb.MariaDBDatabase</name>
+      <name> org.jooq.meta.mysql.MySQLDatabase</name>
       <includes>.*</includes>
       <!-- Ignore UUID_TO_BIN utility functions -->
       <excludes>.*UUID.*</excludes>
@@ -18,7 +18,7 @@
         <forcedType>
           <userType>java.util.UUID</userType>
           <converter>sh.xana.forum.server.dbutil.UuidConverter</converter>
-          <includeExpression>.*[iI]d</includeExpression>
+          <includeTypes>BINARY\(16\)</includeTypes>
         </forcedType>
         <forcedType>
           <userType>java.net.URI</userType>

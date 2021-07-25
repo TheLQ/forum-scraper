@@ -20,7 +20,10 @@
 
   <logger name="org.jooq.tools.LoggerListener" level="info"/>
   <logger name="org.jooq.impl.DefaultBinding" level="info"/>
+  <!-- Log spam about available jackson/jaxb -->
   <logger name="org.jooq.tools.Convert" level="info"/>
+  <logger name="org.jooq.impl.Convert" level="info"/>
+  <!-- Obnoxious tips spam -->
   <logger name="org.jooq.Constants" level="warn"/>
 
   <logger name="com.amazonaws" level="info"/>

@@ -49,7 +49,7 @@ public class DatabaseStorage {
 
     // need to load this since at runtime using cp not modules, DriverManager isn't finding it
     try {
-      Class.forName("org.mariadb.jdbc.Driver");
+      // Class.forName("org.mariadb.jdbc.Driver");
     } catch (Exception e) {
       throw new RuntimeException("failed to load class", e);
     }
