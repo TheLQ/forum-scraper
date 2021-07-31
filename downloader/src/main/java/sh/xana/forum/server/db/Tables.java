@@ -3,6 +3,7 @@
  */
 package sh.xana.forum.server.db;
 
+import sh.xana.forum.server.db.tables.Dataset;
 import sh.xana.forum.server.db.tables.Filedata;
 import sh.xana.forum.server.db.tables.Forums;
 import sh.xana.forum.server.db.tables.Pageredirects;
@@ -14,6 +15,9 @@ import sh.xana.forum.server.db.tables.Topics;
 /** Convenience access to all tables in forum-scrape. */
 @SuppressWarnings({"all", "unchecked", "rawtypes"})
 public class Tables {
+
+  /** The table <code>forum-scrape.Dataset</code>. */
+  public static final Dataset DATASET = Dataset.DATASET;
 
   /** The table <code>forum-scrape.FileData</code>. */
   public static final Filedata FILEDATA = Filedata.FILEDATA;

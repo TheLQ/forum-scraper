@@ -8,11 +8,13 @@ import org.jooq.TableField;
 import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
 import org.jooq.impl.Internal;
+import sh.xana.forum.server.db.tables.Dataset;
 import sh.xana.forum.server.db.tables.Filedata;
 import sh.xana.forum.server.db.tables.Forums;
 import sh.xana.forum.server.db.tables.Pages;
 import sh.xana.forum.server.db.tables.Posts;
 import sh.xana.forum.server.db.tables.Sites;
+import sh.xana.forum.server.db.tables.records.DatasetRecord;
 import sh.xana.forum.server.db.tables.records.FiledataRecord;
 import sh.xana.forum.server.db.tables.records.ForumsRecord;
 import sh.xana.forum.server.db.tables.records.PagesRecord;
@@ -27,6 +29,12 @@ public class Keys {
   // UNIQUE and PRIMARY KEY definitions
   // -------------------------------------------------------------------------
 
+  public static final UniqueKey<DatasetRecord> KEY_DATASET_PRIMARY =
+      Internal.createUniqueKey(
+          Dataset.DATASET,
+          DSL.name("KEY_Dataset_PRIMARY"),
+          new TableField[] {Dataset.DATASET.PAGEID},
+          true);
   public static final UniqueKey<FiledataRecord> KEY_FILEDATA_PRIMARY =
       Internal.createUniqueKey(
           Filedata.FILEDATA,
