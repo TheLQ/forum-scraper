@@ -47,7 +47,7 @@ public class UuidConverter implements Converter<byte[], UUID> {
     return new UUID(firstLong, secondLong);
   }
 
-  private static byte[] uuidAsBytes(UUID uuid) {
+  public static byte[] uuidAsBytes(UUID uuid) {
     ByteBuffer bb = ByteBuffer.wrap(new byte[16]);
     bb.putLong(uuid.getMostSignificantBits());
     bb.putLong(uuid.getLeastSignificantBits());

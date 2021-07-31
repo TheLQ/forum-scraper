@@ -32,6 +32,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.ipc.ScraperDownload;
 import sh.xana.forum.server.ServerConfig;
+import sh.xana.forum.server.db.tables.Dataset;
+import sh.xana.forum.server.db.tables.records.DatasetRecord;
 import sh.xana.forum.server.db.tables.records.PageredirectsRecord;
 import sh.xana.forum.server.db.tables.records.PagesRecord;
 import sh.xana.forum.server.db.tables.records.SitesRecord;
@@ -67,7 +69,7 @@ public class DatabaseStorage {
         DSL.using(
             dataSource,
             SQLDialect.MARIADB,
-            new Settings().withThrowExceptions(ThrowExceptions.THROW_ALL));
+            new Settings().withThrowExceptions(ThrowExceptions.THROW_ALL).withFetchWarnings(false));
     log.info("Connected to database");
   }
 
@@ -255,6 +257,15 @@ public class DatabaseStorage {
 
   public record PageUrl(URI pageUrl, URI siteUrl, ForumType forumType) {}
 
+  public List<URI> getPageUrlsOnly(Condition... conditions) {
+    return context.select(PAGES.PAGEURL).from(PAGES).where(conditions).fetch(PAGES.PAGEURL);
+    // .map(record -> record.value1().toString());
+  }
+
+  public List<UUID> getPageIdsOnly(Condition... conditions) {
+    return context.select(PAGES.PAGEID).from(PAGES).where(conditions).fetch(PAGES.PAGEID);
+  }
+
   public List<PageUrl> getPageUrls(Condition... conditions) {
     var query =
         context
@@ -292,6 +303,10 @@ public class DatabaseStorage {
           "Expected 1 row, got " + pages.size() + " for pageId " + pageId + "\r\n" + pages);
     }
     return pages.get(0);
+  }
+
+  public List<PageredirectsRecord> getPageRedirects(Condition... conditions) {
+    return context.select().from(PAGEREDIRECTS).where(conditions).fetchInto(PAGEREDIRECTS);
   }
 
   /**
@@ -457,6 +472,18 @@ public class DatabaseStorage {
     Query query = context.delete(PAGES).where(PAGES.PAGEID.eq(pageId));
 
     executeOneRow(query);
+  }
+
+  public void insertDataset(List<DatasetRecord> records) {
+    context.batchInsert(records).execute();
+  }
+
+  public DatasetRecord getDataset(UUID pageId) {
+    return context
+        .select()
+        .from(Dataset.DATASET)
+        .where(Dataset.DATASET.PAGEID.eq(pageId))
+        .fetchOneInto(DatasetRecord.class);
   }
 
   // *******************************

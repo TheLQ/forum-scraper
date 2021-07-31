@@ -11,6 +11,8 @@ import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -99,5 +101,17 @@ public class Utils {
     } catch (Exception e) {
       throw new RuntimeException("Invalid uri " + uri);
     }
+  }
+
+  public static List<Thread> threadRunner(int numThreads, String namePrefix, Runnable runner) {
+    List<Thread> threads = new ArrayList<>();
+    for (int i = 0; i < numThreads; i++) {
+      Thread thread = new Thread(runner);
+      thread.setName(namePrefix + i);
+      thread.setDaemon(false);
+      thread.start();
+      threads.add(thread);
+    }
+    return threads;
   }
 }

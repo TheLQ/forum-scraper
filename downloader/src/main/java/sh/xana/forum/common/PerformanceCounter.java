@@ -10,7 +10,6 @@ public class PerformanceCounter {
   private final Logger log;
   private final int splitBy;
 
-
   public PerformanceCounter(Logger log, int splitBy) {
     this.log = log;
     this.splitBy = splitBy;
@@ -29,7 +28,7 @@ public class PerformanceCounter {
           processIndex,
           inputList.size(),
           processIndex / durationSec,
-          "%.2f".formatted(idx / (double)inputList.size() * 100),
+          "%.2f".formatted(idx / (double) inputList.size() * 100),
           outputList.size());
     }
     return idx;

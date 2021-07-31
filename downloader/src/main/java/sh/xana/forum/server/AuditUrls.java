@@ -12,7 +12,6 @@ import sh.xana.forum.server.db.tables.Sites;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
 import sh.xana.forum.server.dbutil.DatabaseStorage.PageUrl;
 import sh.xana.forum.server.dbutil.ForumType;
-import sh.xana.forum.server.parser.PageParser;
 
 public class AuditUrls {
   private static final Logger log = LoggerFactory.getLogger(AuditUrls.class);
@@ -56,13 +55,14 @@ public class AuditUrls {
   }
 
   private static void eval(PageUrl pageUrlEntry) {
-    try {
-      PageParser.validateUrl(
-          pageUrlEntry.pageUrl().toString(),
-          pageUrlEntry.siteUrl().toString(),
-          pageUrlEntry.forumType());
-    } catch (Exception e) {
-      log.error("FAIL " + e.getMessage());
-    }
+    throw new UnsupportedOperationException();
+    //    try {
+    //      validateUrl(
+    //          pageUrlEntry.pageUrl().toString(),
+    //          pageUrlEntry.siteUrl().toString(),
+    //          pageUrlEntry.forumType());
+    //    } catch (Exception e) {
+    //      log.error("FAIL " + e.getMessage());
+    //    }
   }
 }

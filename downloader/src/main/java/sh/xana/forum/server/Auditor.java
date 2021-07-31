@@ -1,4 +1,4 @@
-package sh.xana.forum.server.parser;
+package sh.xana.forum.server;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import java.io.IOException;
@@ -10,7 +10,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -18,10 +17,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sh.xana.forum.common.AuditorExecutor;
 import sh.xana.forum.common.Utils;
 import sh.xana.forum.common.ipc.ParserResult;
 import sh.xana.forum.common.ipc.ParserResult.ParserEntry;
-import sh.xana.forum.server.ServerConfig;
 import sh.xana.forum.server.db.tables.Pages;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
 import sh.xana.forum.server.dbutil.DatabaseStorage.ValidationRecord;
@@ -29,6 +28,9 @@ import sh.xana.forum.server.dbutil.DlStatus;
 import sh.xana.forum.server.dbutil.ForumType;
 import sh.xana.forum.server.dbutil.PageType;
 import sh.xana.forum.server.dbutil.ParserPage;
+import sh.xana.forum.server.parser.LoginRequiredException;
+import sh.xana.forum.server.parser.PageParser;
+import sh.xana.forum.server.parser.ParserException;
 
 /** Audits complete file cache */
 public class Auditor {
@@ -207,79 +209,23 @@ public class Auditor {
   private record QueueEntry(byte[] in, ParserPage pageId) {}
 
   public static void start_preopen(List<ParserPage> pages) throws InterruptedException {
-    BlockingQueue<QueueEntry> open = new ArrayBlockingQueue<>(5000);
-
-    long start = System.currentTimeMillis();
-    AtomicInteger counter = new AtomicInteger();
-    threadRunner(
-        Runtime.getRuntime().availableProcessors() * 16,
-        "processor-",
-        () -> {
-          log.info("STARTING THREAD");
-          while (true) {
-            int idx = counter.incrementAndGet();
-            if (idx % 1000 == 0) {
-              log.info(
-                  "{} of {} - open {} /sec {}",
-                  idx,
-                  pages.size(),
-                  open.size(),
-                  idx / ((System.currentTimeMillis() - start) / 1000));
-            }
-
-            QueueEntry take;
-            try {
-              take = open.take();
-            } catch (InterruptedException e) {
-              throw new RuntimeException("inter", e);
-            }
-            runParser(take.in(), take.pageId());
-          }
+    AuditorExecutor<ParserPage, QueueEntry> executor = new AuditorExecutor<>(log);
+    executor.run(
+        pages,
+        16,
+        (pageId) -> new QueueEntry(Files.readAllBytes(parser.getPagePath(pageId.pageId())), pageId),
+        Runtime.getRuntime().availableProcessors(),
+        (pageData) -> {
+          runParser(pageData.in(), pageData.pageId());
         });
-
-    AtomicInteger readCounter = new AtomicInteger();
-    threadRunner(
-        Runtime.getRuntime().availableProcessors() * 4,
-        "reader-",
-        () -> {
-          while (true) {
-            int idx = readCounter.getAndIncrement();
-            try {
-              ParserPage page = pages.get(idx);
-              if (idx % 100 == 0) {
-                //                log.info("read {} of {} - size {}", idx, pages.size(),
-                // open.size());
-              }
-
-              open.put(new QueueEntry(Files.readAllBytes(parser.getPagePath(page.pageId())), page));
-            } catch (Exception e) {
-              log.error("FAILED TO PUT", e);
-              System.exit(1);
-            }
-          }
-        });
-
-    while (readCounter.get() != pages.size()) {
-      TimeUnit.MINUTES.sleep(1);
-    }
-  }
-
-  public static List<Thread> threadRunner(int numThreads, String namePrefix, Runnable runner) {
-    List<Thread> threads = new ArrayList<>();
-    for (int i = 0; i < numThreads; i++) {
-      Thread thread = new Thread(runner);
-      thread.setName(namePrefix + i);
-      thread.setDaemon(false);
-      thread.start();
-      threads.add(thread);
-    }
-    return threads;
   }
 
   private static void runParser(byte[] data, ParserPage page) {
     try {
       ParserResult result = parser.parsePage(data, page);
-      postValidator(page.pageId(), result);
+      //      postValidator(page.pageId(), result);
+    } catch (LoginRequiredException e) {
+      // nothing
     } catch (ParserException e) {
       if (e.getCause() != null) {
         log.error("FAILED TO PARSE", e);
@@ -310,12 +256,12 @@ public class Auditor {
       }
     }
 
-    if (!errors.isEmpty()) {
-      log.error(
-          "Failed to parse page "
-              + pageId
-              + System.lineSeparator()
-              + StringUtils.join(errors, System.lineSeparator()));
-    }
+    //    if (!errors.isEmpty()) {
+    //      log.error(
+    //          "Failed to parse page "
+    //              + pageId
+    //              + System.lineSeparator()
+    //              + StringUtils.join(errors, System.lineSeparator()));
+    //    }
   }
 }
