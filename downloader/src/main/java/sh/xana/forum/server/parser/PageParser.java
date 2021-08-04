@@ -42,7 +42,10 @@ public class PageParser {
   public Path getPagePath(UUID pageId) {
     String pageIdStr = pageId.toString();
     return Path.of(
-        config.get(config.ARG_FILE_CACHE), "" + pageIdStr.charAt(0), pageIdStr + ".response");
+        config.get(config.ARG_FILE_CACHE),
+        "" + pageIdStr.charAt(0),
+        "" + pageIdStr.charAt(1),
+        pageIdStr + ".response");
   }
 
   public Path getPageHeaderPath(UUID pageId) {
@@ -96,7 +99,11 @@ public class PageParser {
       //      }
 
       SourcePage sourcePage =
-          new SourcePage(page.pageId(), rawHtml, parser.newDocument(rawHtml, siteUrl.toString()), page.pageUri());
+          new SourcePage(
+              page.pageId(),
+              rawHtml,
+              parser.newDocument(rawHtml, siteUrl.toString()),
+              page.pageUri());
 
       parser.preProcessing(sourcePage);
 
@@ -139,7 +146,6 @@ public class PageParser {
       }
 
       ParserResult result = new ParserResult(pageType, forumType, subpages);
-      //      parser.postProcessing(sourcePage, result);
 
       return result;
     } catch (ParserException e) {
@@ -163,5 +169,4 @@ public class PageParser {
       throw new ParserException("HTTP Error " + dlstatusCode, page.pageId());
     }
   }
-
 }

@@ -13,14 +13,13 @@ public class ValidatedUrl {
   public final String url;
 
   public ValidatedUrl(String url, AbstractForum parser, SourcePage page) {
-    validateUrl(url, page.doc().baseUri(), parser);
-    this.url = url;
+    this.url = validateUrl(url, page.doc().baseUri(), parser);
   }
 
-  public static void validateUrl(String pageUrl, String baseUrl, AbstractForum parser) {
+  public static String validateUrl(String pageUrl, String baseUrl, AbstractForum parser) {
     if (pageUrl.equals(baseUrl)) {
       // this is the root page, skip
-      return;
+      return pageUrl;
     }
     if (!pageUrl.startsWith(baseUrl)) {
       throw new RuntimeException("Page " + pageUrl + " does not start with base " + baseUrl);
@@ -55,12 +54,13 @@ public class ValidatedUrl {
     String subUrlFinal = subUrl;
     if (Arrays.stream(parser.validateUrl()).noneMatch(e -> e.matcher(subUrlFinal).matches())) {
       throw new RuntimeException(
-          "Failed to match "
+          "Failed to regex validate "
               + subUrl
               + " from "
               + pageUrl
               + " in "
               + parser.getClass().getCanonicalName());
     }
+    return pageUrl;
   }
 }
