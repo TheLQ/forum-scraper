@@ -9,6 +9,8 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sh.xana.forum.server.dbutil.ForumType;
 import sh.xana.forum.server.parser.AbstractForum;
 import sh.xana.forum.server.parser.ForumUtils;
@@ -16,6 +18,7 @@ import sh.xana.forum.server.parser.SourcePage;
 import sh.xana.forum.server.parser.ValidatedUrl;
 
 public class vBulletin_IB implements AbstractForum {
+  private static final Logger log = LoggerFactory.getLogger(vBulletin_IB.class);
 
   @Override
   public boolean detectLoginRequired(SourcePage sourcePage) {
@@ -30,6 +33,7 @@ public class vBulletin_IB implements AbstractForum {
   }
 
   private static final Pattern PATTERN_PAGES = Pattern.compile("Page [0-9]+ of ([0-9]+)");
+  private static final Pattern PATTERN_FORUM_NUM_THREADS = Pattern.compile("Showing threads [01] to ([0-9]+) of ([0-9]+)");
 
   @Override
   public @Nonnull Collection<ValidatedUrl> getPageLinks(SourcePage sourcePage) {
@@ -52,22 +56,29 @@ public class vBulletin_IB implements AbstractForum {
       // topic page with infinite scroll
       pageTotalNum = Integer.parseInt(navNextElements.get(0).text().trim());
     } else {
-      throw new RuntimeException("Cannot find any page nav");
+      Matcher matcher = PATTERN_FORUM_NUM_THREADS.matcher(sourcePage.rawHtml());
+      if (matcher.find() && matcher.group(1).equals(matcher.group(2))) {
+        // detect ForumList with no subpages, ignore
+        return List.of();
+      } else {
+        throw new RuntimeException("Cannot find any page nav");
+      }
     }
 
     List<ValidatedUrl> result = new ArrayList<>();
     String pageUri = sourcePage.pageUri().toString();
-//    if (sourcePage.pageUri().getQuery() != null) {
-//      for (int i = 1; i <= pageTotalNum; i++) {
-//        result.add(new ValidatedUrl(pageUri + "page" + pageSep + i + "/", this, sourcePage));
-//      }
-//    } else {
+    // For page 1 the page parameter is removed, so skip generating it
+    if (sourcePage.pageUri().getQuery() != null) {
+      for (int i = 2; i <= pageTotalNum; i++) {
+        result.add(new ValidatedUrl(pageUri + "&page=" + i, this, sourcePage));
+      }
+    } else {
       pageUri = getUrlWithoutPage(pageUri);
       String pageSep = pageUri.contains("/marketplace/") ? "-" : "";
-      for (int i = 1; i <= pageTotalNum; i++) {
+      for (int i = 2; i <= pageTotalNum; i++) {
         result.add(new ValidatedUrl(pageUri + "page" + pageSep + i + "/", this, sourcePage));
       }
-//    }
+    }
 
     return result;
   }
@@ -109,8 +120,14 @@ public class vBulletin_IB implements AbstractForum {
     return ForumUtils.elementToUrl(
         ForumUtils.findElementByIdPrefix(
             sourcePage.doc(),
-            (element, elements) -> elements.addAll(element.select("a")),
-            "thread_title_"),
+            (element, elements) -> {
+              // first link is forum, subsequent might be description links
+              elements.add(element.select("a").get(0));
+
+              // subforums
+              elements.addAll(element.select(".subforums a"));
+            },
+            "f"),
         this,
         sourcePage,
         new ArrayList<>());

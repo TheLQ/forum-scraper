@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.function.BiConsumer;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
@@ -79,7 +80,7 @@ public class ForumUtils {
                 return;
               }
               for (String prefix : prefixes) {
-                if (id.startsWith(prefix)) {
+                if (id.startsWith(prefix) && NumberUtils.isDigits(id.substring(prefix.length()))) {
                   processor.accept((Element) node, result);
                   return;
                 }
