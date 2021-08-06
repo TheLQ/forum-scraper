@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -46,13 +47,14 @@ public class Auditor {
     if (args.length == 0) {
       throw new RuntimeException("no args");
     } else if (args[0].equals("file")) {
-      if (args.length != 5) {
-        System.out.println("file <path> <baseUrl> <forumType> <pageType>");
-      }
       Path path = Path.of(args[1]);
 
       ParserPage page;
       if (Files.exists(path)) {
+        if (args.length != 5) {
+          System.out.println("file <path> <baseUrl> <forumType> <pageType>");
+          return;
+        }
         page =
             new ParserPage(
                 UUID.fromString("00000000-0000-0000-0000-000000000000"),
@@ -70,7 +72,12 @@ public class Auditor {
       }
 
       ParserResult result = parser.parsePage(Files.readAllBytes(path), page);
-      postValidator(page.pageId(), result);
+      List<String> errors = new ArrayList<>();
+      getErrors(page.pageId(), result, errors);
+      log.info("error size" + errors.size());
+      for (String error : errors) {
+        log.info("Error " + error);
+      }
       log.info(
           "result {}",
           Utils.jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(result));
@@ -130,12 +137,13 @@ public class Auditor {
       pages =
           dbStorage.getParserPages(
               false, // Pages.PAGES.EXCEPTION.isNull(), Pages.PAGES.DLSTATUS.eq(DlStatus.Done)
-              Pages.PAGES.DOMAIN.eq("www.rx8club.com"),
+              Pages.PAGES.DOMAIN.in("www.avsforum.com","www.b15sentra.net","www.b15u.com","www.clubwrx.net","www.iwsti.com","www.kboards.com","www.nissancubelife.com","www.nissanforums.com","www.subaruforester.org","www.subaruxvforum.com","www.wrxtuners.com"),
               Pages.PAGES.DLSTATUS.in(DlStatus.Parse, DlStatus.Done));
+      log.info("writing " + pages.size() + " rows to " + auditorCache);
       Utils.jsonMapper.writeValue(auditorCache.toFile(), pages);
-      log.info("query end for " + pages.size());
     }
 
+    log.info("start");
     switch (args[0]) {
       case "simple" -> start_simple(pages);
       case "pre" -> start_preopen(pages);
@@ -156,7 +164,7 @@ public class Auditor {
               try {
                 byte[] data = Files.readAllBytes(parser.getPagePath(page.pageId()));
                 ParserResult result = parser.parsePage(data, page);
-                postValidator(page.pageId(), result);
+                getErrors(page.pageId(), result, new ArrayList<>());
               } catch (Exception e) {
                 log.error("FAIL ON " + page, e);
                 System.exit(1);
@@ -200,7 +208,7 @@ public class Auditor {
                 }
 
                 byte[] data = Files.readAllBytes(parser.getPagePath(page.pageId()));
-                runParser(data, page);
+                runParser(data, page, new ArrayList<>());
                 return null;
               });
     }
@@ -208,22 +216,27 @@ public class Auditor {
 
   private record QueueEntry(byte[] in, ParserPage pageId) {}
 
-  public static void start_preopen(List<ParserPage> pages) throws InterruptedException {
+  public static void start_preopen(List<ParserPage> pages)
+      throws InterruptedException, IOException {
+    ConcurrentSkipListSet<String> errors = new ConcurrentSkipListSet<>();
+
     AuditorExecutor<ParserPage, QueueEntry> executor = new AuditorExecutor<>(log);
     executor.run(
         pages,
         16,
         (pageId) -> new QueueEntry(Files.readAllBytes(parser.getPagePath(pageId.pageId())), pageId),
-        Runtime.getRuntime().availableProcessors(),
+        Runtime.getRuntime().availableProcessors() * 2,
         (pageData) -> {
-          runParser(pageData.in(), pageData.pageId());
+          runParser(pageData.in(), pageData.pageId(), errors);
         });
+    log.info("writing {} auditor errors", errors.size());
+    Files.write(Path.of("auditor-errors.log"), errors);
   }
 
-  private static void runParser(byte[] data, ParserPage page) {
+  private static List<String> runParser(byte[] data, ParserPage page, Collection<String> errors) {
     try {
       ParserResult result = parser.parsePage(data, page);
-      //      postValidator(page.pageId(), result);
+      getErrors(page.pageId(), result, errors);
     } catch (LoginRequiredException e) {
       // nothing
     } catch (ParserException e) {
@@ -235,15 +248,13 @@ public class Auditor {
     } catch (Exception e) {
       log.error("FAILED TO PARSE", e);
     }
+    return List.of();
   }
 
-  private static void postValidator(UUID pageId, ParserResult result) {
-    //    List<PagesRecord> pages = dbStorage.getPages(Pages.PAGES.SOURCEPAGEID.eq(pageId));
+  private static void getErrors(UUID pageId, ParserResult result, Collection<String> errors) {
     List<ValidationRecord> pages =
         dbStorage.getPageByUrl(
             result.subpages().stream().map(ParserEntry::url).collect(Collectors.toList()));
-
-    List<String> errors = new ArrayList<>();
     for (ValidationRecord page : pages) {
       if (result.subpages().stream()
           .noneMatch(parserEntry -> parserEntry.url().equals(page.url().toString()))) {
@@ -255,13 +266,5 @@ public class Auditor {
         errors.add("db missing url " + subpage.url());
       }
     }
-
-    //    if (!errors.isEmpty()) {
-    //      log.error(
-    //          "Failed to parse page "
-    //              + pageId
-    //              + System.lineSeparator()
-    //              + StringUtils.join(errors, System.lineSeparator()));
-    //    }
   }
 }

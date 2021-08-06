@@ -33,7 +33,8 @@ public class vBulletin_IB implements AbstractForum {
   }
 
   private static final Pattern PATTERN_PAGES = Pattern.compile("Page [0-9]+ of ([0-9]+)");
-  private static final Pattern PATTERN_FORUM_NUM_THREADS = Pattern.compile("Showing threads [01] to ([0-9]+) of ([0-9]+)");
+  private static final Pattern PATTERN_FORUM_NUM_THREADS =
+      Pattern.compile("Showing threads [01] to ([0-9]+) of ([0-9]+)");
 
   @Override
   public @Nonnull Collection<ValidatedUrl> getPageLinks(SourcePage sourcePage) {
