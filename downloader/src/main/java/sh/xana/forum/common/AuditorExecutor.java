@@ -52,7 +52,7 @@ public class AuditorExecutor<Input, Output> {
             outputThreadsNum,
             "processor-",
             () -> {
-              while (allThreadsNotStopped(inputThreads)) {
+              while (anyThreadAlive(inputThreads)) {
                 try {
                   Output entry = outputQueue.poll(10, TimeUnit.SECONDS);
                   if (entry == null) {
@@ -71,7 +71,7 @@ public class AuditorExecutor<Input, Output> {
     List<Thread> allThreads = new ArrayList<>();
     allThreads.addAll(inputThreads);
     allThreads.addAll(outputThreads);
-    while (allThreadsNotStopped(allThreads)) {
+    while (anyThreadAlive(allThreads)) {
       TimeUnit.SECONDS.sleep(10);
     }
   }
@@ -84,7 +84,7 @@ public class AuditorExecutor<Input, Output> {
     void run(Output out) throws Exception;
   }
 
-  private static boolean allThreadsNotStopped(List<Thread> threads) {
+  private static boolean anyThreadAlive(List<Thread> threads) {
     for (Thread thread : threads) {
       if (thread.isAlive()) {
         return true;

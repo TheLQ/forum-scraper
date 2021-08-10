@@ -44,6 +44,11 @@ public class ForumUtils {
   }
 
   public static Collection<ValidatedUrl> elementToUrl(
+      Collection<Element> elements, AbstractForum parser, SourcePage sourcePage) {
+    return elementToUrl(elements, parser, sourcePage, new ArrayList<>());
+  }
+
+  public static Collection<ValidatedUrl> elementToUrl(
       Collection<Element> elements,
       AbstractForum parser,
       SourcePage sourcePage,

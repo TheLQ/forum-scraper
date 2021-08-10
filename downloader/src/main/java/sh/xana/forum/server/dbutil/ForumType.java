@@ -7,5 +7,6 @@ public enum ForumType {
   vBulletin_IB,
   phpBB,
   XenForo,
+  XenForo_F,
   SMF,
 }

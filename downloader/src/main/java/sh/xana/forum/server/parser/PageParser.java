@@ -16,6 +16,7 @@ import sh.xana.forum.server.ServerConfig;
 import sh.xana.forum.server.dbutil.ForumType;
 import sh.xana.forum.server.dbutil.PageType;
 import sh.xana.forum.server.dbutil.ParserPage;
+import sh.xana.forum.server.parser.impl.XenForo_F;
 import sh.xana.forum.server.parser.impl.vBulletin_IB;
 
 public class PageParser {
@@ -24,13 +25,11 @@ public class PageParser {
       Map.of(
           //          ForumType.vBulletin,
           //          new vBulletin(),
-          ForumType.vBulletin_IB, new vBulletin_IB()
-          //          ForumType.XenForo,
-          //          new XenForo(),
+          ForumType.vBulletin_IB, new vBulletin_IB(), ForumType.XenForo_F, new XenForo_F()
           //          ForumType.SMF,
           //          new SMF(),
-          //          ForumType.ForkBoard,
-          //          new ForkBoard()
+          //                    ForumType.ForkBoard,
+          //                    new ForkBoard()
           );
 
   private final ServerConfig config;
@@ -73,6 +72,9 @@ public class PageParser {
 
       // make sure selected parser can handle this but nothing else can
       AbstractForum parser = PARSERS.get(forumType);
+      if (parser == null) {
+        throw new NullPointerException("Cannot find parser for " + forumType);
+      }
       //      if (parser.detectForumType(rawHtml) == null) {
       //        earlyThrowIfHttpError(page);
       //        throw new ParserException("No parsers handled this file", pageId);
