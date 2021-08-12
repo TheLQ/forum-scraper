@@ -16,6 +16,7 @@ import sh.xana.forum.server.ServerConfig;
 import sh.xana.forum.server.dbutil.ForumType;
 import sh.xana.forum.server.dbutil.PageType;
 import sh.xana.forum.server.dbutil.ParserPage;
+import sh.xana.forum.server.parser.impl.ForkBoard;
 import sh.xana.forum.server.parser.impl.XenForo_F;
 import sh.xana.forum.server.parser.impl.vBulletin_IB;
 
@@ -25,11 +26,14 @@ public class PageParser {
       Map.of(
           //          ForumType.vBulletin,
           //          new vBulletin(),
-          ForumType.vBulletin_IB, new vBulletin_IB(), ForumType.XenForo_F, new XenForo_F()
+          ForumType.vBulletin_IB,
+          new vBulletin_IB(),
+          ForumType.XenForo_F,
+          new XenForo_F(),
+          ForumType.ForkBoard,
+          new ForkBoard()
           //          ForumType.SMF,
           //          new SMF(),
-          //                    ForumType.ForkBoard,
-          //                    new ForkBoard()
           );
 
   private final ServerConfig config;
