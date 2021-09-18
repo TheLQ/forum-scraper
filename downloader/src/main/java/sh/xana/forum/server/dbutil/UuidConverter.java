@@ -3,6 +3,7 @@ package sh.xana.forum.server.dbutil;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.UUID;
+import org.jetbrains.annotations.NotNull;
 import org.jooq.Converter;
 
 /**
@@ -32,12 +33,12 @@ public class UuidConverter implements Converter<byte[], UUID> {
   }
 
   @Override
-  public Class<byte[]> fromType() {
+  public @NotNull Class<byte[]> fromType() {
     return byte[].class;
   }
 
   @Override
-  public Class<UUID> toType() {
+  public @NotNull Class<UUID> toType() {
     return UUID.class;
   }
 

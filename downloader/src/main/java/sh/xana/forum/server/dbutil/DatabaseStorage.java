@@ -358,6 +358,8 @@ public class DatabaseStorage {
           while (root.getCause() != null) {
             root = root.getCause();
           }
+
+          //noinspection StatementWithEmptyBody
           if (root.getMessage().startsWith("Duplicate entry")
               && root.getMessage().endsWith("for key 'url'")) {
             // silently ignore...

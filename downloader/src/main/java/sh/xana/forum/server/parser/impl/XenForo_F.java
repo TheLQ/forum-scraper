@@ -2,6 +2,7 @@ package sh.xana.forum.server.parser.impl;
 
 import java.util.Collection;
 import java.util.regex.Pattern;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -50,24 +51,24 @@ public class XenForo_F implements AbstractForum {
   }
 
   @Override
-  public Collection<ValidatedUrl> getPageLinks(SourcePage sourcePage) {
+  public @NotNull Collection<ValidatedUrl> getPageLinks(SourcePage sourcePage) {
     return ForumUtils.elementToUrl(
         sourcePage.doc().select("a[qid=\"page-nav-other-page\"]"), this, sourcePage);
   }
 
   @Override
-  public Collection<Element> getPostElements(SourcePage sourcePage) {
+  public @NotNull Collection<Element> getPostElements(SourcePage sourcePage) {
     return sourcePage.doc().select("article[qid=\"post-text\"]");
   }
 
   @Override
-  public Collection<ValidatedUrl> getSubforumAnchors(SourcePage sourcePage) {
+  public @NotNull Collection<ValidatedUrl> getSubforumAnchors(SourcePage sourcePage) {
     return ForumUtils.elementToUrl(
         sourcePage.doc().select("a[qid=\"forum-item-title\"]"), this, sourcePage);
   }
 
   @Override
-  public Collection<ValidatedUrl> getTopicAnchors(SourcePage sourcePage) {
+  public @NotNull Collection<ValidatedUrl> getTopicAnchors(SourcePage sourcePage) {
     return ForumUtils.elementToUrl(
         sourcePage.doc().select("a[qid=\"thread-item-title\"]"), this, sourcePage);
   }

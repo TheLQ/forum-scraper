@@ -61,29 +61,22 @@ public class WebServer extends NanoHTTPD {
       if (page.startsWith(PAGE_FILE)) {
         return pageFile(session);
       }
-      switch (page) {
-        case "/":
-          return newFixedLengthResponse("Started " + start + " currently " + new Date());
-        case PAGE_SITE_ADD:
-          return newFixedLengthResponse(pageAddSite(session));
-        case PAGE_OVERVIEW:
-          return newFixedLengthResponse(pageOverview());
-        case PAGE_OVERVIEW_PAGE:
-          return newFixedLengthResponse(pageOverviewPage(session));
-        case PAGE_OVERVIEW_ERRORS:
-          return newFixedLengthResponse(pageOverviewErrors());
-        case PAGE_OVERVIEW_ERRORS_CLEAR:
-          return newFixedLengthResponse(pageOverviewErrorsClear(session));
-        case PAGE_OVERVIEW_ERRORS_CLEARALL:
-          return newFixedLengthResponse(pageOverviewErrorsClearAll(session));
-        case "/favicon.ico":
-          // Stop "java.net.SocketException: An established connection was aborted by the software
-          // in your host machine"
-          return newFixedLengthResponse(Response.Status.NOT_FOUND, "image/x-icon", null);
-        default:
-          return newFixedLengthResponse(
-              Response.Status.NOT_FOUND, NanoHTTPD.MIME_PLAINTEXT, "Not Found");
-      }
+      return switch (page) {
+        case "/" -> newFixedLengthResponse("Started " + start + " currently " + new Date());
+        case PAGE_SITE_ADD -> newFixedLengthResponse(pageAddSite(session));
+        case PAGE_OVERVIEW -> newFixedLengthResponse(pageOverview());
+        case PAGE_OVERVIEW_PAGE -> newFixedLengthResponse(pageOverviewPage(session));
+        case PAGE_OVERVIEW_ERRORS -> newFixedLengthResponse(pageOverviewErrors());
+        case PAGE_OVERVIEW_ERRORS_CLEAR -> newFixedLengthResponse(pageOverviewErrorsClear(session));
+        case PAGE_OVERVIEW_ERRORS_CLEARALL -> newFixedLengthResponse(
+            pageOverviewErrorsClearAll(session));
+        case "/favicon.ico" ->
+        // Stop "java.net.SocketException: An established connection was aborted by the software
+        // in your host machine"
+        newFixedLengthResponse(Response.Status.NOT_FOUND, "image/x-icon", null);
+        default -> newFixedLengthResponse(
+            Response.Status.NOT_FOUND, NanoHTTPD.MIME_PLAINTEXT, "Not Found");
+      };
     } catch (Exception e) {
       log.error("Caught exception while processing page {}", session.getUri(), e);
       return newFixedLengthResponse(
@@ -223,7 +216,7 @@ public class WebServer extends NanoHTTPD {
     return result.toString();
   }
 
-  private String pageOverviewErrorsClear_util(UUID pageId) throws InterruptedException {
+  private String pageOverviewErrorsClear_util(UUID pageId) {
     dbStorage.setPageExceptionNull(pageId);
 
     PagesRecord page = dbStorage.getPage(pageId);

@@ -1,6 +1,7 @@
 package sh.xana.forum.server.dbutil;
 
 import java.net.URI;
+import org.jetbrains.annotations.NotNull;
 import org.jooq.Converter;
 import sh.xana.forum.common.Utils;
 
@@ -17,12 +18,12 @@ public class UriConverter implements Converter<String, URI> {
   }
 
   @Override
-  public Class<String> fromType() {
+  public @NotNull Class<String> fromType() {
     return String.class;
   }
 
   @Override
-  public Class<URI> toType() {
+  public @NotNull Class<URI> toType() {
     return URI.class;
   }
 }

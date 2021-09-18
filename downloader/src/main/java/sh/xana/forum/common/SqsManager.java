@@ -164,10 +164,6 @@ public class SqsManager {
   }
 
   private <T> List<RecieveRequest<T>> receive(URI queueUrl, Class<T> clazz) {
-    return _receive(queueUrl, clazz, 0);
-  }
-
-  private <T> List<RecieveRequest<T>> _receive(URI queueUrl, Class<T> clazz, int index) {
     try {
       Exception receiveException = null;
       ReceiveMessageResult receiveMessageResult = null;
@@ -189,7 +185,7 @@ public class SqsManager {
                 "S3 failure for queue "
                     + queueUrl
                     + ", retry "
-                    + index
+                    + i
                     + " - "
                     + e.getMessage()
                     + " - "
@@ -206,7 +202,7 @@ public class SqsManager {
       List<RecieveRequest<T>> result = new ArrayList<>();
       for (Message message : receiveMessageResult.getMessages()) {
         result.add(
-            new RecieveRequest<T>(message, Utils.jsonMapper.readValue(message.getBody(), clazz)));
+            new RecieveRequest<>(message, Utils.jsonMapper.readValue(message.getBody(), clazz)));
       }
       return result;
     } catch (Exception e) {

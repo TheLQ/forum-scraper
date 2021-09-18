@@ -76,11 +76,11 @@ public class AuditorExecutor<Input, Output> {
     }
   }
 
-  public static interface InputFunction<Input, Output> {
+  public interface InputFunction<Input, Output> {
     Output run(Input in) throws Exception;
   }
 
-  public static interface OutputFunction<Output> {
+  public interface OutputFunction<Output> {
     void run(Output out) throws Exception;
   }
 

@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.function.BiConsumer;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
@@ -78,7 +79,7 @@ public class ForumUtils {
     NodeTraversor.traverse(
         new NodeVisitor() {
           @Override
-          public void head(Node node, int depth) {
+          public void head(@NotNull Node node, int depth) {
             if (node instanceof Element) {
               String id = node.attr("id");
               if (id.equals("")) {
@@ -94,7 +95,7 @@ public class ForumUtils {
           }
 
           @Override
-          public void tail(Node node, int depth) {}
+          public void tail(@NotNull Node node, int depth) {}
         },
         doc);
     return result;

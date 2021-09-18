@@ -28,7 +28,6 @@ import sh.xana.forum.common.ipc.ParserResult.ParserEntry;
 import sh.xana.forum.common.ipc.ScraperDownload;
 import sh.xana.forum.common.ipc.ScraperUpload;
 import sh.xana.forum.server.db.tables.records.PageredirectsRecord;
-import sh.xana.forum.server.db.tables.records.PagesRecord;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
 import sh.xana.forum.server.dbutil.DatabaseStorage.OverviewEntry;
 import sh.xana.forum.server.dbutil.DlStatus;
@@ -110,16 +109,15 @@ public class PageManager implements Closeable {
   }
 
   public void _processUploads(List<RecieveRequest<ScraperUpload>> recieveRequests)
-      throws IOException, InterruptedException {
+      throws IOException {
     List<PageredirectsRecord> sqlNewRedirects = new ArrayList<>();
     for (RecieveRequest<ScraperUpload> successMessage : recieveRequests) {
       ScraperUpload success = successMessage.obj();
       log.debug("Writing " + success.pageId().toString() + " response and header");
+
+      // pageId could potentially be old. Make sure it's still current to avoid writing trash
       try {
-        PagesRecord page = dbStorage.getPage(success.pageId());
-        if (page.getPageurl().equals("asdf")) {
-          throw new RuntimeException("que?");
-        }
+        dbStorage.getPage(success.pageId());
       } catch (Exception e) {
         log.error(
             "Failed to get page "
@@ -310,8 +308,6 @@ public class PageManager implements Closeable {
       try {
         if (first) {
           createDownloadQueues();
-          // fill so downloaders work while we process the upload queue
-          refillDownloadQueues();
           first = false;
         }
         result = refillDownloadQueues();
@@ -337,7 +333,7 @@ public class PageManager implements Closeable {
     for (OverviewEntry overviewEntry : dbStorage.getOverviewSites()) {
       String domain = dbStorage.siteCache.recordById(overviewEntry.siteId()).getDomain();
       String queueNameSafe = SqsManager.getQueueNameSafe(domain);
-      Integer parseCount = overviewToParse.get(domain);
+      Integer parseCount = overviewToParse.get(overviewEntry.siteId());
       if (overviewEntry.dlStatusCount().get(DlStatus.Queued) == null
           && overviewEntry.dlStatusCount().get(DlStatus.Download) == null
           && (parseCount == null || parseCount == 0)) {
@@ -408,7 +404,7 @@ public class PageManager implements Closeable {
   }
 
   @Override
-  public void close() throws IOException {
+  public void close() {
     log.info("close called, stopping thread");
     for (Thread workerThread : workerThreads) {
       closeThread(workerThread);

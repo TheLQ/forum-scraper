@@ -1,7 +1,6 @@
 package sh.xana.forum.server;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
@@ -37,7 +36,7 @@ public class RuntimeDebugThread implements Closeable {
         for (var thread : ThreadUtils.getAllThreads()) {
           sb.append("Thread ").append(thread.getName()).append(System.lineSeparator());
         }
-        System.err.println(sb.toString());
+        System.err.println(sb);
 
         // wait 5 minutes
         for (int i = 0; i < 5 * 2; i++) {
@@ -55,7 +54,7 @@ public class RuntimeDebugThread implements Closeable {
   }
 
   @Override
-  public void close() throws IOException {
+  public void close() {
     log.info("close called, stopping thread");
     if (thread.isAlive()) {
       thread.interrupt();

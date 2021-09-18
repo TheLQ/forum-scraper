@@ -250,9 +250,7 @@ public class Auditor {
         16,
         (pageId) -> new QueueEntry(Files.readAllBytes(parser.getPagePath(pageId.pageId())), pageId),
         Runtime.getRuntime().availableProcessors() * 2,
-        (pageData) -> {
-          runParser(pageData.in(), pageData.pageId(), errors);
-        });
+        (pageData) -> runParser(pageData.in(), pageData.pageId(), errors));
     log.info("writing {} auditor errors", errors.size());
     Files.write(Path.of("auditor-errors.log"), errors);
   }

@@ -16,7 +16,7 @@ public class ClientMain implements Closeable {
   private static final Logger log = LoggerFactory.getLogger(ClientMain.class);
   private final List<Scraper> scrapers = new ArrayList<>();
   private final String HOSTNAME = System.getenv("HOSTNAME");
-  private String PUBLIC_ADDRESS = null;
+  private final String PUBLIC_ADDRESS;
 
   public static void main(String[] args) throws URISyntaxException, IOException {
     new ClientMain();
