@@ -1,5 +1,6 @@
 package sh.xana.forum.client;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -17,10 +18,11 @@ import sh.xana.forum.common.Utils;
 public class AwsClientManager {
   private static final Logger log = LoggerFactory.getLogger(AwsClientManager.class);
   private final Thread thread;
-
   private String metadataToken;
+  private final Closeable main;
 
-  public AwsClientManager() {
+  public AwsClientManager(Closeable main) {
+    this.main = main;
     thread = new Thread(this::awsThread);
     thread.setName("AwsManager");
   }
@@ -74,7 +76,7 @@ public class AwsClientManager {
         break;
       case 200:
         log.warn("AWS Requesting shutdown " + response);
-        ClientMain.close();
+        main.close();
         return false;
       default:
         throw new RuntimeException(

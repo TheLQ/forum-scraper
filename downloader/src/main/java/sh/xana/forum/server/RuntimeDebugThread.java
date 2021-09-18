@@ -2,6 +2,8 @@ package sh.xana.forum.server;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Locale;
@@ -12,10 +14,12 @@ import org.slf4j.LoggerFactory;
 
 public class RuntimeDebugThread implements Closeable {
   private static final Logger log = LoggerFactory.getLogger(RuntimeDebugThread.class);
-
+  private static final Path PATH_DEATH_TRIGGER = Path.of("death.tmp");
+  private final Closeable main;
   private final Thread thread;
 
-  public RuntimeDebugThread() {
+  public RuntimeDebugThread(Closeable main) {
+    this.main = main;
     thread = new Thread(this::stateThread);
     thread.setName("RuntimeDebugThread");
   }
@@ -34,7 +38,16 @@ public class RuntimeDebugThread implements Closeable {
           sb.append("Thread ").append(thread.getName()).append(System.lineSeparator());
         }
         System.err.println(sb.toString());
-        TimeUnit.MINUTES.sleep(5);
+
+        // wait 5 minutes
+        for (int i = 0; i < 5 * 2; i++) {
+          TimeUnit.SECONDS.sleep(30);
+          if (Files.exists(PATH_DEATH_TRIGGER)) {
+            Files.delete(PATH_DEATH_TRIGGER);
+            main.close();
+            return;
+          }
+        }
       } catch (Exception e) {
         log.error("STATE THREAD CRASH", e);
       }

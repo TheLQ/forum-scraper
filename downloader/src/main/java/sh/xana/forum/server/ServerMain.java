@@ -1,5 +1,6 @@
 package sh.xana.forum.server;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -10,16 +11,20 @@ import sh.xana.forum.client.ClientMain;
 import sh.xana.forum.common.SqsManager;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
 
-public class ServerMain {
+public class ServerMain implements Closeable {
   private static final Logger log = LoggerFactory.getLogger(ClientMain.class);
 
-  private static PageManager pageManager;
-  private static RuntimeDebugThread debugThread;
+  private final PageManager pageManager;
+  private final RuntimeDebugThread debugThread;
 
   public static void main(String[] args) throws Exception {
     SLF4JBridgeHandler.removeHandlersForRootLogger();
     SLF4JBridgeHandler.install();
 
+    new ServerMain();
+  }
+
+  private ServerMain() throws IOException {
     boolean debugMode = false; // System.getProperty(CommonConfig.PROPERTY_LOGBACK_TYPE) == null;
     if (debugMode) {
       log.warn("DEBUG MODE, not starting processor");
@@ -63,7 +68,7 @@ public class ServerMain {
     WebServer server = new WebServer(dbStorage, pageManager, nodeManager, config);
     server.start();
 
-    debugThread = new RuntimeDebugThread();
+    debugThread = new RuntimeDebugThread(this);
     if (!debugMode) {
       pageManager.startThreads();
       debugThread.start();
@@ -71,7 +76,7 @@ public class ServerMain {
     }
   }
 
-  public static void close() throws InterruptedException, IOException {
+  public void close() throws IOException {
     log.error("CLOSING");
     pageManager.close();
     debugThread.close();
