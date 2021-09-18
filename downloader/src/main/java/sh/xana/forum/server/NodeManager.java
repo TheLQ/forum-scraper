@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.Utils;
 
 public class NodeManager {
-  public static final Logger log = LoggerFactory.getLogger(NodeManager.class);
+  private static final Logger log = LoggerFactory.getLogger(NodeManager.class);
   private final List<NodeInfo> nodes = new ArrayList<>();
 
   public UUID registerNode(String ip, String hostname) {

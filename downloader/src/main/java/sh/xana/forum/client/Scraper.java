@@ -29,7 +29,7 @@ import sh.xana.forum.common.ipc.ScraperUpload;
  * <p>When buffer is below Y, refill so download queue can keep going
  */
 public class Scraper implements Closeable {
-  public static final Logger log = LoggerFactory.getLogger(Scraper.class);
+  private static final Logger log = LoggerFactory.getLogger(Scraper.class);
 
   private static final int CYCLE_SECONDS = 2;
   private static int INSTANCE_COUNTER = 0;

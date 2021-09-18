@@ -7,7 +7,7 @@ import sh.xana.forum.client.ClientMain;
 import sh.xana.forum.server.ServerMain;
 
 public class JPackageMain {
-  public static final Logger log = LoggerFactory.getLogger(JPackageMain.class);
+  private static final Logger log = LoggerFactory.getLogger(JPackageMain.class);
 
   public static void main(String[] args) throws Exception {
     if (args.length == 0) {

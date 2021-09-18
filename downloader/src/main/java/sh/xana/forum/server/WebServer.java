@@ -21,7 +21,7 @@ import sh.xana.forum.server.dbutil.ForumType;
 import sh.xana.forum.server.dbutil.PageType;
 
 public class WebServer extends NanoHTTPD {
-  public static final Logger log = LoggerFactory.getLogger(WebServer.class);
+  private static final Logger log = LoggerFactory.getLogger(WebServer.class);
   private static final Date start = new Date();
   public static final int PORT = 8080;
   private static final String MIME_BLOB = "application/octet-stream";

@@ -23,7 +23,7 @@ import sh.xana.forum.server.WebServer;
 public class Utils {
   private Utils() {}
 
-  public static final Logger log = LoggerFactory.getLogger(Utils.class);
+  private static final Logger log = LoggerFactory.getLogger(Utils.class);
   public static final HttpClient httpClient =
       HttpClient.newBuilder().followRedirects(Redirect.ALWAYS).build();
   public static final ObjectMapper jsonMapper = new ObjectMapper();
