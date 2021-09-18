@@ -149,7 +149,8 @@ public class DatabaseStorage {
                         e.value5(),
                         e.value6(),
                         e.value7()));
-    log.trace("Ran getParserPages in " + timer + System.lineSeparator() + query);
+    log.trace(
+        "getParserPages fetched " + res.size() + " in " + timer + System.lineSeparator() + query);
     return res;
   }
 

@@ -140,25 +140,28 @@ public class Auditor {
               false,
               // Pages.PAGES.EXCEPTION.isNull(),
               // Pages.PAGES.DLSTATUS.eq(DlStatus.Done)
-              Pages.PAGES.SITEID.in(dbStorage.siteCache.mapByDomains(List.of(
-                  "www.avsforum.com",
-                  "www.b15sentra.net",
-                  "www.b15u.com",
-                  "www.clubwrx.net",
-                  "www.iwsti.com",
-                  "www.kboards.com",
-                  "www.nissancubelife.com",
-                  "www.nissanforums.com",
-                  "www.subaruforester.org",
-                  "www.subaruxvforum.com",
-                  "www.wrxtuners.com"
-                  //
-                  // "www.corvetteforum.com"
-                  // "www.rx7club.com",
-                  // "www.rx8club.com"
-                  //
-                  // "www.sr20-forum.com"
-              ), SitesRecord::getSiteid)),
+              Pages.PAGES.SITEID.in(
+                  dbStorage.siteCache.mapByDomains(
+                      List.of(
+                          "www.avsforum.com",
+                          "www.b15sentra.net",
+                          "www.b15u.com",
+                          "www.clubwrx.net",
+                          "www.iwsti.com",
+                          "www.kboards.com",
+                          "www.nissancubelife.com",
+                          "www.nissanforums.com",
+                          "www.subaruforester.org",
+                          "www.subaruxvforum.com",
+                          "www.wrxtuners.com"
+                          //
+                          // "www.corvetteforum.com"
+                          // "www.rx7club.com",
+                          // "www.rx8club.com"
+                          //
+                          // "www.sr20-forum.com"
+                          ),
+                      SitesRecord::getSiteid)),
               Pages.PAGES.DLSTATUS.in(DlStatus.Parse, DlStatus.Done));
       log.info("writing " + pages.size() + " rows to " + auditorCache);
       Utils.jsonMapper.writeValue(auditorCache.toFile(), pages);
