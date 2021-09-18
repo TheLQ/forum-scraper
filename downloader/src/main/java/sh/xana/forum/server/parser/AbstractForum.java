@@ -2,8 +2,8 @@ package sh.xana.forum.server.parser;
 
 import java.util.Collection;
 import java.util.regex.Pattern;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -22,16 +22,16 @@ public interface AbstractForum {
 
   boolean detectLoginRequired(SourcePage sourcePage);
 
-  @Nonnull
+  @NotNull
   Collection<ValidatedUrl> getPageLinks(SourcePage sourcePage);
 
-  @Nonnull
+  @NotNull
   Collection<Element> getPostElements(SourcePage sourcePage);
 
-  @Nonnull
+  @NotNull
   Collection<ValidatedUrl> getSubforumAnchors(SourcePage sourcePage);
 
-  @Nonnull
+  @NotNull
   Collection<ValidatedUrl> getTopicAnchors(SourcePage sourcePage);
 
   default PageType postForcePageType(SourcePage sourcePage, PageType currentType) {

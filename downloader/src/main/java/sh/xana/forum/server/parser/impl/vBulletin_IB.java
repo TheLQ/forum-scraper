@@ -5,8 +5,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
@@ -37,7 +37,7 @@ public class vBulletin_IB implements AbstractForum {
       Pattern.compile("Showing threads [01] to ([0-9]+) of ([0-9]+)");
 
   @Override
-  public @Nonnull Collection<ValidatedUrl> getPageLinks(SourcePage sourcePage) {
+  public @NotNull Collection<ValidatedUrl> getPageLinks(SourcePage sourcePage) {
     if (sourcePage.pageUri().toString().equals(sourcePage.doc().baseUri())) {
       // homepage, ignore
       return List.of();
@@ -102,7 +102,7 @@ public class vBulletin_IB implements AbstractForum {
   }
 
   @Override
-  public @Nonnull Collection<Element> getPostElements(SourcePage sourcePage) {
+  public @NotNull Collection<Element> getPostElements(SourcePage sourcePage) {
     Matcher matcher =
         Pattern.compile("id=\"(?<id>(td_post|post_message)_[0-9]+)\"")
             .matcher(sourcePage.rawHtml());
@@ -117,7 +117,7 @@ public class vBulletin_IB implements AbstractForum {
   }
 
   @Override
-  public @Nonnull Collection<ValidatedUrl> getSubforumAnchors(SourcePage sourcePage) {
+  public @NotNull Collection<ValidatedUrl> getSubforumAnchors(SourcePage sourcePage) {
     return ForumUtils.elementToUrl(
         ForumUtils.findElementByIdPrefix(
             sourcePage.doc(),
@@ -135,7 +135,7 @@ public class vBulletin_IB implements AbstractForum {
   }
 
   @Override
-  public @Nonnull Collection<ValidatedUrl> getTopicAnchors(SourcePage sourcePage) {
+  public @NotNull Collection<ValidatedUrl> getTopicAnchors(SourcePage sourcePage) {
     return ForumUtils.elementToUrl(
         ForumUtils.findElementByIdPrefix(sourcePage.doc(), "thread_title_"),
         this,

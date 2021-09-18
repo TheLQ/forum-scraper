@@ -91,7 +91,14 @@
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>amazon-sqs-java-extended-client-lib</artifactId>
-      <version>1.2.0</version>
+      <version>1.2.1</version>
+    </dependency>
+    <!-- Replacement for javax.annotations -->
+    <dependency>
+      <groupId>org.jetbrains</groupId>
+      <artifactId>annotations</artifactId>
+      <version>22.0.0</version>
+      <scope>compile</scope>
     </dependency>
   </dependencies>
 

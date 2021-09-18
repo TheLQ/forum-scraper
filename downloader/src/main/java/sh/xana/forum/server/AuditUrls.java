@@ -21,8 +21,6 @@ public class AuditUrls {
     ServerConfig config = new ServerConfig();
     dbStorage = new DatabaseStorage(config);
 
-    System.setProperty("org.jooq.no-tips", "true");
-
     List<PageUrl> pageUrls;
     Path cacheUrlsPath = Path.of("AuditUrls.cache.txt");
     if (Files.exists(cacheUrlsPath)) {

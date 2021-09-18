@@ -253,7 +253,6 @@ public class DatabaseStorage {
 
   public List<URI> getPageUrlsOnly(Condition... conditions) {
     return context.select(PAGES.PAGEURL).from(PAGES).where(conditions).fetch(PAGES.PAGEURL);
-    // .map(record -> record.value1().toString());
   }
 
   public List<UUID> getPageIdsOnly(Condition... conditions) {

@@ -2,7 +2,7 @@ package sh.xana.forum.server.parser.impl;
 
 import java.util.Collection;
 import java.util.regex.Pattern;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import sh.xana.forum.server.dbutil.ForumType;

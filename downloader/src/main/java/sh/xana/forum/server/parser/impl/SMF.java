@@ -6,7 +6,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.slf4j.Logger;
@@ -45,11 +45,11 @@ public class SMF /*implements AbstractForum*/ {
     return sourcePage.rawHtml().contains("document.forms.frmLogin.user.focus");
   }
 
-  public @Nonnull Collection<Element> getPageLinks(SourcePage sourcePage) {
+  public @NotNull Collection<Element> getPageLinks(SourcePage sourcePage) {
     return sourcePage.doc().select(".pagelinks .navPages");
   }
 
-  public @Nonnull Collection<Element> getPostElements(SourcePage sourcePage) {
+  public @NotNull Collection<Element> getPostElements(SourcePage sourcePage) {
     // both the topiclist entry and the message posts use the same id... so make sure we are on
     // the post page
     if (!sourcePage.doc().select("#messageindex").isEmpty()) {
@@ -58,7 +58,7 @@ public class SMF /*implements AbstractForum*/ {
     return getMessage(sourcePage, "");
   }
 
-  public @Nonnull Collection<Element> getSubforumAnchors(SourcePage sourcePage) {
+  public @NotNull Collection<Element> getSubforumAnchors(SourcePage sourcePage) {
     Matcher matcher = Pattern.compile("name=\"(?<id>b[0-9]{1,4})\"").matcher(sourcePage.rawHtml());
 
     List<Element> result = new ArrayList<>();
@@ -72,7 +72,7 @@ public class SMF /*implements AbstractForum*/ {
     return result;
   }
 
-  public @Nonnull Collection<Element> getTopicAnchors(SourcePage sourcePage) {
+  public @NotNull Collection<Element> getTopicAnchors(SourcePage sourcePage) {
     // both the topiclist entry and the message posts use the same id... so make sure we are on
     // the forumlist page
     if (sourcePage.doc().select("#messageindex").isEmpty()) {

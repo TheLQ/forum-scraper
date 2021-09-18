@@ -2,7 +2,7 @@ package sh.xana.forum.server.parser.impl;
 
 import java.util.Collection;
 import java.util.regex.Pattern;
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import sh.xana.forum.common.ipc.ParserResult;
@@ -39,20 +39,20 @@ public class ForkBoard implements AbstractForum {
     }
   }
 
-  public @Nonnull Collection<ValidatedUrl> getPageLinks(SourcePage sourcePage) {
+  public @NotNull Collection<ValidatedUrl> getPageLinks(SourcePage sourcePage) {
     return ForumUtils.elementToUrl(sourcePage.doc().select(".page_skip"), this, sourcePage);
   }
 
-  public @Nonnull Collection<Element> getPostElements(SourcePage sourcePage) {
+  public @NotNull Collection<Element> getPostElements(SourcePage sourcePage) {
     return sourcePage.doc().select(".post_container");
   }
 
-  public @Nonnull Collection<ValidatedUrl> getSubforumAnchors(SourcePage sourcePage) {
+  public @NotNull Collection<ValidatedUrl> getSubforumAnchors(SourcePage sourcePage) {
     return ForumUtils.elementToUrl(
         sourcePage.doc().select(".child_section .child_section_title a"), this, sourcePage);
   }
 
-  public @Nonnull Collection<ValidatedUrl> getTopicAnchors(SourcePage sourcePage) {
+  public @NotNull Collection<ValidatedUrl> getTopicAnchors(SourcePage sourcePage) {
     return ForumUtils.elementToUrl(
         sourcePage.doc().select(".thread_details div:first-child a"), this, sourcePage);
   }

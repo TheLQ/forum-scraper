@@ -5,7 +5,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
@@ -30,11 +30,11 @@ public class vBulletin /*implements AbstractForum*/ {
     return sourcePage.rawHtml().contains("<!-- permission error message - user not logged in -->");
   }
 
-  public @Nonnull Collection<Element> getPageLinks(SourcePage sourcePage) {
+  public @NotNull Collection<Element> getPageLinks(SourcePage sourcePage) {
     return sourcePage.doc().select(".pagenav a, .threadpagenav .pagination a, link[rel='next']");
   }
 
-  public @Nonnull Collection<Element> getPostElements(SourcePage sourcePage) {
+  public @NotNull Collection<Element> getPostElements(SourcePage sourcePage) {
     Matcher matcher =
         Pattern.compile("id=\"(?<id>(td_post|post_message)_[0-9]+)\"")
             .matcher(sourcePage.rawHtml());
@@ -52,7 +52,7 @@ public class vBulletin /*implements AbstractForum*/ {
   private final Pattern PATTERN_SUBFORUM2 =
       Pattern.compile("class=\"[a-zA-Z ] (?<id>forum[0-9]+\")");
 
-  public @Nonnull Collection<Element> getSubforumAnchors(SourcePage sourcePage) {
+  public @NotNull Collection<Element> getSubforumAnchors(SourcePage sourcePage) {
     // id="f266"
     // id="forum266"
     // class="forum_266"
@@ -85,7 +85,7 @@ public class vBulletin /*implements AbstractForum*/ {
   private static final Pattern PATTERN_TOPIC =
       Pattern.compile("id=\"(?<id>thread(_title_)?[0-9]+)\"");
 
-  public @Nonnull Collection<Element> getTopicAnchors(SourcePage sourcePage) {
+  public @NotNull Collection<Element> getTopicAnchors(SourcePage sourcePage) {
     Matcher matcher = PATTERN_TOPIC.matcher(sourcePage.rawHtml());
 
     List<Element> result = new ArrayList<>();
