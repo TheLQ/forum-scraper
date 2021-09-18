@@ -17,8 +17,6 @@ public class SiteCache {
 
   public SiteCache(DatabaseStorage dbStorage) {
     this.dbStorage = dbStorage;
-
-    refresh();
   }
 
   public void refresh() {
@@ -26,15 +24,23 @@ public class SiteCache {
     sitesRef.set(dbStorage.getSites());
   }
 
+  private List<SitesRecord> lazyGet() {
+    List<SitesRecord> res = sitesRef.get();
+    if (res == null) {
+      refresh();
+    }
+    return sitesRef.get();
+  }
+
   public SitesRecord recordById(UUID siteId) {
-    return sitesRef.get().stream()
+    return lazyGet().stream()
         .filter(e -> e.getSiteid().equals(siteId))
         .findFirst()
         .orElseThrow(() -> new RuntimeException("Could not find siteId " + siteId));
   }
 
   public SitesRecord recordByDomain(String domain) {
-    return sitesRef.get().stream()
+    return lazyGet().stream()
         .filter(e -> e.getDomain().equals(domain))
         .findFirst()
         .orElseThrow(() -> new RuntimeException("Could not find domain " + domain));
@@ -46,7 +52,7 @@ public class SiteCache {
 
   public <T> List<T> mapByDomains(Collection<String> domains, Function<SitesRecord, T> mapper) {
     List<T> res =
-        sitesRef.get().stream()
+        lazyGet().stream()
             .filter(e -> domains.contains(e.getDomain()))
             .map(mapper)
             .collect(Collectors.toList());
