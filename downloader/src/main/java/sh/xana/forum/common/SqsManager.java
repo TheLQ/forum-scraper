@@ -75,6 +75,7 @@ public class SqsManager {
 
   public Map<URI, Integer> getDownloadQueueSizes() {
     var result = new HashMap<URI, Integer>();
+    boolean queueNeedsUpdating = false;
     for (URI queueUrl : getDownloadQueueUrls()) {
       int isize;
       try {
@@ -87,10 +88,17 @@ public class SqsManager {
       } catch (QueueDoesNotExistException e) {
         // silently catch, deleted queues can appear in subsequent list
         log.warn("Failed to get queue " + queueUrl + " might of been deleted", e);
+        queueNeedsUpdating = true;
         continue;
       }
       result.put(queueUrl, isize);
     }
+
+    if (queueNeedsUpdating) {
+      log.info("refreshing cached download queue urls");
+      updateDownloadQueueUrls();
+    }
+
     return result;
   }
 
