@@ -50,6 +50,12 @@ public class Keys {
   public static final UniqueKey<PostsRecord> KEY_POSTS_PRIMARY =
       Internal.createUniqueKey(
           Posts.POSTS, DSL.name("KEY_Posts_PRIMARY"), new TableField[] {Posts.POSTS.POSTID}, true);
+  public static final UniqueKey<SitesRecord> KEY_SITES_DOMAIN_UNIQUE =
+      Internal.createUniqueKey(
+          Sites.SITES,
+          DSL.name("KEY_Sites_domain_UNIQUE"),
+          new TableField[] {Sites.SITES.DOMAIN},
+          true);
   public static final UniqueKey<SitesRecord> KEY_SITES_PRIMARY =
       Internal.createUniqueKey(
           Sites.SITES, DSL.name("KEY_Sites_PRIMARY"), new TableField[] {Sites.SITES.SITEID}, true);

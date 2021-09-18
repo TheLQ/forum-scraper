@@ -18,12 +18,14 @@
     </encoder>
   </appender>
 
+  <!-- TRACE has extreme detail on each record fetched, DEBUG shows results and ASCII table -->
   <logger name="org.jooq.tools.LoggerListener" level="info"/>
-  <logger name="org.jooq.impl.DefaultBinding" level="info"/>
-  <!-- Log spam about available jackson/jaxb -->
+  <!-- TRACE lists each binding variable -->
+  <logger name="org.jooq.impl.DefaultBinding" level="debug"/>
+  <!-- DEBUG has irrelevant complaints available jackson/jaxb -->
   <logger name="org.jooq.tools.Convert" level="info"/>
   <logger name="org.jooq.impl.Convert" level="info"/>
-  <!-- Obnoxious tips spam -->
+  <!-- Obnoxious tip of the day spam -->
   <logger name="org.jooq.Constants" level="warn"/>
 
   <logger name="com.amazonaws" level="info"/>

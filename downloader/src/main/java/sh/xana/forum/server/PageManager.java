@@ -331,11 +331,11 @@ public class PageManager implements Closeable {
     // clear out old domains
     log.info("Updating download queues...");
 
-    Map<String, Integer> overviewToParse = dbStorage.getOverviewToParse();
+    Map<UUID, Integer> overviewToParse = dbStorage.getOverviewToParse();
 
     boolean updated = false;
     for (OverviewEntry overviewEntry : dbStorage.getOverviewSites()) {
-      String domain = overviewEntry.domain();
+      String domain = dbStorage.siteCache.recordById(overviewEntry.siteId()).getDomain();
       String queueNameSafe = SqsManager.getQueueNameSafe(domain);
       Integer parseCount = overviewToParse.get(domain);
       if (overviewEntry.dlStatusCount().get(DlStatus.Queued) == null
@@ -360,8 +360,8 @@ public class PageManager implements Closeable {
                 .findFirst()
                 .orElse(null);
         if (queue == null) {
-          log.info("New queue " + overviewEntry.domain());
-          sqsManager.newDownloadQueue(overviewEntry.domain());
+          log.info("New queue " + domain);
+          sqsManager.newDownloadQueue(domain);
           updated = true;
         }
       }
@@ -384,10 +384,11 @@ public class PageManager implements Closeable {
       }
       String domain = SqsManager.getQueueDomain(entry.getKey());
       domain = SqsManager.getQueueNameSafeOrig(domain);
+      UUID siteid = dbStorage.siteCache.recordByDomain(domain).getSiteid();
       // Give the queues sufficient lead time
       log.debug("domain " + domain);
       List<ScraperDownload> scraperDownloads =
-          dbStorage.movePageQueuedToDownloadIPC(domain, expectedQueueSize * 10);
+          dbStorage.movePageQueuedToDownloadIPC(siteid, expectedQueueSize * 10);
       if (!scraperDownloads.isEmpty()) {
         log.debug(
             "Pushing {} download requests for {}",

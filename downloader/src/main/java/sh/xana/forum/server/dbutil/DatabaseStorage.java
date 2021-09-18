@@ -18,12 +18,14 @@ import org.apache.commons.dbcp2.DriverManagerConnectionFactory;
 import org.apache.commons.dbcp2.PoolableConnection;
 import org.apache.commons.dbcp2.PoolableConnectionFactory;
 import org.apache.commons.dbcp2.PoolingDataSource;
+import org.apache.commons.lang3.time.StopWatch;
 import org.apache.commons.pool2.ObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Query;
 import org.jooq.Record2;
+import org.jooq.Result;
 import org.jooq.SQLDialect;
 import org.jooq.conf.Settings;
 import org.jooq.conf.ThrowExceptions;
@@ -40,6 +42,7 @@ import sh.xana.forum.server.db.tables.records.SitesRecord;
 
 public class DatabaseStorage {
   private static final Logger log = LoggerFactory.getLogger(DatabaseStorage.class);
+  public final SiteCache siteCache;
 
   private final DSLContext context;
 
@@ -71,28 +74,26 @@ public class DatabaseStorage {
             SQLDialect.MARIADB,
             new Settings().withThrowExceptions(ThrowExceptions.THROW_ALL).withFetchWarnings(false));
     log.info("Connected to database");
-  }
 
-  /** Stage: init client */
-  public List<String> getScraperDomainsIPC() {
-    return context.selectDistinct(PAGES.DOMAIN).from(PAGES).fetch(PAGES.DOMAIN);
+    siteCache = new SiteCache(this);
   }
 
   /** Stage: Load pages to be downloaded by Scraper */
-  public List<ScraperDownload> movePageQueuedToDownloadIPC(String domain, int size) {
+  public List<ScraperDownload> movePageQueuedToDownloadIPC(UUID siteId, int size) {
     // TODO: VERY SUSPICIOUS RACE. Seems multiple clients can request the page,
     List<ScraperDownload> pages =
         context
-            .select()
+            .select(PAGES.PAGEID, PAGES.PAGEURL)
             .from(PAGES)
-            .where(PAGES.DOMAIN.eq(domain))
-            .and(PAGES.DLSTATUS.eq(DlStatus.Queued))
-            .and(PAGES.EXCEPTION.isNull())
+            .where(
+                PAGES.SITEID.eq(siteId),
+                PAGES.DLSTATUS.eq(DlStatus.Queued),
+                PAGES.EXCEPTION.isNull())
             // Select ForumList first, which alphabetically is before TopicPage
             .orderBy(PAGES.PAGETYPE)
             .limit(size)
             .fetch()
-            .map(r -> new ScraperDownload(r.get(PAGES.PAGEID), r.get(PAGES.PAGEURL)));
+            .map(r -> new ScraperDownload(r.value1(), r.value2()));
 
     setPageStatus(
         pages.stream().map(ScraperDownload::pageId).collect(Collectors.toList()),
@@ -116,6 +117,8 @@ public class DatabaseStorage {
 
   /** Stage: Load pages for Parser */
   public List<ParserPage> getParserPages(boolean limited, Condition... conditions) {
+    StopWatch timer = new StopWatch();
+    timer.start();
     var query =
         context
             .select(
@@ -128,36 +131,37 @@ public class DatabaseStorage {
                 SITES.FORUMTYPE)
             .from(PAGES)
             .innerJoin(SITES)
-            .on(PAGES.SITEID.eq(SITES.SITEID))
+            .using(PAGES.SITEID)
             .where(conditions);
     if (limited) {
       query.limit(8000);
     }
-    //    log.info(query.toString());
-    return query
-        .fetch()
-        .map(
-            e ->
-                new ParserPage(
-                    e.value1(),
-                    e.value2(),
-                    e.value3(),
-                    e.value4(),
-                    e.value5(),
-                    e.value6(),
-                    e.value7()));
+    var res =
+        query
+            .fetch()
+            .map(
+                e ->
+                    new ParserPage(
+                        e.value1(),
+                        e.value2(),
+                        e.value3(),
+                        e.value4(),
+                        e.value5(),
+                        e.value6(),
+                        e.value7()));
+    log.trace("Ran getParserPages in " + timer + System.lineSeparator() + query);
+    return res;
   }
 
-  public record OverviewEntry(UUID siteId, String domain, Map<DlStatus, Integer> dlStatusCount) {}
+  public record OverviewEntry(UUID siteId, Map<DlStatus, Integer> dlStatusCount) {}
 
   /** Stage: reporting monitor */
   public List<OverviewEntry> getOverviewSites() {
     var query =
         context
-            .select(DSL.count(), PAGES.DLSTATUS, PAGES.SITEID, PAGES.DOMAIN)
+            .select(DSL.count(), PAGES.DLSTATUS, PAGES.SITEID)
             .from(PAGES)
-            // SITEID is redundant but mysql doesn't like the free floating column
-            .groupBy(PAGES.DLSTATUS, PAGES.DOMAIN, PAGES.SITEID);
+            .groupBy(PAGES.DLSTATUS, PAGES.SITEID);
     log.info("QUERY " + query);
     var pages = query.fetch();
     List<OverviewEntry> result = new ArrayList<>();
@@ -165,13 +169,11 @@ public class DatabaseStorage {
       Map<DlStatus, Integer> counter = new HashMap<>();
 
       var pageIterator = pages.iterator();
-      String siteUrl = null;
       UUID siteId = null;
       do {
         var curPage = pageIterator.next();
         if (siteId == null) {
           siteId = curPage.get(PAGES.SITEID);
-          siteUrl = curPage.get(PAGES.DOMAIN);
         } else if (!curPage.get(PAGES.SITEID).equals(siteId)) {
           continue;
         }
@@ -179,7 +181,7 @@ public class DatabaseStorage {
         pageIterator.remove();
       } while (pageIterator.hasNext());
 
-      result.add(new OverviewEntry(siteId, siteUrl, counter));
+      result.add(new OverviewEntry(siteId, counter));
     }
     return result;
   }
@@ -223,32 +225,23 @@ public class DatabaseStorage {
         .fetchInto(PagesRecord.class);
   }
 
-  public Map<String, Integer> getOverviewToParse() {
+  public Map<UUID, Integer> getOverviewToParse() {
     return context
-        .select(DSL.count(PAGES), PAGES.DOMAIN)
+        .select(DSL.count(PAGES), PAGES.SITEID)
         .from(PAGES)
         .where(
             PAGES.DLSTATUS.eq(DlStatus.Parse),
             PAGES.EXCEPTION.isNotNull(),
             PAGES.EXCEPTION.notLike("%LoginRequired%"))
-        .groupBy(PAGES.DOMAIN)
+        .groupBy(PAGES.SITEID)
         .fetch()
         .intoMap(Record2::component2, Record2::component1);
   }
 
   // **************************** Utils ******************
 
-  public List<SitesRecord> getSites(Condition... conditions) {
-    return context.select().from(SITES).where(conditions).fetchInto(SitesRecord.class);
-  }
-
-  public SitesRecord getSite(UUID siteId) {
-    List<SitesRecord> sites = getSites(SITES.SITEID.eq(siteId));
-    if (sites.size() != 1) {
-      throw new RuntimeException(
-          "Expected 1 row, got " + sites.size() + " for siteId " + siteId + "\r\n" + sites);
-    }
-    return sites.get(0);
+  public Result<SitesRecord> getSites(Condition... conditions) {
+    return context.select().from(SITES).where(conditions).fetchInto(SITES);
   }
 
   public List<PagesRecord> getPages(Condition... conditions) {
@@ -350,7 +343,6 @@ public class DatabaseStorage {
                   PAGES.PAGETYPE,
                   PAGES.DLSTATUS,
                   PAGES.PAGEUPDATED,
-                  PAGES.DOMAIN,
                   PAGES.SOURCEPAGEID)
               .values(
                   id,
@@ -359,7 +351,6 @@ public class DatabaseStorage {
                   page.type(),
                   DlStatus.Queued,
                   LocalDateTime.now(),
-                  page.pageUrl().getHost(),
                   page.sourcePageId())
               .execute();
         } catch (Exception e) {
@@ -405,7 +396,6 @@ public class DatabaseStorage {
             PAGES.PAGETYPE,
             PAGES.DLSTATUS,
             PAGES.PAGEUPDATED,
-            PAGES.DOMAIN,
             PAGES.SOURCEPAGEID);
 
     for (InsertPage page : pages) {
@@ -418,7 +408,6 @@ public class DatabaseStorage {
           page.type(),
           DlStatus.Queued,
           LocalDateTime.now(),
-          page.pageUrl().getHost(),
           page.sourcePageId());
     }
 

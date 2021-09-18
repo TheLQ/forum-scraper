@@ -13,7 +13,7 @@ import org.jooq.ForeignKey;
 import org.jooq.Index;
 import org.jooq.Name;
 import org.jooq.Record;
-import org.jooq.Row10;
+import org.jooq.Row9;
 import org.jooq.Schema;
 import org.jooq.Table;
 import org.jooq.TableField;
@@ -100,10 +100,6 @@ public class Pages extends TableImpl<PagesRecord> {
   public final TableField<PagesRecord, LocalDateTime> PAGEUPDATED =
       createField(DSL.name("pageUpdated"), SQLDataType.LOCALDATETIME(0).nullable(false), this, "");
 
-  /** The column <code>forum-scrape.Pages.domain</code>. */
-  public final TableField<PagesRecord, String> DOMAIN =
-      createField(DSL.name("domain"), SQLDataType.VARCHAR(255).nullable(false), this, "");
-
   /** The column <code>forum-scrape.Pages.dlStatusCode</code>. */
   public final TableField<PagesRecord, Integer> DLSTATUSCODE =
       createField(DSL.name("dlStatusCode"), SQLDataType.INTEGER, this, "");
@@ -146,7 +142,8 @@ public class Pages extends TableImpl<PagesRecord> {
 
   @Override
   public List<Index> getIndexes() {
-    return Arrays.asList(Indexes.PAGES_DOMAIN_STATUS);
+    return Arrays.asList(
+        Indexes.PAGES_DLSTATUS, Indexes.PAGES_DLSTATUSCODE, Indexes.PAGES_S_SITEID_STATUS);
   }
 
   @Override
@@ -195,12 +192,12 @@ public class Pages extends TableImpl<PagesRecord> {
   }
 
   // -------------------------------------------------------------------------
-  // Row10 type methods
+  // Row9 type methods
   // -------------------------------------------------------------------------
 
   @Override
-  public Row10<UUID, UUID, UUID, URI, PageType, DlStatus, LocalDateTime, String, Integer, String>
+  public Row9<UUID, UUID, UUID, URI, PageType, DlStatus, LocalDateTime, Integer, String>
       fieldsRow() {
-    return (Row10) super.fieldsRow();
+    return (Row9) super.fieldsRow();
   }
 }

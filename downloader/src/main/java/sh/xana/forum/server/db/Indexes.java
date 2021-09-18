@@ -18,16 +18,25 @@ public class Indexes {
   // INDEX definitions
   // -------------------------------------------------------------------------
 
-  public static final Index PAGES_DOMAIN_STATUS =
+  public static final Index PAGES_DLSTATUS =
       Internal.createIndex(
-          DSL.name("domain-status"),
+          DSL.name("dlstatus"), Pages.PAGES, new OrderField[] {Pages.PAGES.DLSTATUS}, false);
+  public static final Index PAGES_DLSTATUSCODE =
+      Internal.createIndex(
+          DSL.name("dlstatusCode"),
           Pages.PAGES,
-          new OrderField[] {Pages.PAGES.DLSTATUS, Pages.PAGES.DOMAIN},
+          new OrderField[] {Pages.PAGES.DLSTATUSCODE},
           false);
   public static final Index PAGEREDIRECTS_REDIRECTURL =
       Internal.createIndex(
           DSL.name("redirectUrl"),
           Pageredirects.PAGEREDIRECTS,
           new OrderField[] {Pageredirects.PAGEREDIRECTS.REDIRECTURL},
+          false);
+  public static final Index PAGES_S_SITEID_STATUS =
+      Internal.createIndex(
+          DSL.name("S_siteId_status"),
+          Pages.PAGES,
+          new OrderField[] {Pages.PAGES.SITEID, Pages.PAGES.DLSTATUS},
           false);
 }

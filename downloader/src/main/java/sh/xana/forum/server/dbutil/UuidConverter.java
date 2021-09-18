@@ -1,6 +1,7 @@
 package sh.xana.forum.server.dbutil;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.UUID;
 import org.jooq.Converter;
 
@@ -41,10 +42,15 @@ public class UuidConverter implements Converter<byte[], UUID> {
   }
 
   private static UUID uuidFromBytes(byte[] bytes) {
-    ByteBuffer bb = ByteBuffer.wrap(bytes);
-    long firstLong = bb.getLong();
-    long secondLong = bb.getLong();
-    return new UUID(firstLong, secondLong);
+    try {
+      ByteBuffer bb = ByteBuffer.wrap(bytes);
+      long firstLong = bb.getLong();
+      long secondLong = bb.getLong();
+      return new UUID(firstLong, secondLong);
+    } catch (Exception e) {
+      throw new RuntimeException(
+          "Failed on len " + bytes.length + " arr " + Arrays.toString(bytes), e);
+    }
   }
 
   public static byte[] uuidAsBytes(UUID uuid) {

@@ -12,7 +12,7 @@ import org.jooq.Field;
 import org.jooq.ForeignKey;
 import org.jooq.Name;
 import org.jooq.Record;
-import org.jooq.Row4;
+import org.jooq.Row5;
 import org.jooq.Schema;
 import org.jooq.Table;
 import org.jooq.TableField;
@@ -75,6 +75,10 @@ public class Sites extends TableImpl<SitesRecord> {
           "",
           new EnumConverter<String, ForumType>(String.class, ForumType.class));
 
+  /** The column <code>forum-scrape.Sites.domain</code>. */
+  public final TableField<SitesRecord, String> DOMAIN =
+      createField(DSL.name("domain"), SQLDataType.VARCHAR(45).nullable(false), this, "");
+
   private Sites(Name alias, Table<SitesRecord> aliased) {
     this(alias, aliased, null);
   }
@@ -114,7 +118,7 @@ public class Sites extends TableImpl<SitesRecord> {
 
   @Override
   public List<UniqueKey<SitesRecord>> getUniqueKeys() {
-    return Arrays.asList(Keys.KEY_SITES_URL);
+    return Arrays.asList(Keys.KEY_SITES_URL, Keys.KEY_SITES_DOMAIN_UNIQUE);
   }
 
   @Override
@@ -140,11 +144,11 @@ public class Sites extends TableImpl<SitesRecord> {
   }
 
   // -------------------------------------------------------------------------
-  // Row4 type methods
+  // Row5 type methods
   // -------------------------------------------------------------------------
 
   @Override
-  public Row4<UUID, URI, LocalDateTime, ForumType> fieldsRow() {
-    return (Row4) super.fieldsRow();
+  public Row5<UUID, URI, LocalDateTime, ForumType, String> fieldsRow() {
+    return (Row5) super.fieldsRow();
   }
 }

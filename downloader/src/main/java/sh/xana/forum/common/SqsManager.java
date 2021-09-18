@@ -63,10 +63,6 @@ public class SqsManager {
     }
   }
 
-  public void tmp(URI pageUrl) {
-    sqsClient.setQueueAttributes(pageUrl.toString(), Map.of("VisibilityTimeout", "" + 60 * 10));
-  }
-
   public void updateDownloadQueueUrls() {
     synchronized (cachedDownloadQueueUrls) {
       ListQueuesResult listQueuesResult = sqsClient.listQueues(QUEUE_DOWNLOAD_PREFIX);
