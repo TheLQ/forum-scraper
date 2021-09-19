@@ -4,7 +4,6 @@ import static sh.xana.forum.server.db.tables.Pageredirects.PAGEREDIRECTS;
 import static sh.xana.forum.server.db.tables.Pages.PAGES;
 import static sh.xana.forum.server.db.tables.Sites.SITES;
 
-import java.io.Closeable;
 import java.net.URI;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -42,12 +41,12 @@ import sh.xana.forum.server.db.tables.records.PageredirectsRecord;
 import sh.xana.forum.server.db.tables.records.PagesRecord;
 import sh.xana.forum.server.db.tables.records.SitesRecord;
 
-public class DatabaseStorage {
+public class DatabaseStorage implements AutoCloseable {
   private static final Logger log = LoggerFactory.getLogger(DatabaseStorage.class);
   public final SiteCache siteCache;
 
   private final DSLContext context;
-  private final Closeable closableConnection;
+  private final AutoCloseable closableConnection;
 
   public DatabaseStorage(ServerConfig config) {
     log.info("Connecting to database");
@@ -70,6 +69,7 @@ public class DatabaseStorage {
     poolableConnectionFactory.setPool(connectionPool);
     // jdbc DataSource
     PoolingDataSource<PoolableConnection> dataSource = new PoolingDataSource<>(connectionPool);
+    closableConnection = dataSource;
 
     context =
         DSL.using(
@@ -528,7 +528,7 @@ public class DatabaseStorage {
     }
   }
 
-  public void close() {
-    context.close();
+  public void close() throws Exception {
+    closableConnection.close();
   }
 }

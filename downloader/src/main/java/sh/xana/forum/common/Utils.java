@@ -114,4 +114,13 @@ public class Utils {
     }
     return threads;
   }
+
+  public static void closeThread(Logger log, Thread thread) {
+    if (thread.isAlive()) {
+      log.info("Closing active thread");
+      thread.interrupt();
+    } else {
+      log.info("Thread not alive");
+    }
+  }
 }

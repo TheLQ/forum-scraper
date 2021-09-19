@@ -1,6 +1,5 @@
 package sh.xana.forum.client;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -12,7 +11,7 @@ import sh.xana.forum.common.SqsManager;
 import sh.xana.forum.common.Utils;
 import sh.xana.forum.server.threads.RuntimeDebugThread;
 
-public class ClientMain implements Closeable {
+public class ClientMain implements AutoCloseable {
   private static final Logger log = LoggerFactory.getLogger(ClientMain.class);
   private final SqsManager sqsManager;
   private final List<Scraper> scrapers = new ArrayList<>();
@@ -23,7 +22,7 @@ public class ClientMain implements Closeable {
     new ClientMain();
   }
 
-  public ClientMain() throws URISyntaxException, IOException {
+  public ClientMain() throws IOException {
     log.info("Client start");
 
     ClientConfig config = new ClientConfig();

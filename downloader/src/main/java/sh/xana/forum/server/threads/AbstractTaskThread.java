@@ -1,10 +1,10 @@
 package sh.xana.forum.server.threads;
 
-import java.io.Closeable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sh.xana.forum.common.Utils;
 
-public abstract class AbstractTaskThread implements Closeable {
+public abstract class AbstractTaskThread implements AutoCloseable {
   private static final Logger log = LoggerFactory.getLogger(AbstractTaskThread.class);
   private final Thread thread;
   private final long cycleSleepMillis;
@@ -51,11 +51,15 @@ public abstract class AbstractTaskThread implements Closeable {
 
   protected void firstCycle() throws Exception {}
 
+  /**
+   *
+   * @return true to continue, false to stop
+   * @throws Exception
+   */
   protected abstract boolean runCycle() throws Exception;
 
   public void close() {
-    log.info("Closing thead");
-    this.thread.interrupt();
+    Utils.closeThread(log, thread);
   }
 
   public void waitForThreadDeath() throws InterruptedException {

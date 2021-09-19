@@ -1,6 +1,5 @@
 package sh.xana.forum.client;
 
-import java.io.Closeable;
 import java.net.URI;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -28,7 +27,7 @@ import sh.xana.forum.common.ipc.ScraperUpload;
  *
  * <p>When buffer is below Y, refill so download queue can keep going
  */
-public class Scraper implements Closeable {
+public class Scraper implements AutoCloseable {
   private static final Logger log = LoggerFactory.getLogger(Scraper.class);
   private static final int CYCLE_SECONDS = 2;
 
@@ -173,7 +172,7 @@ public class Scraper implements Closeable {
   @Override
   public void close() {
     log.info("close called, stopping thread");
-    thread.interrupt();
+    Utils.closeThread(log, thread);
   }
 
   public void waitForThreadDeath() throws InterruptedException {

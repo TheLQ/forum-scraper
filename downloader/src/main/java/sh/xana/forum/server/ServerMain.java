@@ -1,6 +1,5 @@
 package sh.xana.forum.server;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -15,9 +14,9 @@ import sh.xana.forum.server.dbutil.DatabaseStorage;
 import sh.xana.forum.server.threads.RuntimeDebugThread;
 import sh.xana.forum.server.threads.WebServer;
 
-public class ServerMain implements Closeable {
+public class ServerMain implements AutoCloseable {
   private static final Logger log = LoggerFactory.getLogger(ClientMain.class);
-  private final List<Closeable> closableComponents = new ArrayList<>();
+  private final List<AutoCloseable> closableComponents = new ArrayList<>();
 
   public static void main(String[] args) throws Exception {
     SLF4JBridgeHandler.removeHandlersForRootLogger();
@@ -60,10 +59,10 @@ public class ServerMain implements Closeable {
     closableComponents.add(sqsManager);
     RuntimeDebugThread debugThread = new RuntimeDebugThread(this);
     closableComponents.add(debugThread);
-    NodeManager nodeManager = new NodeManager();
-
     DatabaseStorage dbStorage = new DatabaseStorage(config);
     closableComponents.add(dbStorage);
+
+    NodeManager nodeManager = new NodeManager();
 
     WebServer server = new WebServer(dbStorage, nodeManager, config);
     server.start();
@@ -73,15 +72,14 @@ public class ServerMain implements Closeable {
 
 
     if (!debugMode) {
-      pageManager.startThreads();
       debugThread.start();
       // ClientMain.main(new String[0]);
     }
   }
 
-  public void close() throws IOException {
+  public void close() throws Exception {
     log.error("CLOSING");
-    for (Closeable thread : closableComponents) {
+    for (AutoCloseable thread : closableComponents) {
       thread.close();
     }
   }
