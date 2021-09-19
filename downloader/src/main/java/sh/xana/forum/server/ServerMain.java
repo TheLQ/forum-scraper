@@ -10,6 +10,9 @@ import org.slf4j.bridge.SLF4JBridgeHandler;
 import sh.xana.forum.client.ClientMain;
 import sh.xana.forum.common.SqsManager;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
+import sh.xana.forum.server.threads.PageManager;
+import sh.xana.forum.server.threads.RuntimeDebugThread;
+import sh.xana.forum.server.threads.WebServer;
 
 public class ServerMain implements Closeable {
   private static final Logger log = LoggerFactory.getLogger(ClientMain.class);
@@ -57,12 +60,6 @@ public class ServerMain implements Closeable {
 
     sqsManager = new SqsManager(config, debugMode);
     DatabaseStorage dbStorage = new DatabaseStorage(config);
-    //    if (true) {
-    //      PagesRecord page =
-    // dbStorage.getPage(UUID.fromString("036afcb1-3f90-4569-a3e6-96dcffd5f3c9"));
-    //      log.info(page.toString());
-    //      return;
-    //    }
     pageManager = new PageManager(dbStorage, config, sqsManager);
     NodeManager nodeManager = new NodeManager();
 

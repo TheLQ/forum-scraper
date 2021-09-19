@@ -18,7 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.helpers.MessageFormatter;
 import sh.xana.forum.client.RequestException;
-import sh.xana.forum.server.WebServer;
+import sh.xana.forum.server.threads.WebServer;
 
 public class Utils {
   private Utils() {}

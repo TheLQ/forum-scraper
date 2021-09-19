@@ -1,4 +1,4 @@
-package sh.xana.forum.server;
+package sh.xana.forum.server.threads;
 
 import static sh.xana.forum.server.db.tables.Pages.PAGES;
 
@@ -27,6 +27,8 @@ import sh.xana.forum.common.ipc.ParserResult;
 import sh.xana.forum.common.ipc.ParserResult.ParserEntry;
 import sh.xana.forum.common.ipc.ScraperDownload;
 import sh.xana.forum.common.ipc.ScraperUpload;
+import sh.xana.forum.server.ServerConfig;
+import sh.xana.forum.server.SpiderWarningException;
 import sh.xana.forum.server.db.tables.records.PageredirectsRecord;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
 import sh.xana.forum.server.dbutil.DatabaseStorage.OverviewEntry;
@@ -68,12 +70,11 @@ public class PageManager implements Closeable {
   }
 
   public void startThreads() {
-    List<Thread> spiderThreads =
-        Auditor.threadRunner(SPIDER_THREADS, "PageSpider-", this::pageSpiderThread);
-    this.workerThreads.addAll(spiderThreads);
-    this.spiderFeederThread.start();
-    List<Thread> uploadThreads = Auditor.threadRunner(2, "PageUploads-", this::uploadsThread);
-    this.workerThreads.addAll(uploadThreads);
+    // this.workerThreads.addAll(Auditor.threadRunner(SPIDER_THREADS, "PageSpider-",
+    // this::pageSpiderThread));
+    // this.spiderFeederThread.start();
+
+    this.workerThreads.addAll(Utils.threadRunner(2, "PageUploads-", this::uploadsThread));
     this.downloadsThread.start();
   }
 
@@ -327,7 +328,7 @@ public class PageManager implements Closeable {
     // clear out old domains
     log.info("Updating download queues...");
 
-    Map<UUID, Integer> overviewToParse = dbStorage.getOverviewToParse();
+    Map<UUID, Integer> overviewToParse = dbStorage.getParseCountPerSite();
 
     boolean updated = false;
     for (OverviewEntry overviewEntry : dbStorage.getOverviewSites()) {

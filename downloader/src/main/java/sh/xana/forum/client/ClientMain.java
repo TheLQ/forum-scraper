@@ -10,7 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.SqsManager;
 import sh.xana.forum.common.Utils;
-import sh.xana.forum.server.RuntimeDebugThread;
+import sh.xana.forum.server.threads.RuntimeDebugThread;
 
 public class ClientMain implements Closeable {
   private static final Logger log = LoggerFactory.getLogger(ClientMain.class);

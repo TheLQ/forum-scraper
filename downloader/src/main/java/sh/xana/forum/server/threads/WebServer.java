@@ -1,4 +1,4 @@
-package sh.xana.forum.server;
+package sh.xana.forum.server.threads;
 
 import fi.iki.elonen.NanoHTTPD;
 import java.io.IOException;
@@ -12,6 +12,8 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.Utils;
+import sh.xana.forum.server.NodeManager;
+import sh.xana.forum.server.ServerConfig;
 import sh.xana.forum.server.db.tables.Pages;
 import sh.xana.forum.server.db.tables.records.PagesRecord;
 import sh.xana.forum.server.dbutil.DatabaseStorage;

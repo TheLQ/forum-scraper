@@ -1,6 +1,6 @@
 package sh.xana.forum.server;
 
-class SpiderWarningException extends RuntimeException {
+public class SpiderWarningException extends RuntimeException {
 
   public SpiderWarningException(String message) {
     super(message);

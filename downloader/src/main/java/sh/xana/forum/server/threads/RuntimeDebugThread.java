@@ -1,4 +1,4 @@
-package sh.xana.forum.server;
+package sh.xana.forum.server.threads;
 
 import java.io.Closeable;
 import java.nio.file.Files;
