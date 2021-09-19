@@ -9,8 +9,8 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sh.xana.forum.common.Utils;
 import sh.xana.forum.common.AbstractTaskThread;
+import sh.xana.forum.common.Utils;
 
 /**
  * https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configuring-instance-metadata-service.html

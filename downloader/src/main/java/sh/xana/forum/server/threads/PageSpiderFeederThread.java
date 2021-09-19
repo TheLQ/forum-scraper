@@ -2,11 +2,13 @@ package sh.xana.forum.server.threads;
 
 import static sh.xana.forum.server.db.tables.Pages.PAGES;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.AbstractTaskThread;
@@ -24,9 +26,22 @@ import sh.xana.forum.server.dbutil.ParserPage;
  */
 public class PageSpiderFeederThread extends AbstractTaskThread {
   private static final Logger log = LoggerFactory.getLogger(PageSpiderFeederThread.class);
-  public final ArrayBlockingQueue<Task> spiderQueue =
-      new ArrayBlockingQueue<>(PageSpiderThread.SPIDER_THREAD_SIZE * PageSpiderThread.SPIDER_THREADS * 4);
+  private static final int QUEUE_SIZE = PageSpiderThread.NUM_THREADS * 200;
   private final DatabaseStorage dbStorage;
+  /**
+   * All pages either parsing or waiting to be parsed. Used to not re-fetch the same pages from the
+   * db
+   */
+  private final List<UUID> pagesWIP = new ArrayList<>();
+  /** Fetched pages ready for PageSpiderThread */
+  private final BlockingQueue<ParserPage> queuedForParsing = new ArrayBlockingQueue<>(QUEUE_SIZE);
+  /**
+   * Exists so pagesWIP can be given to jOOq for a long query, instead of synchronizing on it then
+   * blocking PageSpiderThread's remove() for an unnecessarily long time, or ugly copying
+   *
+   * <p><b>public write</b>
+   */
+  private final List<UUID> queuedForWIPDone = new ArrayList<>(QUEUE_SIZE);
 
   public PageSpiderFeederThread(DatabaseStorage dbStorage) {
     // Use queue blocking instead of post-cycle sleeps
@@ -36,45 +51,54 @@ public class PageSpiderFeederThread extends AbstractTaskThread {
 
   @Override
   protected boolean runCycle() throws Exception {
-    List<UUID> wipIds;
-    synchronized (spiderWIP) {
-      wipIds = spiderWIP.stream().map(ParserPage::pageId).collect(Collectors.toList());
+    fill();
+    return true;
+  }
+
+  protected void fill() throws InterruptedException {
+    // Make sure pagesWIP is accurate
+    synchronized (queuedForWIPDone) {
+      pagesWIP.removeAll(queuedForWIPDone);
+      queuedForWIPDone.clear();
     }
-    log.info("Loading pages");
+
+    log.info("Loading pages excluding {} WIP pages", pagesWIP.size());
     List<ParserPage> parserPages =
         dbStorage.getParserPages(
             true,
             PAGES.DLSTATUS.eq(DlStatus.Parse),
             PAGES.EXCEPTION.isNull(),
-            PAGES.PAGEID.notIn(wipIds));
+            PAGES.PAGEID.notIn(pagesWIP));
     if (parserPages.isEmpty()) {
-      // manual sleep to avoid spinning on no data
+      // Scheduling control: manual sleep to avoid spinning on no data
       TimeUnit.MINUTES.sleep(1);
-      return true;
+      return;
     }
-    synchronized (spiderWIP) {
-      spiderWIP.addAll(parserPages);
-    }
-    // This is the flow control, will block until spiderQueue is free
+
     for (ParserPage parserPage : parserPages) {
-      spiderQueue.put(parserPage);
-    }
-
-    return true;
-  }
-
-  public static class Task {
-    public final ParserPage page;
-    public State state;
-
-    public Task(ParserPage page) {
-      this.page = page;
+      pagesWIP.add(parserPage.pageId());
+      // Scheduling control: will block until queue has room for more
+      queuedForParsing.put(parserPage);
     }
   }
 
-  public enum State {
-    QUEUED,
-    PARSING,
-    DONE,
+  public ParserPage getPageToParse_Poll() {
+    return queuedForParsing.poll();
+  }
+
+  public ParserPage getPageToParse_Blocking() throws InterruptedException {
+    return queuedForParsing.take();
+  }
+
+  public void setPageDone(UUID page) {
+    synchronized (queuedForWIPDone) {
+      queuedForWIPDone.add(page);
+    }
+  }
+
+  public void setPageDone(Collection<UUID> pages) {
+    synchronized (queuedForWIPDone) {
+      queuedForWIPDone.addAll(pages);
+    }
   }
 }

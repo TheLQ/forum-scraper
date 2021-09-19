@@ -34,10 +34,7 @@ public class WebServer extends NanoHTTPD {
   private final DatabaseStorage dbStorage;
   private final NodeManager nodeManager;
 
-  public WebServer(
-      DatabaseStorage dbStorage,
-      NodeManager nodeManager,
-      ServerConfig config) {
+  public WebServer(DatabaseStorage dbStorage, NodeManager nodeManager, ServerConfig config) {
     // Bind to localhost since on aws we are proxied
     super(PORT);
     this.dbStorage = dbStorage;

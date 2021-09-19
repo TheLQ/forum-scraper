@@ -478,6 +478,34 @@ public class DatabaseStorage implements AutoCloseable {
     executeOneRow(query);
   }
 
+  public record UpdatePageException(UUID pageId, String exception) {}
+
+  public void setPageException(List<UpdatePageException> updates) {
+    var batchQuery =
+        context.batch(
+            context
+                .update(PAGES)
+                .set(PAGES.EXCEPTION, DSL.param(PAGES.EXCEPTION))
+                .where(PAGES.PAGEID.eq(DSL.param(PAGES.PAGEID))));
+    for (UpdatePageException entry : updates) {
+      batchQuery.bind(entry.exception(), entry.pageId());
+    }
+    int[] results = batchQuery.execute();
+
+    boolean errors = false;
+    int i = 0;
+    for (int result : results) {
+      if (result != 1) {
+        log.error("set {} rows expected 1 row for {}", result, updates.get(i));
+        errors = true;
+      }
+      i++;
+    }
+    if (errors) {
+      throw new RuntimeException("See logged errors");
+    }
+  }
+
   public void setPageExceptionNull(UUID pageId) {
     Query query =
         context.update(PAGES).set(PAGES.EXCEPTION, (String) null).where(PAGES.PAGEID.eq(pageId));

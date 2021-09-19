@@ -51,7 +51,6 @@ public abstract class AbstractTaskThread implements AutoCloseable {
   protected void firstCycle() throws Exception {}
 
   /**
-   *
    * @return true to continue, false to stop
    * @throws Exception
    */
