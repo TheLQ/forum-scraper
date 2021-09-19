@@ -26,14 +26,14 @@ public class ServerMain implements Closeable {
   }
 
   private ServerMain() throws IOException {
-    boolean debugMode = false; // System.getProperty(CommonConfig.PROPERTY_LOGBACK_TYPE) == null;
+    ServerConfig config = new ServerConfig();
+
+    boolean debugMode = config.isDebugMode();
     if (debugMode) {
       log.warn("DEBUG MODE, not starting processor");
     } else {
       log.info("Production mode");
     }
-
-    ServerConfig config = new ServerConfig();
 
     Path fileCachePath = Path.of("..", "filecache");
     if (config.hasArg(config.ARG_FILE_CACHE)) {

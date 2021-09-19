@@ -9,6 +9,7 @@ import org.apache.commons.lang3.StringUtils;
 
 public class CommonConfig {
   public static final String PROPERTY_LOGBACK_TYPE = "logbackType";
+  public final String ARG_DEBUG_MODE = "debugMode";
   public final String ARG_SERVER_AUTH = "server.auth";
 
   public final String ARG_QUEUE_S3 = "queue.s3";
@@ -43,5 +44,9 @@ public class CommonConfig {
       return defaultValue;
     }
     return value;
+  }
+
+  public boolean isDebugMode() {
+    return getOrDefault(ARG_DEBUG_MODE, "false").equals("true");
   }
 }
