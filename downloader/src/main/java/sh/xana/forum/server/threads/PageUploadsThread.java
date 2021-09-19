@@ -26,11 +26,11 @@ public class PageUploadsThread extends AbstractTaskThread {
   private final SqsManager sqsManager;
   private final DatabaseStorage dbStorage;
 
-  public PageUploadsThread(ServerConfig config, SqsManager sqsManager, DatabaseStorage dbStorage) {
+  public PageUploadsThread(ServerConfig config, DatabaseStorage dbStorage, SqsManager sqsManager) {
     super("PageUploads-" + THREAD_COUNTER++, TimeUnit.MINUTES.toMillis(1));
     this.config = config;
-    this.sqsManager = sqsManager;
     this.dbStorage = dbStorage;
+    this.sqsManager = sqsManager;
   }
 
   @Override

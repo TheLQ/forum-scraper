@@ -39,8 +39,8 @@ public class SqsManager implements Closeable {
 
   private final List<URI> cachedDownloadQueueUrls = new ArrayList<>();
 
-  public SqsManager(CommonConfig config, boolean debugMode) {
-    if (!debugMode) {
+  public SqsManager(CommonConfig config) {
+    if (!config.isDebugMode()) {
       final AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
 
       final ExtendedClientConfiguration extendedClientConfig =

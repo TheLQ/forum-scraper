@@ -23,7 +23,7 @@ import sh.xana.forum.server.dbutil.DlStatus;
 import sh.xana.forum.server.dbutil.ForumType;
 import sh.xana.forum.server.dbutil.PageType;
 
-public class WebServer extends NanoHTTPD {
+public class WebServer extends NanoHTTPD implements AutoCloseable {
   private static final Logger log = LoggerFactory.getLogger(WebServer.class);
   private static final Date start = new Date();
   public static final int PORT = 8080;
@@ -300,5 +300,10 @@ public class WebServer extends NanoHTTPD {
     if (value == null || !value.equals(nodeAuthValue)) {
       throw new RuntimeException("Protected endpoint " + session.getHeaders());
     }
+  }
+
+  @Override
+  public void close() throws Exception {
+    stop();
   }
 }

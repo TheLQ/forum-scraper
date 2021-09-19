@@ -11,7 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.ipc.ParserResult;
 import sh.xana.forum.common.ipc.ParserResult.ParserEntry;
-import sh.xana.forum.server.ServerConfig;
 import sh.xana.forum.server.dbutil.ForumType;
 import sh.xana.forum.server.dbutil.PageType;
 import sh.xana.forum.server.dbutil.ParserPage;
@@ -34,12 +33,6 @@ public class PageParser {
           //          ForumType.SMF,
           //          new SMF(),
           );
-
-  private final ServerConfig config;
-
-  public PageParser(ServerConfig config) {
-    this.config = config;
-  }
 
   public ParserResult parsePage(byte[] data, ParserPage page) {
     UUID pageId = page.pageId();
