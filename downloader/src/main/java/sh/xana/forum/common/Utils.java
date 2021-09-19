@@ -12,8 +12,10 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.helpers.MessageFormatter;
@@ -113,6 +115,29 @@ public class Utils {
       threads.add(thread);
     }
     return threads;
+  }
+
+  public static <T extends AbstractTaskThread> T createTask(
+      CommonConfig config, Collection<AutoCloseable> closableComponents, T thread) {
+    closableComponents.add(thread);
+    if (!config.isDebugMode()) {
+      thread.start();
+    }
+    return thread;
+  }
+
+  public static void createTasks(
+      CommonConfig config,
+      Collection<AutoCloseable> closableComponents,
+      int numThreads,
+      Supplier<AbstractTaskThread> threadSupplier) {
+    for (int i = 0; i < numThreads; i++) {
+      AbstractTaskThread thread = threadSupplier.get();
+      closableComponents.add(thread);
+      if (!config.isDebugMode()) {
+        thread.start();
+      }
+    }
   }
 
   public static void closeThread(Logger log, Thread thread) {
