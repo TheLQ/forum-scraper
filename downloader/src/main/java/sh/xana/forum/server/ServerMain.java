@@ -55,7 +55,7 @@ public class ServerMain implements Closeable {
                   }
                 }));
 
-    sqsManager = new SqsManager(config);
+    sqsManager = new SqsManager(config, debugMode);
     DatabaseStorage dbStorage = new DatabaseStorage(config);
     //    if (true) {
     //      PagesRecord page =

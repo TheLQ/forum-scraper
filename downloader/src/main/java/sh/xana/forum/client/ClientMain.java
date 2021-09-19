@@ -36,7 +36,7 @@ public class ClientMain implements Closeable {
     }
     new RuntimeDebugThread(this).start();
 
-    sqsManager = new SqsManager(config);
+    sqsManager = new SqsManager(config, false);
 
     // load webserver secret key
     Utils.BACKEND_KEY = config.getRequiredArg(config.ARG_SERVER_AUTH);

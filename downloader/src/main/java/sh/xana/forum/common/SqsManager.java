@@ -34,23 +34,24 @@ public class SqsManager implements Closeable {
 
   public static final int QUEUE_SIZE = 10;
   public static final String QUEUE_DOWNLOAD_PREFIX = "forumDownload-";
-  private final CommonConfig config;
   private final AmazonSQSExtendedClient sqsClient;
   private final URI uploadQueueUrl;
 
   private final List<URI> cachedDownloadQueueUrls = new ArrayList<>();
 
-  public SqsManager(CommonConfig config) {
-    this.config = config;
+  public SqsManager(CommonConfig config, boolean debugMode) {
+    if (!debugMode) {
+      final AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
 
-    final AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
+      final ExtendedClientConfiguration extendedClientConfig =
+          new ExtendedClientConfiguration()
+              .withPayloadSupportEnabled(s3, config.get(config.ARG_QUEUE_S3), true);
 
-    final ExtendedClientConfiguration extendedClientConfig =
-        new ExtendedClientConfiguration()
-            .withPayloadSupportEnabled(s3, config.get(config.ARG_QUEUE_S3), true);
-
-    sqsClient =
-        new AmazonSQSExtendedClient(AmazonSQSClientBuilder.defaultClient(), extendedClientConfig);
+      sqsClient =
+          new AmazonSQSExtendedClient(AmazonSQSClientBuilder.defaultClient(), extendedClientConfig);
+    } else {
+      sqsClient = null;
+    }
 
     uploadQueueUrl = Utils.toURI(config.get(config.ARG_QUEUE_UPLOADNAME));
   }
