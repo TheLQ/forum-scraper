@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import sh.xana.forum.common.AbstractTaskThread;
 import sh.xana.forum.common.Utils;
 import sh.xana.forum.common.ipc.ParserResult;
 import sh.xana.forum.common.ipc.ParserResult.ParserEntry;

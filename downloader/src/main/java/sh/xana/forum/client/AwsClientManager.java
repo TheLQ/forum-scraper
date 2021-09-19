@@ -1,35 +1,33 @@
 package sh.xana.forum.client;
 
-import java.io.Closeable;
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.Utils;
+import sh.xana.forum.common.AbstractTaskThread;
 
 /**
  * https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configuring-instance-metadata-service.html
  */
-public class AwsClientManager {
+public class AwsClientManager extends AbstractTaskThread {
   private static final Logger log = LoggerFactory.getLogger(AwsClientManager.class);
-  private final Thread thread;
+  private final AutoCloseable main;
   private String metadataToken;
-  private final Closeable main;
 
-  public AwsClientManager(Closeable main) {
+  public AwsClientManager(AutoCloseable main) {
+    super("AwsManager", TimeUnit.SECONDS.toMillis(10));
     this.main = main;
-    thread = new Thread(this::awsThread);
-    thread.setName("AwsManager");
   }
 
-  public void start() throws URISyntaxException {
+  @Override
+  protected void firstCycle() throws Exception {
     newToken();
-    thread.start();
   }
 
   private void newToken() throws URISyntaxException {
@@ -44,22 +42,8 @@ public class AwsClientManager {
     log.info("Got metadata token {}", metadataToken);
   }
 
-  private void awsThread() {
-    log.info("Starting aws thread");
-    while (true) {
-      try {
-        boolean continueLoop = awsThreadCycle();
-        if (!continueLoop) {
-          log.info("Stopping thread per request");
-        }
-      } catch (Exception e) {
-        log.error("aws fail!", e);
-        break;
-      }
-    }
-  }
-
-  private boolean awsThreadCycle() throws InterruptedException, URISyntaxException, IOException {
+  @Override
+  protected boolean runCycle() throws Exception {
     HttpRequest request =
         HttpRequest.newBuilder()
             .uri(new URI("http://169.254.169.254/latest/meta-data/spot/instance-action"))
@@ -82,8 +66,6 @@ public class AwsClientManager {
         throw new RuntimeException(
             "Got status " + response.statusCode() + " when refreshing metadata " + response.body());
     }
-
-    Thread.sleep(10 * 1000);
     return true;
   }
 }

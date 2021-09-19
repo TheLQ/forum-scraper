@@ -1,8 +1,7 @@
-package sh.xana.forum.server.threads;
+package sh.xana.forum.common;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sh.xana.forum.common.Utils;
 
 public abstract class AbstractTaskThread implements AutoCloseable {
   private static final Logger log = LoggerFactory.getLogger(AbstractTaskThread.class);

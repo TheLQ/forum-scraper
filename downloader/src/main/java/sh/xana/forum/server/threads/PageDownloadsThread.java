@@ -9,6 +9,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sh.xana.forum.common.AbstractTaskThread;
 import sh.xana.forum.common.SqsManager;
 import sh.xana.forum.common.ipc.ScraperDownload;
 import sh.xana.forum.server.dbutil.DatabaseStorage;

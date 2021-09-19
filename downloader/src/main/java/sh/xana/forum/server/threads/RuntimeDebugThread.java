@@ -1,6 +1,5 @@
 package sh.xana.forum.server.threads;
 
-import java.io.Closeable;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
@@ -10,55 +9,38 @@ import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.ThreadUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sh.xana.forum.common.AbstractTaskThread;
 
-public class RuntimeDebugThread implements Closeable {
+public class RuntimeDebugThread extends AbstractTaskThread {
   private static final Logger log = LoggerFactory.getLogger(RuntimeDebugThread.class);
   private static final Path PATH_DEATH_TRIGGER = Path.of("death.tmp");
-  private final Closeable main;
-  private final Thread thread;
+  private final AutoCloseable main;
 
-  public RuntimeDebugThread(Closeable main) {
+  public RuntimeDebugThread(AutoCloseable main) {
+    // we handle the cycle sleep internally
+    super("RuntimeDebugThread", 0);
     this.main = main;
-    thread = new Thread(this::stateThread);
-    thread.setName("RuntimeDebugThread");
-  }
-
-  public void start() {
-    thread.start();
-  }
-
-  private void stateThread() {
-    log.info("start state thread");
-    while (true) {
-      try {
-        StringBuilder sb = new StringBuilder("State thread").append(System.lineSeparator());
-        sb.append(getSystemInformation()).append(System.lineSeparator());
-        for (var thread : ThreadUtils.getAllThreads()) {
-          sb.append("Thread ").append(thread.getName()).append(System.lineSeparator());
-        }
-        System.err.println(sb);
-
-        // wait 5 minutes
-        for (int i = 0; i < 5 * 2; i++) {
-          TimeUnit.SECONDS.sleep(30);
-          if (Files.exists(PATH_DEATH_TRIGGER)) {
-            Files.delete(PATH_DEATH_TRIGGER);
-            main.close();
-            return;
-          }
-        }
-      } catch (Exception e) {
-        log.error("STATE THREAD CRASH", e);
-      }
-    }
   }
 
   @Override
-  public void close() {
-    log.info("close called, stopping thread");
-    if (thread.isAlive()) {
-      thread.interrupt();
+  protected boolean runCycle() throws Exception {
+    StringBuilder sb = new StringBuilder("State thread").append(System.lineSeparator());
+    sb.append(getSystemInformation()).append(System.lineSeparator());
+    for (var thread : ThreadUtils.getAllThreads()) {
+      sb.append("Thread ").append(thread.getName()).append(System.lineSeparator());
     }
+    System.err.println(sb);
+
+    // wait 5 minutes
+    for (int i = 0; i < 5 * 2; i++) {
+      TimeUnit.SECONDS.sleep(30);
+      if (Files.exists(PATH_DEATH_TRIGGER)) {
+        Files.delete(PATH_DEATH_TRIGGER);
+        main.close();
+        return false;
+      }
+    }
+    return true;
   }
 
   public static long getMaxMemory() {
