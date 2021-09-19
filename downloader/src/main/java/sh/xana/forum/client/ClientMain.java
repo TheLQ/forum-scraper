@@ -14,6 +14,7 @@ import sh.xana.forum.server.RuntimeDebugThread;
 
 public class ClientMain implements Closeable {
   private static final Logger log = LoggerFactory.getLogger(ClientMain.class);
+  private final SqsManager sqsManager;
   private final List<Scraper> scrapers = new ArrayList<>();
   private final String HOSTNAME = System.getenv("HOSTNAME");
   private final String PUBLIC_ADDRESS;
@@ -35,7 +36,7 @@ public class ClientMain implements Closeable {
     }
     new RuntimeDebugThread(this).start();
 
-    SqsManager sqsManager = new SqsManager(config);
+    sqsManager = new SqsManager(config);
 
     // load webserver secret key
     Utils.BACKEND_KEY = config.getRequiredArg(config.ARG_SERVER_AUTH);
@@ -85,5 +86,6 @@ public class ClientMain implements Closeable {
         throw new RuntimeException("not death", e);
       }
     }
+    sqsManager.close();
   }
 }

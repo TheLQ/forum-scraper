@@ -16,6 +16,7 @@ public class ServerMain implements Closeable {
 
   private final PageManager pageManager;
   private final RuntimeDebugThread debugThread;
+  private final SqsManager sqsManager;
 
   public static void main(String[] args) throws Exception {
     SLF4JBridgeHandler.removeHandlersForRootLogger();
@@ -54,7 +55,7 @@ public class ServerMain implements Closeable {
                   }
                 }));
 
-    SqsManager sqsManager = new SqsManager(config);
+    sqsManager = new SqsManager(config);
     DatabaseStorage dbStorage = new DatabaseStorage(config);
     //    if (true) {
     //      PagesRecord page =
@@ -80,5 +81,6 @@ public class ServerMain implements Closeable {
     log.error("CLOSING");
     pageManager.close();
     debugThread.close();
+    sqsManager.close();
   }
 }

@@ -15,6 +15,7 @@ import com.amazonaws.services.sqs.model.QueueDoesNotExistException;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
+import java.io.Closeable;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,7 +29,7 @@ import sh.xana.forum.common.ipc.IScraperRequest;
 import sh.xana.forum.common.ipc.ScraperDownload;
 import sh.xana.forum.common.ipc.ScraperUpload;
 
-public class SqsManager {
+public class SqsManager implements Closeable {
   private static final Logger log = LoggerFactory.getLogger(SqsManager.class);
 
   public static final int QUEUE_SIZE = 10;
@@ -221,6 +222,12 @@ public class SqsManager {
                     new DeleteMessageBatchRequestEntry(
                         UUID.randomUUID().toString(), e.getReceiptHandle()))
             .collect(Collectors.toList()));
+  }
+
+  @Override
+  public void close() {
+    log.info("closing SqsManager");
+    sqsClient.shutdown();
   }
 
   public static String getQueueName(URI queueUrl) {

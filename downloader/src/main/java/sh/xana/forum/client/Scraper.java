@@ -177,6 +177,7 @@ public class Scraper implements Closeable {
   }
 
   public void waitForThreadDeath() throws InterruptedException {
+    log.info("waiting for thread to die");
     thread.join();
   }
 }
