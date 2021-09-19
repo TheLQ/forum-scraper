@@ -28,8 +28,8 @@ public abstract class AbstractTaskThread implements AutoCloseable {
           isFirstIteration = false;
         }
 
-        boolean result = runCycle();
-        if (!result) {
+        boolean keepRunning = runCycle();
+        if (!keepRunning) {
           log.warn("mainLoop returned false, stopping");
           break;
         }
@@ -39,6 +39,7 @@ public abstract class AbstractTaskThread implements AutoCloseable {
         Thread.sleep(cycleSleepMillis);
       } catch (InterruptedException e) {
         log.info("Thread interrupted, closing");
+        onInterrupt();
         break;
       } catch (Exception e) {
         log.error("Caught exception in mainLoop, stopping", e);
@@ -55,6 +56,8 @@ public abstract class AbstractTaskThread implements AutoCloseable {
    * @throws Exception
    */
   protected abstract boolean runCycle() throws Exception;
+
+  protected void onInterrupt() {}
 
   public void close() {
     Utils.closeThread(log, thread);

@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sh.xana.forum.common.AbstractTaskThread;
 import sh.xana.forum.common.RecieveRequest;
 import sh.xana.forum.common.SqsManager;
 import sh.xana.forum.common.Utils;
@@ -27,7 +28,7 @@ import sh.xana.forum.common.ipc.ScraperUpload;
  *
  * <p>When buffer is below Y, refill so download queue can keep going
  */
-public class Scraper implements AutoCloseable {
+public class Scraper extends AbstractTaskThread {
   private static final Logger log = LoggerFactory.getLogger(Scraper.class);
   private static final int CYCLE_SECONDS = 2;
 
@@ -38,116 +39,85 @@ public class Scraper implements AutoCloseable {
   /** Message is from the original ScraperDownload */
   private final List<RecieveRequest<ScraperUpload>> scraperUploads = new ArrayList<>();
 
-  private final Thread thread;
-
   public Scraper(ClientConfig config, SqsManager sqsManager, URI queue) {
+    super(SqsManager.getQueueName(queue), TimeUnit.SECONDS.toMillis(CYCLE_SECONDS));
     this.config = config;
     this.sqsManager = sqsManager;
     this.queue = queue;
-    this.thread = new Thread(this::downloadThread);
-
-    thread.setName(SqsManager.getQueueName(queue));
   }
 
-  public void startThread() {
-    thread.start();
-  }
-
-  private void downloadThread() {
-    while (true) {
-      boolean isClosing;
-      try {
-        isClosing = mainLoopCycle();
-      } catch (Exception e) {
-        log.error("Caught exception in mainLoop, stopping", e);
-        break;
-      }
-      if (isClosing) {
-        log.warn("mainLoop closing, stopping");
-        break;
-      }
-    }
-    log.info("main loop ended");
-  }
-
-  /**
-   * Main execution loop
-   *
-   * @return isClosing should stop thread
-   */
-  private boolean mainLoopCycle() throws InterruptedException {
+  @Override
+  protected boolean runCycle() throws InterruptedException {
     if (scraperDownloads.size() < SqsManager.QUEUE_SIZE) {
-      boolean isClosing = refillQueue(true);
-      if (isClosing) {
-        return true;
-      }
+      refillQueue(true);
     }
 
     if (scraperDownloads.size() == 0) {
       log.info("Queue is empty, not doing anything");
     } else {
       // pop request and fetch content
-      var scraperRequestMessage = scraperDownloads.remove(0);
-      ScraperDownload scraperRequest = scraperRequestMessage.obj();
-
-      List<URI> redirectList = new ArrayList<>();
-      Exception caughtException = null;
-      HttpResponse<byte[]> response = null;
-      try {
-        URI url = scraperRequest.url();
-        log.debug("Requesting {} url {}", scraperRequest.pageId(), scraperRequest.url());
-        HttpRequest request =
-            HttpRequest.newBuilder()
-                // Fix VERY annoying forum that gives different html without this, breaking parser
-                .header("User-Agent", config.get(config.ARG_CLIENT_USERAGENT))
-                .uri(url)
-                .timeout(Duration.ofSeconds(60))
-                .build();
-        response = Utils.httpClient.send(request, BodyHandlers.ofByteArray());
-
-        HttpResponse<byte[]> previousResponse = response.previousResponse().orElse(null);
-        while (previousResponse != null) {
-          redirectList.add(0, previousResponse.uri());
-          previousResponse = previousResponse.previousResponse().orElse(null);
-        }
-        if (!redirectList.isEmpty()) {
-          // add final destination url
-          redirectList.add(response.uri());
-        }
-      } catch (InterruptedException e) {
-        throw e;
-      } catch (Exception e) {
-        log.debug("exception during run", e);
-        caughtException = e;
-      }
-
-      scraperUploads.add(
-          new RecieveRequest<>(
-              scraperRequestMessage.message(),
-              new ScraperUpload(
-                  scraperRequest.pageId(),
-                  caughtException == null ? null : ExceptionUtils.getStackTrace(caughtException),
-                  scraperRequest.url(),
-                  redirectList,
-                  response == null ? null : response.body(),
-                  response == null ? null : response.headers().map(),
-                  response == null ? 0 : response.statusCode())));
+      fetch(scraperDownloads.remove(0));
     }
 
     // sleep then continue for the next cycle
-    log.debug("Queued {} urls, sleeping {} seconds", scraperDownloads.size(), CYCLE_SECONDS);
+    log.debug(
+        "{} download requests, {} upload requests, sleeping {} seconds",
+        scraperDownloads.size(),
+        scraperUploads.size(),
+        CYCLE_SECONDS);
+    return true;
+  }
+
+  private void fetch(RecieveRequest<ScraperDownload> scraperRequestMessage)
+      throws InterruptedException {
+    ScraperDownload scraperRequest = scraperRequestMessage.obj();
+
+    List<URI> redirectList = new ArrayList<>();
+    Exception caughtException = null;
+    HttpResponse<byte[]> response = null;
     try {
-      TimeUnit.SECONDS.sleep(CYCLE_SECONDS);
+      URI url = scraperRequest.url();
+      log.debug("Requesting {} url {}", scraperRequest.pageId(), scraperRequest.url());
+      HttpRequest request =
+          HttpRequest.newBuilder()
+              // Fix VERY annoying forum that gives different html without this, breaking parser
+              .header("User-Agent", config.get(config.ARG_CLIENT_USERAGENT))
+              .uri(url)
+              .timeout(Duration.ofSeconds(60))
+              .build();
+      response = Utils.httpClient.send(request, BodyHandlers.ofByteArray());
+
+      HttpResponse<byte[]> previousResponse = response.previousResponse().orElse(null);
+      while (previousResponse != null) {
+        redirectList.add(0, previousResponse.uri());
+        previousResponse = previousResponse.previousResponse().orElse(null);
+      }
+      if (!redirectList.isEmpty()) {
+        // add final destination url
+        redirectList.add(response.uri());
+      }
     } catch (InterruptedException e) {
-      log.info("Captured interrupt, sending last request");
-      refillQueue(false);
-      return true;
+      throw e;
+    } catch (Exception e) {
+      log.debug("exception during run", e);
+      caughtException = e;
     }
-    return false;
+
+    scraperUploads.add(
+        new RecieveRequest<>(
+            scraperRequestMessage.message(),
+            new ScraperUpload(
+                scraperRequest.pageId(),
+                caughtException == null ? null : ExceptionUtils.getStackTrace(caughtException),
+                scraperRequest.url(),
+                redirectList,
+                response == null ? null : response.body(),
+                response == null ? null : response.headers().map(),
+                response == null ? 0 : response.statusCode())));
   }
 
   /** Fetch new batch of URLs to process, and submit completedBuffer */
-  private boolean refillQueue(boolean requestMore) {
+  private void refillQueue(boolean requestMore) {
     log.info(
         "-- Refill, {} downloads, {} pending upload, {} request more",
         scraperDownloads.size(),
@@ -160,23 +130,20 @@ public class Scraper implements AutoCloseable {
         // deleted the processed scraperDownload messages that we copied to the scraperUpload list
         sqsManager.deleteQueueMessage(queue, scraperUploads);
       }
-      scraperDownloads.addAll(sqsManager.receiveDownloadRequests(queue));
+
+      if (requestMore) {
+        scraperDownloads.addAll(sqsManager.receiveDownloadRequests(queue));
+      }
 
       scraperUploads.clear();
     } catch (Exception e) {
       throw new RuntimeException("failed to parse buffer json", e);
     }
-    return false;
   }
 
   @Override
-  public void close() {
-    log.info("close called, stopping thread");
-    Utils.closeThread(log, thread);
-  }
-
-  public void waitForThreadDeath() throws InterruptedException {
-    log.info("waiting for thread to die");
-    thread.join();
+  protected void onInterrupt() {
+    log.info("Captured interrupt, sending last request");
+    refillQueue(false);
   }
 }
