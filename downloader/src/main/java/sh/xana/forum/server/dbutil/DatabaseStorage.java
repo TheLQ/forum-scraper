@@ -161,7 +161,8 @@ public class DatabaseStorage implements AutoCloseable {
       UUID siteId,
       Map<DlStatus, Integer> dlStatusCount,
       MutableInt parseLoginRequired,
-      MutableInt parseSoft500) {}
+      MutableInt parseSoft500,
+      MutableInt parseOtherException) {}
 
   /** Stage: reporting monitor */
   @SuppressWarnings("unchecked")
@@ -173,7 +174,8 @@ public class DatabaseStorage implements AutoCloseable {
                 PAGES.DLSTATUS,
                 PAGES.SITEID,
                 DSL.count(DSL.when(PAGES.EXCEPTION.like("%LoginRequired%"), 1)),
-                DSL.count(DSL.when(PAGES.EXCEPTION.like("%Soft500Exception%"), 1)))
+                DSL.count(DSL.when(PAGES.EXCEPTION.like("%Soft500Exception%"), 1)),
+                DSL.count(DSL.when(PAGES.EXCEPTION.isNotNull(), 1)))
             .from(PAGES)
             .groupBy(PAGES.DLSTATUS, PAGES.SITEID);
     log.info("QUERY " + query);
@@ -191,7 +193,11 @@ public class DatabaseStorage implements AutoCloseable {
                   () -> {
                     OverviewEntry newEntry =
                         new OverviewEntry(
-                            siteId, new HashMap<>(), new MutableInt(), new MutableInt());
+                            siteId,
+                            new HashMap<>(),
+                            new MutableInt(),
+                            new MutableInt(),
+                            new MutableInt());
                     result.add(newEntry);
                     return newEntry;
                   });
@@ -200,13 +206,15 @@ public class DatabaseStorage implements AutoCloseable {
 
       int loginRequired = page.value4();
       int soft500 = page.value5();
-      if ((loginRequired != 0 || soft500 != 0)) {
+      int allExceptions = page.value6();
+      if ((loginRequired != 0 || soft500 != 0 || allExceptions != 0)) {
         if (!page.value2().equals(DlStatus.Parse)) {
           throw new IllegalStateException(
               "Got exception values when DlStatus is not Parse" + System.lineSeparator() + page);
         }
         entry.parseLoginRequired().setValue(loginRequired);
         entry.parseSoft500().setValue(soft500);
+        entry.parseOtherException().setValue(allExceptions - loginRequired - soft500);
       }
     }
 
