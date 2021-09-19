@@ -113,7 +113,7 @@ public class WebServer extends NanoHTTPD {
     result.append("<th>Type</th>");
     result.append("<th>Queued</th>");
     result.append("<th>Download</th>");
-    result.append("<th>Parse</th>");
+    result.append("<th>Parse<br>(LoginRequired/Soft500)</th>");
     result.append("<th>Done</th>");
     result.append("</tr>");
 
@@ -126,7 +126,15 @@ public class WebServer extends NanoHTTPD {
       result.append("<td>").append(site.getForumtype()).append("</td>");
       result.append("<td>").append(entry.dlStatusCount().get(DlStatus.Queued)).append("</td>");
       result.append("<td>").append(entry.dlStatusCount().get(DlStatus.Download)).append("</td>");
-      result.append("<td>").append(entry.dlStatusCount().get(DlStatus.Parse)).append("</td>");
+
+      result.append("<td>").append(entry.dlStatusCount().get(DlStatus.Parse));
+      int loginRequired = entry.parseLoginRequired().getValue();
+      int soft500 = entry.parseSoft500().getValue();
+      if (loginRequired != 0 || soft500 != 0) {
+        result.append(" (").append(loginRequired).append("/").append(soft500).append(")");
+      }
+      result.append("</td>");
+
       result.append("<td>").append(entry.dlStatusCount().get(DlStatus.Done)).append("</td>");
       result.append("</tr>");
     }
@@ -139,7 +147,7 @@ public class WebServer extends NanoHTTPD {
   private String pageOverviewPage(IHTTPSession session) {
     UUID pageId = UUID.fromString(getRequiredParameter(session, "pageId"));
 
-    List<PagesRecord> pages = dbStorage.getOverviewPage(pageId);
+    List<PagesRecord> pages = dbStorage.getOverviewPageHistory(pageId);
     return _overviewPage(pages);
   }
 

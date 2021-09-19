@@ -19,13 +19,13 @@ import org.apache.commons.dbcp2.DriverManagerConnectionFactory;
 import org.apache.commons.dbcp2.PoolableConnection;
 import org.apache.commons.dbcp2.PoolableConnectionFactory;
 import org.apache.commons.dbcp2.PoolingDataSource;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.commons.pool2.ObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Query;
-import org.jooq.Record2;
 import org.jooq.Result;
 import org.jooq.SQLDialect;
 import org.jooq.conf.Settings;
@@ -155,14 +155,23 @@ public class DatabaseStorage {
     return res;
   }
 
-  public record OverviewEntry(UUID siteId, Map<DlStatus, Integer> dlStatusCount) {}
+  public record OverviewEntry(
+      UUID siteId,
+      Map<DlStatus, Integer> dlStatusCount,
+      MutableInt parseLoginRequired,
+      MutableInt parseSoft500) {}
 
   /** Stage: reporting monitor */
   @SuppressWarnings("unchecked")
   public List<OverviewEntry> getOverviewSites() {
     var query =
         context
-            .select(DSL.count(), PAGES.DLSTATUS, PAGES.SITEID)
+            .select(
+                DSL.count(),
+                PAGES.DLSTATUS,
+                PAGES.SITEID,
+                DSL.count(DSL.when(PAGES.EXCEPTION.like("%LoginRequired%"), 1)),
+                DSL.count(DSL.when(PAGES.EXCEPTION.like("%Soft500Exception%"), 1)))
             .from(PAGES)
             .groupBy(PAGES.DLSTATUS, PAGES.SITEID);
     log.info("QUERY " + query);
@@ -178,12 +187,25 @@ public class DatabaseStorage {
               .findFirst()
               .orElseGet(
                   () -> {
-                    OverviewEntry newEntry = new OverviewEntry(siteId, new HashMap<>());
+                    OverviewEntry newEntry =
+                        new OverviewEntry(
+                            siteId, new HashMap<>(), new MutableInt(), new MutableInt());
                     result.add(newEntry);
                     return newEntry;
                   });
 
       entry.dlStatusCount().put(page.value2(), page.value1());
+
+      int loginRequired = page.value4();
+      int soft500 = page.value5();
+      if ((loginRequired != 0 || soft500 != 0)) {
+        if (!page.value2().equals(DlStatus.Parse)) {
+          throw new IllegalStateException(
+              "Got exception values when DlStatus is not Parse" + System.lineSeparator() + page);
+        }
+        entry.parseLoginRequired().setValue(loginRequired);
+        entry.parseSoft500().setValue(soft500);
+      }
     }
 
     /*
@@ -208,7 +230,7 @@ public class DatabaseStorage {
     return result;
   }
 
-  public List<PagesRecord> getOverviewPage(UUID id) {
+  public List<PagesRecord> getOverviewPageHistory(UUID id) {
     List<PagesRecord> results = new ArrayList<>();
     UUID nextId = id;
     for (int i = 0; i < Integer.MAX_VALUE; i++) {
@@ -245,19 +267,6 @@ public class DatabaseStorage {
             PAGES.EXCEPTION.notLike("%Soft500Exception%"))
         .orderBy(PAGES.PAGEUPDATED)
         .fetchInto(PagesRecord.class);
-  }
-
-  public Map<UUID, Integer> getParseCountPerSite() {
-    return context
-        .select(DSL.count(PAGES), PAGES.SITEID)
-        .from(PAGES)
-        .where(
-            PAGES.DLSTATUS.eq(DlStatus.Parse),
-            PAGES.EXCEPTION.isNotNull(),
-            PAGES.EXCEPTION.notLike("%LoginRequired%"))
-        .groupBy(PAGES.SITEID)
-        .fetch()
-        .intoMap(Record2::value2, Record2::value1);
   }
 
   // **************************** Utils ******************
