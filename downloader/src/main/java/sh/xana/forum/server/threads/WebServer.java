@@ -16,6 +16,7 @@ import sh.xana.forum.server.NodeManager;
 import sh.xana.forum.server.ServerConfig;
 import sh.xana.forum.server.db.tables.Pages;
 import sh.xana.forum.server.db.tables.records.PagesRecord;
+import sh.xana.forum.server.db.tables.records.SitesRecord;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
 import sh.xana.forum.server.dbutil.DatabaseStorage.InsertPage;
 import sh.xana.forum.server.dbutil.DlStatus;
@@ -107,8 +108,9 @@ public class WebServer extends NanoHTTPD {
     StringBuilder result = new StringBuilder();
     result.append("<table>");
     result.append("<tr>");
-    result.append("<th>ID</th>");
-    result.append("<th>UUID</th>");
+    result.append("<th>SiteId</th>");
+    result.append("<th>Domain</th>");
+    result.append("<th>Type</th>");
     result.append("<th>Queued</th>");
     result.append("<th>Download</th>");
     result.append("<th>Parse</th>");
@@ -116,12 +118,12 @@ public class WebServer extends NanoHTTPD {
     result.append("</tr>");
 
     for (DatabaseStorage.OverviewEntry entry : dbStorage.getOverviewSites()) {
+      SitesRecord site = dbStorage.siteCache.recordById(entry.siteId());
+
       result.append("<tr>");
       result.append("<td>").append(entry.siteId()).append("</td>");
-      result
-          .append("<td>")
-          .append(dbStorage.siteCache.recordById(entry.siteId()).getDomain())
-          .append("</td>");
+      result.append("<td>").append(site.getDomain()).append("</td>");
+      result.append("<td>").append(site.getForumtype()).append("</td>");
       result.append("<td>").append(entry.dlStatusCount().get(DlStatus.Queued)).append("</td>");
       result.append("<td>").append(entry.dlStatusCount().get(DlStatus.Download)).append("</td>");
       result.append("<td>").append(entry.dlStatusCount().get(DlStatus.Parse)).append("</td>");
