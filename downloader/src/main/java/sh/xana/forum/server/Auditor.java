@@ -44,7 +44,7 @@ public class Auditor {
   public static void main(String[] args) throws Exception {
     config = new ServerConfig();
     dbStorage = new DatabaseStorage(config);
-    parser = new PageParser(config);
+    parser = new PageParser();
 
     if (args.length == 0) {
       throw new RuntimeException("no args");

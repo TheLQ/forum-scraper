@@ -18,7 +18,7 @@ public class AuditRedirectsNotRemoved {
   public static void main(String[] args) throws IOException {
     ServerConfig config = new ServerConfig();
     dbStorage = new DatabaseStorage(config);
-    parser = new PageParser(config);
+    parser = new PageParser();
 
     log.info("Loading page redirects...");
     List<PageredirectsRecord> pageRedirects =

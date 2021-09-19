@@ -12,7 +12,6 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.Utils;
-import sh.xana.forum.server.NodeManager;
 import sh.xana.forum.server.ServerConfig;
 import sh.xana.forum.server.db.tables.Pages;
 import sh.xana.forum.server.db.tables.records.PagesRecord;
@@ -32,13 +31,11 @@ public class WebServer extends NanoHTTPD implements AutoCloseable {
   private final String nodeAuthValue;
 
   private final DatabaseStorage dbStorage;
-  private final NodeManager nodeManager;
 
-  public WebServer(DatabaseStorage dbStorage, NodeManager nodeManager, ServerConfig config) {
+  public WebServer(ServerConfig config, DatabaseStorage dbStorage) {
     // Bind to localhost since on aws we are proxied
     super(PORT);
     this.dbStorage = dbStorage;
-    this.nodeManager = nodeManager;
     this.nodeAuthValue = config.get(config.ARG_SERVER_AUTH);
   }
 

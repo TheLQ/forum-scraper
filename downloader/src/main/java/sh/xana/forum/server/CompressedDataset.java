@@ -38,7 +38,7 @@ public class CompressedDataset {
   public static void main(String[] args) throws Exception {
     ServerConfig config = new ServerConfig();
     DatabaseStorage dbStorage = new DatabaseStorage(config);
-    PageParser parser = new PageParser(config);
+    PageParser parser = new PageParser();
 
     CompressedDataset impl = new CompressedDataset(dbStorage);
     impl.write(config, parser);

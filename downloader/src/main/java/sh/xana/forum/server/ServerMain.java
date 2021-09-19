@@ -71,11 +71,11 @@ public class ServerMain implements AutoCloseable {
     DatabaseStorage dbStorage = new DatabaseStorage(config);
     closableComponents.add(dbStorage);
 
-    // ...
-    NodeManager nodeManager = new NodeManager();
+    // TODO remake
+    // NodeManager nodeManager = new NodeManager();
 
     // -- Web server - safe to always start
-    WebServer server = new WebServer(dbStorage, nodeManager, config);
+    WebServer server = new WebServer(config, dbStorage);
     server.start();
     closableComponents.add(server);
 
