@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.apache.commons.collections4.ComparatorUtils;
 import org.apache.commons.dbcp2.ConnectionFactory;
 import org.apache.commons.dbcp2.DriverManagerConnectionFactory;
 import org.apache.commons.dbcp2.PoolableConnection;
@@ -157,6 +158,7 @@ public class DatabaseStorage {
   public record OverviewEntry(UUID siteId, Map<DlStatus, Integer> dlStatusCount) {}
 
   /** Stage: reporting monitor */
+  @SuppressWarnings("unchecked")
   public List<OverviewEntry> getOverviewSites() {
     var query =
         context
@@ -164,26 +166,45 @@ public class DatabaseStorage {
             .from(PAGES)
             .groupBy(PAGES.DLSTATUS, PAGES.SITEID);
     log.info("QUERY " + query);
-    var pages = query.fetch();
+
+    // Convert (Site,Status1,#),(Site,Status2,#),etc to
+    // (Site1,Map<DlStatus,#>),(Site2,Map<DlStatus,#>),etc
     List<OverviewEntry> result = new ArrayList<>();
-    while (!pages.isEmpty()) {
-      Map<DlStatus, Integer> counter = new HashMap<>();
+    for (var page : query.fetch()) {
+      UUID siteId = page.value3();
+      OverviewEntry entry =
+          result.stream()
+              .filter(e -> e.siteId.equals(siteId))
+              .findFirst()
+              .orElseGet(
+                  () -> {
+                    OverviewEntry newEntry = new OverviewEntry(siteId, new HashMap<>());
+                    result.add(newEntry);
+                    return newEntry;
+                  });
 
-      var pageIterator = pages.iterator();
-      UUID siteId = null;
-      do {
-        var curPage = pageIterator.next();
-        if (siteId == null) {
-          siteId = curPage.get(PAGES.SITEID);
-        } else if (!curPage.get(PAGES.SITEID).equals(siteId)) {
-          continue;
-        }
-        counter.put(curPage.get(PAGES.DLSTATUS), curPage.value1());
-        pageIterator.remove();
-      } while (pageIterator.hasNext());
-
-      result.add(new OverviewEntry(siteId, counter));
+      entry.dlStatusCount().put(page.value2(), page.value1());
     }
+
+    /*
+    TODO: Fix annoying "Unchecked generics array creation for varargs parameter" without making a
+    redundant list that chainedComparator just grabs the array from. Then remove @SuppressWarnings
+    */
+    result.sort(
+        ComparatorUtils.chainedComparator(
+            (o1, o2) ->
+                o2.dlStatusCount().getOrDefault(DlStatus.Parse, 0)
+                    - o1.dlStatusCount().getOrDefault(DlStatus.Parse, 0),
+            (o1, o2) ->
+                o2.dlStatusCount().getOrDefault(DlStatus.Download, 0)
+                    - o1.dlStatusCount().getOrDefault(DlStatus.Download, 0),
+            (o1, o2) ->
+                o2.dlStatusCount().getOrDefault(DlStatus.Queued, 0)
+                    - o1.dlStatusCount().getOrDefault(DlStatus.Queued, 0),
+            (o1, o2) ->
+                o2.dlStatusCount().getOrDefault(DlStatus.Done, 0)
+                    - o1.dlStatusCount().getOrDefault(DlStatus.Done, 0)));
+
     return result;
   }
 
@@ -226,7 +247,7 @@ public class DatabaseStorage {
         .fetchInto(PagesRecord.class);
   }
 
-  public Map<UUID, Integer> getOverviewToParse() {
+  public Map<UUID, Integer> getParseCountPerSite() {
     return context
         .select(DSL.count(PAGES), PAGES.SITEID)
         .from(PAGES)
@@ -236,7 +257,7 @@ public class DatabaseStorage {
             PAGES.EXCEPTION.notLike("%LoginRequired%"))
         .groupBy(PAGES.SITEID)
         .fetch()
-        .intoMap(Record2::component2, Record2::component1);
+        .intoMap(Record2::value2, Record2::value1);
   }
 
   // **************************** Utils ******************
