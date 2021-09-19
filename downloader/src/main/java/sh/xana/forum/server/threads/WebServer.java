@@ -32,18 +32,15 @@ public class WebServer extends NanoHTTPD {
   private final String nodeAuthValue;
 
   private final DatabaseStorage dbStorage;
-  private final PageManager pageManager;
   private final NodeManager nodeManager;
 
   public WebServer(
       DatabaseStorage dbStorage,
-      PageManager pageManager,
       NodeManager nodeManager,
       ServerConfig config) {
     // Bind to localhost since on aws we are proxied
     super(PORT);
     this.dbStorage = dbStorage;
-    this.pageManager = pageManager;
     this.nodeManager = nodeManager;
     this.nodeAuthValue = config.get(config.ARG_SERVER_AUTH);
   }

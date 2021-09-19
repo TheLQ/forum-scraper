@@ -4,6 +4,7 @@ import static sh.xana.forum.server.db.tables.Pageredirects.PAGEREDIRECTS;
 import static sh.xana.forum.server.db.tables.Pages.PAGES;
 import static sh.xana.forum.server.db.tables.Sites.SITES;
 
+import java.io.Closeable;
 import java.net.URI;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -46,6 +47,7 @@ public class DatabaseStorage {
   public final SiteCache siteCache;
 
   private final DSLContext context;
+  private final Closeable closableConnection;
 
   public DatabaseStorage(ServerConfig config) {
     log.info("Connecting to database");
@@ -524,5 +526,9 @@ public class DatabaseStorage {
               + ". Query "
               + query);
     }
+  }
+
+  public void close() {
+    context.close();
   }
 }

@@ -4,22 +4,20 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 import sh.xana.forum.client.ClientMain;
 import sh.xana.forum.common.SqsManager;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
-import sh.xana.forum.server.threads.PageManager;
 import sh.xana.forum.server.threads.RuntimeDebugThread;
 import sh.xana.forum.server.threads.WebServer;
 
 public class ServerMain implements Closeable {
   private static final Logger log = LoggerFactory.getLogger(ClientMain.class);
-
-  private final PageManager pageManager;
-  private final RuntimeDebugThread debugThread;
-  private final SqsManager sqsManager;
+  private final List<Closeable> closableComponents = new ArrayList<>();
 
   public static void main(String[] args) throws Exception {
     SLF4JBridgeHandler.removeHandlersForRootLogger();
@@ -58,15 +56,22 @@ public class ServerMain implements Closeable {
                   }
                 }));
 
-    sqsManager = new SqsManager(config, debugMode);
-    DatabaseStorage dbStorage = new DatabaseStorage(config);
-    pageManager = new PageManager(dbStorage, config, sqsManager);
+    SqsManager sqsManager = new SqsManager(config, debugMode);
+    closableComponents.add(sqsManager);
+    RuntimeDebugThread debugThread = new RuntimeDebugThread(this);
+    closableComponents.add(debugThread);
     NodeManager nodeManager = new NodeManager();
 
-    WebServer server = new WebServer(dbStorage, pageManager, nodeManager, config);
+    DatabaseStorage dbStorage = new DatabaseStorage(config);
+    closableComponents.add(dbStorage);
+
+    WebServer server = new WebServer(dbStorage, nodeManager, config);
     server.start();
 
-    debugThread = new RuntimeDebugThread(this);
+
+
+
+
     if (!debugMode) {
       pageManager.startThreads();
       debugThread.start();
@@ -76,8 +81,8 @@ public class ServerMain implements Closeable {
 
   public void close() throws IOException {
     log.error("CLOSING");
-    pageManager.close();
-    debugThread.close();
-    sqsManager.close();
+    for (Closeable thread : closableComponents) {
+      thread.close();
+    }
   }
 }
