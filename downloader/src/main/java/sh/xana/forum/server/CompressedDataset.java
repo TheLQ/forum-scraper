@@ -41,12 +41,12 @@ public class CompressedDataset {
     PageParser parser = new PageParser(config);
 
     CompressedDataset impl = new CompressedDataset(dbStorage);
-    impl.write(parser);
+    impl.write(config, parser);
   }
 
   private record PageData(byte[] in, UUID pageId) {}
 
-  public void write(PageParser parser) throws Exception {
+  public void write(ServerConfig config, PageParser parser) throws Exception {
     Path cache = Path.of("datasetcache.json");
     List<UUID> pages;
     if (Files.exists(cache)) {
@@ -73,7 +73,7 @@ public class CompressedDataset {
     executor.run(
         pages,
         16,
-        (pageId) -> new PageData(Files.readAllBytes(parser.getPagePath(pageId)), pageId),
+        (pageId) -> new PageData(Files.readAllBytes(config.getPagePath(pageId)), pageId),
         1,
         (pageData) -> {
           //      datasetOut.write(input.in);

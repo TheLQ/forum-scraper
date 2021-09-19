@@ -39,9 +39,10 @@ public class Auditor {
   private static final Logger log = LoggerFactory.getLogger(Auditor.class);
   private static DatabaseStorage dbStorage;
   private static PageParser parser;
+  private static ServerConfig config;
 
   public static void main(String[] args) throws Exception {
-    ServerConfig config = new ServerConfig();
+    config = new ServerConfig();
     dbStorage = new DatabaseStorage(config);
     parser = new PageParser(config);
 
@@ -69,7 +70,7 @@ public class Auditor {
         log.info("file exists for {} is {}", path, Files.exists(path));
         UUID pageId = UUID.fromString(args[1]);
         page = dbStorage.getParserPages(true, Pages.PAGES.PAGEID.eq(pageId)).get(0);
-        path = parser.getPagePath(pageId);
+        path = config.getPagePath(pageId);
       }
 
       ParserResult result = parser.parsePage(Files.readAllBytes(path), page);
@@ -186,7 +187,7 @@ public class Auditor {
                 log.info("{} of {}", idx, pages.size());
               }
               try {
-                byte[] data = Files.readAllBytes(parser.getPagePath(page.pageId()));
+                byte[] data = Files.readAllBytes(config.getPagePath(page.pageId()));
                 ParserResult result = parser.parsePage(data, page);
                 getErrors(page.pageId(), result, new ArrayList<>());
               } catch (Exception e) {
@@ -231,7 +232,7 @@ public class Auditor {
                   log.info("{} of {}", idx, pages.size());
                 }
 
-                byte[] data = Files.readAllBytes(parser.getPagePath(page.pageId()));
+                byte[] data = Files.readAllBytes(config.getPagePath(page.pageId()));
                 runParser(data, page, new ArrayList<>());
                 return null;
               });
@@ -248,7 +249,7 @@ public class Auditor {
     executor.run(
         pages,
         16,
-        (pageId) -> new QueueEntry(Files.readAllBytes(parser.getPagePath(pageId.pageId())), pageId),
+        (pageId) -> new QueueEntry(Files.readAllBytes(config.getPagePath(pageId.pageId())), pageId),
         Runtime.getRuntime().availableProcessors() * 2,
         (pageData) -> runParser(pageData.in(), pageData.pageId(), errors));
     log.info("writing {} auditor errors", errors.size());

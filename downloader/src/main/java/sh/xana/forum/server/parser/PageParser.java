@@ -1,7 +1,6 @@
 package sh.xana.forum.server.parser;
 
 import java.net.URI;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -40,21 +39,6 @@ public class PageParser {
 
   public PageParser(ServerConfig config) {
     this.config = config;
-  }
-
-  public Path getPagePath(UUID pageId) {
-    String pageIdStr = pageId.toString();
-    return Path.of(
-        config.get(config.ARG_FILE_CACHE),
-        "" + pageIdStr.charAt(0),
-        "" + pageIdStr.charAt(1),
-        pageIdStr + ".response");
-  }
-
-  public Path getPageHeaderPath(UUID pageId) {
-    String pageIdStr = pageId.toString();
-    return Path.of(
-        config.get(config.ARG_FILE_CACHE), "" + pageIdStr.charAt(0), pageIdStr + ".headers");
   }
 
   public ParserResult parsePage(byte[] data, ParserPage page) {

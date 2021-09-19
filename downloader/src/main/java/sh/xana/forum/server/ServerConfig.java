@@ -2,6 +2,7 @@ package sh.xana.forum.server;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.UUID;
 import sh.xana.forum.common.CommonConfig;
 
 public class ServerConfig extends CommonConfig {
@@ -14,5 +15,23 @@ public class ServerConfig extends CommonConfig {
 
   public ServerConfig() throws IOException {
     super(Path.of("config-server.properties"));
+  }
+
+  public Path getPagePath(UUID pageId) {
+    String pageIdStr = pageId.toString();
+    return Path.of(
+        get(ARG_FILE_CACHE),
+        "" + pageIdStr.charAt(0),
+        "" + pageIdStr.charAt(1),
+        pageIdStr + ".response");
+  }
+
+  public Path getPageHeaderPath(UUID pageId) {
+    String pageIdStr = pageId.toString();
+    return Path.of(
+        get(ARG_FILE_CACHE),
+        "" + pageIdStr.charAt(0),
+        "" + pageIdStr.charAt(1),
+        pageIdStr + ".headers");
   }
 }
