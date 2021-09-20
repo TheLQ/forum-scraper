@@ -20,6 +20,11 @@ public interface AbstractForum {
 
   default void preProcessing(SourcePage sourcePage) {}
 
+  @NotNull
+  default PageType forcePageType(SourcePage sourcePage) {
+    return PageType.Unknown;
+  }
+
   boolean detectLoginRequired(SourcePage sourcePage);
 
   @NotNull
@@ -43,4 +48,6 @@ public interface AbstractForum {
   }
 
   Pattern[] validateUrl();
+
+  default void pageDone() {}
 }

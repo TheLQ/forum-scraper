@@ -17,6 +17,8 @@ import sh.xana.forum.server.dbutil.ParserPage;
 import sh.xana.forum.server.parser.impl.ForkBoard;
 import sh.xana.forum.server.parser.impl.XenForo_F;
 import sh.xana.forum.server.parser.impl.vBulletin_IB;
+import sh.xana.forum.server.parser.impl.vBulletin_Url1;
+import sh.xana.forum.server.parser.impl.vBulletin_Url2;
 
 public class PageParser {
   private static final Logger log = LoggerFactory.getLogger(PageParser.class);
@@ -26,6 +28,10 @@ public class PageParser {
           //          new vBulletin(),
           ForumType.vBulletin_IB,
           new vBulletin_IB(),
+          ForumType.vBulletin_Url1,
+          new vBulletin_Url1(),
+          ForumType.vBulletin_Url2,
+          new vBulletin_Url2(),
           ForumType.XenForo_F,
           new XenForo_F(),
           ForumType.ForkBoard,
@@ -46,16 +52,17 @@ public class PageParser {
       throw new ParserException("Page is empty", pageId);
     }
 
-    PageType pageType = PageType.Unknown;
-    List<ParserEntry> subpages = new ArrayList<>();
+    AbstractForum parser = null;
+    List<Subpage> subpages = new ArrayList<>();
     try {
       String rawHtml = new String(data);
 
       // make sure selected parser can handle this but nothing else can
-      AbstractForum parser = PARSERS.get(forumType);
+      parser = PARSERS.get(forumType);
       if (parser == null) {
         throw new NullPointerException("Cannot find parser for " + forumType);
       }
+//       log.trace("Type {} parser {}", forumType, parser.getClass());
       //      if (parser.detectForumType(rawHtml) == null) {
       //        earlyThrowIfHttpError(page);
       //        throw new ParserException("No parsers handled this file", pageId);
@@ -96,14 +103,17 @@ public class PageParser {
       // Above should of handled HTTP 403 login required, so stop here if nothing has done so
       earlyThrowIfHttpError(page);
 
+      PageType pageType = parser.forcePageType(sourcePage);
+      boolean needPageType = pageType == PageType.Unknown;
+
       addUrls(parser.getSubforumAnchors(sourcePage), subpages, PageType.ForumList);
       addUrls(parser.getTopicAnchors(sourcePage), subpages, PageType.TopicPage);
-      if (!subpages.isEmpty()) {
+      if (needPageType && !subpages.isEmpty()) {
         pageType = PageType.ForumList;
       }
 
       // TODO: Iterate through to build post history
-      if (!parser.getPostElements(sourcePage).isEmpty()) {
+      if (needPageType && !parser.getPostElements(sourcePage).isEmpty()) {
         if (pageType != PageType.Unknown) {
           for (ValidatedUrl url : parser.getSubforumAnchors(sourcePage)) {
             log.info("forum " + url.url);
@@ -135,6 +145,10 @@ public class PageParser {
       throw e;
     } catch (Exception e) {
       throw new ParserException("Failed inside parser " + forumType, pageId, e);
+    } finally {
+      if (parser != null) {
+        parser.pageDone();
+      }
     }
   }
 
