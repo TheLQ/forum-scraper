@@ -27,17 +27,18 @@ public class PageUploadsThread extends AbstractTaskThread {
   private final DatabaseStorage dbStorage;
 
   public PageUploadsThread(ServerConfig config, DatabaseStorage dbStorage, SqsManager sqsManager) {
-    super("PageUploads-" + THREAD_COUNTER++, TimeUnit.MINUTES.toMillis(1));
+    super("PageUploads-" + THREAD_COUNTER++, 0);
     this.config = config;
     this.dbStorage = dbStorage;
     this.sqsManager = sqsManager;
   }
 
   @Override
-  protected boolean runCycle() throws IOException {
+  protected boolean runCycle() throws InterruptedException, IOException {
     List<RecieveRequest<ScraperUpload>> recieveRequests = sqsManager.receiveUploadRequests();
     if (recieveRequests.isEmpty()) {
-      log.debug("No uploads to process");
+      log.debug("No uploads to process, sleeping 1 minute");
+      TimeUnit.MINUTES.sleep(1);
       return true;
     }
 
