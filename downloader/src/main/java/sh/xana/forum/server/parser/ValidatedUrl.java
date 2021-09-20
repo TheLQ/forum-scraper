@@ -22,18 +22,18 @@ public class ValidatedUrl {
       return pageUrl;
     }
     if (!pageUrl.startsWith(baseUrl)) {
-      throw new RuntimeException("Page " + pageUrl + " does not start with base " + baseUrl);
+      throw new ValidatedUrlException("Page " + pageUrl + " does not start with base " + baseUrl);
     }
 
     if (!baseUrl.endsWith("/")) {
-      throw new RuntimeException("Missing end / for " + baseUrl);
+      throw new ValidatedUrlException("Missing end / for " + baseUrl);
     }
 
     pageUrl = parser.postProcessUrl(pageUrl);
 
     String subUrl = pageUrl.substring(baseUrl.length());
     if (subUrl.startsWith("/")) {
-      throw new RuntimeException(
+      throw new ValidatedUrlException(
           "Unexpected starting / for " + subUrl + " with page " + pageUrl + " base " + baseUrl);
     }
 
@@ -53,7 +53,7 @@ public class ValidatedUrl {
 
     String subUrlFinal = subUrl;
     if (Arrays.stream(parser.validateUrl()).noneMatch(e -> e.matcher(subUrlFinal).matches())) {
-      throw new RuntimeException(
+      throw new ValidatedUrlException(
           "Failed to regex validate "
               + subUrl
               + " from "
