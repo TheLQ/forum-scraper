@@ -18,6 +18,14 @@
     </encoder>
   </appender>
 
+  <appender name="FILE-ERRORS" class="ch.qos.logback.core.FileAppender">
+    <file>server-${timestamp}.log</file>
+    <append>true</append>
+    <encoder>
+      <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+    </encoder>
+  </appender>
+
   <!-- TRACE has extreme detail on each record fetched, DEBUG shows results and ASCII table -->
   <logger name="org.jooq.tools.LoggerListener" level="info"/>
   <!-- TRACE lists each binding variable -->
@@ -37,5 +45,6 @@
   <root level="trace">
     <appender-ref ref="STDOUT"/>
     <appender-ref ref="FILE"/>
+    <appender-ref ref="FILE-ERRORS"/>
   </root>
 </configuration>
