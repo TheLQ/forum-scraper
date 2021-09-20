@@ -23,9 +23,10 @@ public class vBulletin_Url2 extends AbstractUrlForum {
 
   public vBulletin_Url2() {
     super(
-        "forumdisplay.php", "showthread.php", new String[] {"f", "page"},
-        new String[] {"t", /*old way??*/ "p", "page"}
-    );
+        "forumdisplay.php",
+        "showthread.php",
+        new String[] {"f", "page"},
+        new String[] {"t", /*old way??*/ "p", "page"});
   }
 
   @Override
@@ -42,29 +43,30 @@ public class vBulletin_Url2 extends AbstractUrlForum {
   protected Stream<URIBuilder> getBaseUrls(Document doc) {
     return super.getBaseUrls(doc)
         // remap long param keys to short keys for consistency
-        .peek(e -> {
-          List<NameValuePair> queryParams = e.getQueryParams();
-          boolean queryChanged = false;
-          for (var iter = queryParams.listIterator(); iter.hasNext();) {
-            NameValuePair pair = iter.next();
-            if (pair.getName().equals("threadid")) {
-              iter.set(new BasicNameValuePair("t", pair.getValue()));
-              e.setParameters(queryParams);
-              queryChanged = true;
-            } else if (pair.getName().equals("forumid")) {
-              iter.set(new BasicNameValuePair("f", pair.getValue()));
-              e.setParameters(queryParams);
-              queryChanged = true;
-            } else if (pair.getName().equals("postid")) {
-              iter.set(new BasicNameValuePair("p", pair.getValue()));
-              e.setParameters(queryParams);
-              queryChanged = true;
-            }
-          }
-          if (queryChanged) {
-            e.setParameters(queryParams);
-          }
-        });
+        .peek(
+            e -> {
+              List<NameValuePair> queryParams = e.getQueryParams();
+              boolean queryChanged = false;
+              for (var iter = queryParams.listIterator(); iter.hasNext(); ) {
+                NameValuePair pair = iter.next();
+                if (pair.getName().equals("threadid")) {
+                  iter.set(new BasicNameValuePair("t", pair.getValue()));
+                  e.setParameters(queryParams);
+                  queryChanged = true;
+                } else if (pair.getName().equals("forumid")) {
+                  iter.set(new BasicNameValuePair("f", pair.getValue()));
+                  e.setParameters(queryParams);
+                  queryChanged = true;
+                } else if (pair.getName().equals("postid")) {
+                  iter.set(new BasicNameValuePair("p", pair.getValue()));
+                  e.setParameters(queryParams);
+                  queryChanged = true;
+                }
+              }
+              if (queryChanged) {
+                e.setParameters(queryParams);
+              }
+            });
   }
 
   @Override
@@ -74,12 +76,12 @@ public class vBulletin_Url2 extends AbstractUrlForum {
 
   private static final Pattern[] PATTERNS =
       new Pattern[] {
-          // index.php homepage
-          Pattern.compile("index.php"),
-          // forumdisplay.php?f=139&order=desc&page=5
-          Pattern.compile("forumdisplay.php\\?f=[0-9]+(&order=[a-z]+)?(&page=[0-9]+)?"),
-          // showthread.php?t=717252&page=2
-          Pattern.compile("showthread.php\\?[tp]=[0-9]+(&page=[0-9]+)?")
+        // index.php homepage
+        Pattern.compile("index.php"),
+        // forumdisplay.php?f=139&order=desc&page=5
+        Pattern.compile("forumdisplay.php\\?f=[0-9]+(&order=[a-z]+)?(&page=[0-9]+)?"),
+        // showthread.php?t=717252&page=2
+        Pattern.compile("showthread.php\\?[tp]=[0-9]+(&page=[0-9]+)?")
       };
 
   @Override

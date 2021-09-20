@@ -17,9 +17,10 @@ public class vBulletin_Url1 extends AbstractUrlForum {
 
   public vBulletin_Url1() {
     super(
-        "forumdisplay.php", "showthread.php", new String[] {"f", "page"},
-        new String[] {"t", /*old way??*/ "p", "page"}
-    );
+        "forumdisplay.php",
+        "showthread.php",
+        new String[] {"f", "page"},
+        new String[] {"t", /*old way??*/ "p", "page"});
   }
 
   @Override

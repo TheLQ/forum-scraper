@@ -17,16 +17,17 @@ public abstract class AbstractUrlForum implements AbstractForum {
   private final String[] queryKeysPage;
   private final ThreadLocal<URIBuilder[]> fetchedLinks = new ThreadLocal<>();
 
-  protected AbstractUrlForum(String pageForum, String pageThread, String[] queryKeysForum,
-      String[] queryKeysTopic) {
+  protected AbstractUrlForum(
+      String pageForum, String pageThread, String[] queryKeysForum, String[] queryKeysTopic) {
     this.pageForum = pageForum;
     this.pageThread = pageThread;
     this.queryKeysForum = queryKeysForum;
     this.queryKeysTopic = queryKeysTopic;
 
-    queryKeysPage = Stream.concat(Stream.of(queryKeysForum), Stream.of(queryKeysTopic))
-        .distinct()
-        .toArray(String[]::new);
+    queryKeysPage =
+        Stream.concat(Stream.of(queryKeysForum), Stream.of(queryKeysTopic))
+            .distinct()
+            .toArray(String[]::new);
   }
 
   @Override

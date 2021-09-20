@@ -138,32 +138,33 @@ public class Auditor {
               auditorCache.toFile(), new TypeReference<List<ParserPage>>() {});
     } else {
       log.info("query start");
-      List<String> domains = List.of(
-          // Validated with XenForo_F @ 8d57e93464511ff6b2d51c7c01949bea40720492
-          // "Fix Java Warnings"
-          // Only errors are on the home page
-          // "www.avsforum.com",
-          // "www.b15sentra.net",
-          // "www.b15u.com",
-          // "www.clubwrx.net",
-          // "www.iwsti.com",
-          // "www.kboards.com",
-          // "www.nissancubelife.com",
-          // "www.nissanforums.com",
-          // "www.subaruforester.org",
-          // "www.subaruxvforum.com",
-          // "www.wrxtuners.com"
-          //
-          // vBulletin_IB
-          // "www.corvetteforum.com", "www.rx7club.com", "www.rx8club.com"
-          //
-          // vBulletin_Url1
-//                          "forum.miata.net"
-          "forums.nasioc.com"
-          //
+      List<String> domains =
+          List.of(
+              // Validated with XenForo_F @ 8d57e93464511ff6b2d51c7c01949bea40720492
+              // "Fix Java Warnings"
+              // Only errors are on the home page
+              // "www.avsforum.com",
+              // "www.b15sentra.net",
+              // "www.b15u.com",
+              // "www.clubwrx.net",
+              // "www.iwsti.com",
+              // "www.kboards.com",
+              // "www.nissancubelife.com",
+              // "www.nissanforums.com",
+              // "www.subaruforester.org",
+              // "www.subaruxvforum.com",
+              // "www.wrxtuners.com"
+              //
+              // vBulletin_IB
+              // "www.corvetteforum.com", "www.rx7club.com", "www.rx8club.com"
+              //
+              // vBulletin_Url1
+              //                          "forum.miata.net"
+              "forums.nasioc.com"
+              //
 
-          // "www.sr20-forum.com"
-      );
+              // "www.sr20-forum.com"
+              );
       log.info("domains {}", domains);
       pages =
           dbStorage.getParserPages(

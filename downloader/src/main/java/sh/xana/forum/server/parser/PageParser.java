@@ -62,7 +62,7 @@ public class PageParser {
       if (parser == null) {
         throw new NullPointerException("Cannot find parser for " + forumType);
       }
-//       log.trace("Type {} parser {}", forumType, parser.getClass());
+      //       log.trace("Type {} parser {}", forumType, parser.getClass());
       //      if (parser.detectForumType(rawHtml) == null) {
       //        earlyThrowIfHttpError(page);
       //        throw new ParserException("No parsers handled this file", pageId);
