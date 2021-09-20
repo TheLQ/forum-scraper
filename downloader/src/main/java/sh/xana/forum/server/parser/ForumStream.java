@@ -6,6 +6,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.jsoup.nodes.Document;
@@ -72,6 +73,13 @@ public class ForumStream {
         });
     if (actualArgs.size() != actualArgsOrigSize) {
       uriBuilder.setParameters(actualArgs);
+    }
+
+    String newPath = uriBuilder.getPath();
+    int newPathLen = newPath.length();
+    newPath = StringUtils.replace(newPath, "//", "/");
+    if (newPath.length() != newPathLen) {
+      uriBuilder.setPath(newPath);
     }
 
     String newUri = uriBuilder.toString();

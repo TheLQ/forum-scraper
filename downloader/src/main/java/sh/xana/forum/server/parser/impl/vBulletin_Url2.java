@@ -41,16 +41,28 @@ public class vBulletin_Url2 extends AbstractUrlForum {
   @Override
   protected Stream<URIBuilder> getBaseUrls(Document doc) {
     return super.getBaseUrls(doc)
-        // remap showthread.php?threadid=555 to showthread.php?t=555 , both are the same content
+        // remap long param keys to short keys for consistency
         .peek(e -> {
           List<NameValuePair> queryParams = e.getQueryParams();
+          boolean queryChanged = false;
           for (var iter = queryParams.listIterator(); iter.hasNext();) {
             NameValuePair pair = iter.next();
             if (pair.getName().equals("threadid")) {
               iter.set(new BasicNameValuePair("t", pair.getValue()));
               e.setParameters(queryParams);
-              break;
+              queryChanged = true;
+            } else if (pair.getName().equals("forumid")) {
+              iter.set(new BasicNameValuePair("f", pair.getValue()));
+              e.setParameters(queryParams);
+              queryChanged = true;
+            } else if (pair.getName().equals("postid")) {
+              iter.set(new BasicNameValuePair("p", pair.getValue()));
+              e.setParameters(queryParams);
+              queryChanged = true;
             }
+          }
+          if (queryChanged) {
+            e.setParameters(queryParams);
           }
         });
   }
