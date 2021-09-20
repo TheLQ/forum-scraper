@@ -10,7 +10,7 @@ import org.jsoup.nodes.Element;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.ipc.ParserResult;
-import sh.xana.forum.common.ipc.ParserResult.ParserEntry;
+import sh.xana.forum.common.ipc.ParserResult.Subpage;
 import sh.xana.forum.server.dbutil.ForumType;
 import sh.xana.forum.server.dbutil.PageType;
 import sh.xana.forum.server.dbutil.ParserPage;
@@ -138,10 +138,9 @@ public class PageParser {
     }
   }
 
-  private void addUrls(
-      Collection<ValidatedUrl> urls, List<ParserEntry> subpages, PageType pageType) {
+  private void addUrls(Collection<ValidatedUrl> urls, List<Subpage> subpages, PageType pageType) {
     for (ValidatedUrl url : urls) {
-      ParserEntry parser = new ParserEntry("", url.url, pageType);
+      Subpage parser = new Subpage("", url.url, pageType);
       subpages.add(parser);
     }
   }

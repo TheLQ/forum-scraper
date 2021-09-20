@@ -12,7 +12,7 @@ import org.jsoup.nodes.Element;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.ipc.ParserResult;
-import sh.xana.forum.common.ipc.ParserResult.ParserEntry;
+import sh.xana.forum.common.ipc.ParserResult.Subpage;
 import sh.xana.forum.server.dbutil.ForumType;
 import sh.xana.forum.server.parser.ForumUtils;
 import sh.xana.forum.server.parser.SourcePage;
@@ -100,12 +100,12 @@ public class SMF /*implements AbstractForum*/ {
 
   public void postProcessing(SourcePage sourcePage, ParserResult result) {
     for (var itr = result.subpages().listIterator(); itr.hasNext(); ) {
-      ParserEntry entry = itr.next();
+      Subpage entry = itr.next();
       String newUrl = entry.url();
       newUrl = PATTERN_SID.matcher(newUrl).replaceFirst("");
 
       if (!newUrl.equals(entry.url())) {
-        itr.set(new ParserEntry(entry.name(), newUrl, entry.pageType()));
+        itr.set(new Subpage(entry.name(), newUrl, entry.pageType()));
       }
     }
   }

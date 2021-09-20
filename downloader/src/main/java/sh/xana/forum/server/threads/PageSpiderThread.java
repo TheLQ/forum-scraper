@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.AbstractTaskThread;
 import sh.xana.forum.common.Utils;
 import sh.xana.forum.common.ipc.ParserResult;
-import sh.xana.forum.common.ipc.ParserResult.ParserEntry;
+import sh.xana.forum.common.ipc.ParserResult.Subpage;
 import sh.xana.forum.server.ServerConfig;
 import sh.xana.forum.server.SpiderWarningException;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
@@ -97,7 +97,7 @@ public class PageSpiderThread extends AbstractTaskThread {
       ParserResult results =
           pageParser.parsePage(Files.readAllBytes(config.getPagePath(pageId)), page);
 
-      for (ParserEntry subpage : results.subpages()) {
+      for (Subpage subpage : results.subpages()) {
         sqlNewPages.add(
             new DatabaseStorage.InsertPage(
                 pageId, page.siteId(), Utils.toURI(subpage.url()), subpage.pageType()));

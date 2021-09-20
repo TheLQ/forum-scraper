@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.AuditorExecutor;
 import sh.xana.forum.common.Utils;
 import sh.xana.forum.common.ipc.ParserResult;
-import sh.xana.forum.common.ipc.ParserResult.ParserEntry;
+import sh.xana.forum.common.ipc.ParserResult.Subpage;
 import sh.xana.forum.server.db.tables.Pages;
 import sh.xana.forum.server.db.tables.records.SitesRecord;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
@@ -277,14 +277,14 @@ public class Auditor {
   private static void getErrors(UUID pageId, ParserResult result, Collection<String> errors) {
     List<ValidationRecord> pages =
         dbStorage.getPageByUrl(
-            result.subpages().stream().map(ParserEntry::url).collect(Collectors.toList()));
+            result.subpages().stream().map(Subpage::url).collect(Collectors.toList()));
     for (ValidationRecord page : pages) {
       if (result.subpages().stream()
           .noneMatch(parserEntry -> parserEntry.url().equals(page.url().toString()))) {
         errors.add("parser missing url " + page.url());
       }
     }
-    for (ParserEntry subpage : result.subpages()) {
+    for (Subpage subpage : result.subpages()) {
       if (pages.stream().noneMatch(page -> page.url().toString().equals(subpage.url()))) {
         errors.add("db missing url " + subpage.url());
       }
