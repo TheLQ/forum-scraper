@@ -33,8 +33,6 @@ public class ValidatedUrl {
       throw new ValidatedUrlException("Missing end / for " + baseUrl);
     }
 
-    pageUrl = parser.postProcessUrl(pageUrl);
-
     String subUrl = pageUrl.substring(baseUrl.length());
     if (subUrl.startsWith("/")) {
       throw new ValidatedUrlException(

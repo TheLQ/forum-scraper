@@ -40,10 +40,6 @@ public interface AbstractForum {
     return currentType;
   }
 
-  default String postProcessUrl(String url) {
-    return url;
-  }
-
   Pattern[] validateUrl();
 
   default void pageDone() {}
