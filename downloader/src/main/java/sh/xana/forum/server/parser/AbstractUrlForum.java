@@ -2,6 +2,8 @@ package sh.xana.forum.server.parser;
 
 import java.net.URISyntaxException;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import org.apache.http.client.utils.URIBuilder;
 import org.jetbrains.annotations.NotNull;
@@ -75,15 +77,27 @@ public abstract class AbstractUrlForum implements AbstractForum {
   @Override
   public @Nullable ParserResult.Subpage getValidLink(
       String linkRaw, PageType currentPageType, String baseUri, UUID pageId, boolean throwErrors) {
-    URIBuilder linkBuilder;
+    URIBuilder linkBuilder = null;
     try {
       linkBuilder = new URIBuilder(linkRaw);
     } catch (URISyntaxException e) {
-      String msg = pageId + " unable to convert to uri " + linkRaw;
-      if (throwErrors) {
-        throw new RuntimeException(msg, e);
-      } else {
-        log.warn(msg + " || " + e.getMessage());
+      // attempt to extract a usable url
+      for (Pattern pattern : validateUrl()) {
+        try {
+          Matcher matcher = pattern.matcher(linkRaw);
+          if (matcher.find()) {
+            // must prepend baseUri since the validator only grabs the end path
+            String extracted = baseUri + matcher.group();
+            linkBuilder = new URIBuilder(extracted);
+            log.warn("Extracted {} from broken {}", extracted, linkRaw);
+            break;
+          }
+        } catch (URISyntaxException e2) {
+          // continue...
+        }
+      }
+      if (linkBuilder == null) {
+        softThrow(pageId + " unable to convert to uri " + linkRaw, e, throwErrors);
         return null;
       }
     }
@@ -104,13 +118,8 @@ public abstract class AbstractUrlForum implements AbstractForum {
     try {
       validatedUrl = new ValidatedUrl(linkFinal, baseUri, this);
     } catch (ValidatedUrlException e) {
-      String msg = pageId + " unable to validate final " + linkFinal;
-      if (throwErrors) {
-        throw new RuntimeException(msg, e);
-      } else {
-        log.warn(msg + " || " + e.getMessage());
-        return null;
-      }
+      softThrow(pageId + " unable to validate final " + linkFinal, e, throwErrors);
+      return null;
     }
 
     return new Subpage("", validatedUrl, pageType);
@@ -119,4 +128,12 @@ public abstract class AbstractUrlForum implements AbstractForum {
   protected void getValidLink_pre(URIBuilder uriBuilder) {}
 
   protected void getValidLink_post(URIBuilder uriBuilder) {}
+
+  private void softThrow(String message, Exception e, boolean throwErrors) {
+    if (throwErrors) {
+      throw new RuntimeException(message, e);
+    } else {
+      log.warn(message + " || " + e.getMessage());
+    }
+  }
 }
