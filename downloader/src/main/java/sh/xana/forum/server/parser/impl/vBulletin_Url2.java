@@ -33,7 +33,7 @@ public class vBulletin_Url2 extends AbstractUrlForum {
   }
 
   @Override
-  protected void getValidLink_pre(URIBuilder e) {
+  protected ProcessState getValidLink_pre(String baseUri, URIBuilder e) {
     List<NameValuePair> queryParams = e.getQueryParams();
     boolean queryChanged = false;
     for (var iter = queryParams.listIterator(); iter.hasNext(); ) {
@@ -54,6 +54,12 @@ public class vBulletin_Url2 extends AbstractUrlForum {
     }
     if (queryChanged) {
       e.setParameters(queryParams);
+    }
+
+    if (e.toString().substring(baseUri.length()).startsWith("archive/")) {
+      return ProcessState.STOP;
+    } else {
+      return ProcessState.CONTINUE;
     }
   }
 

@@ -2,6 +2,7 @@ package sh.xana.forum.server.parser.impl;
 
 import java.util.Collection;
 import java.util.regex.Pattern;
+import org.apache.http.client.utils.URIBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jsoup.nodes.Element;
@@ -31,6 +32,15 @@ public class vBulletin_Url1 extends AbstractUrlForum {
   @Override
   public @NotNull Collection<Element> getPostElements(SourcePage sourcePage) {
     return ForumUtils.findElementByIdPrefix(sourcePage.doc(), "post");
+  }
+
+  @Override
+  protected @NotNull ProcessState getValidLink_pre(String baseUri, URIBuilder e) {
+    if (e.toString().substring(baseUri.length()).startsWith("archive/")) {
+      return ProcessState.STOP;
+    } else {
+      return ProcessState.CONTINUE;
+    }
   }
 
   private static final Pattern[] PATTERNS =

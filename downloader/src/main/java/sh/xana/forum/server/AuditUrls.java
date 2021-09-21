@@ -15,6 +15,7 @@ import sh.xana.forum.common.ipc.ParserResult.Subpage;
 import sh.xana.forum.server.db.tables.Pages;
 import sh.xana.forum.server.db.tables.Sites;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
+import sh.xana.forum.server.dbutil.ForumType;
 import sh.xana.forum.server.parser.AbstractForum;
 import sh.xana.forum.server.parser.PageParser;
 
@@ -60,7 +61,7 @@ public class AuditUrls {
     //      pageUrls = dbPageUrls.stream();
     //    }
 
-    var result = dbStorage.getPageUrls(Sites.SITES.DOMAIN.in("forum.miata.net", "xlforum.net"));
+    var result = dbStorage.getPageUrls(Sites.SITES.FORUMTYPE.in(ForumType.vBulletin_Url1, ForumType.vBulletin_Url2));
     log.info("Loaded {} pages", NumberFormat.getNumberInstance().format(result.size()));
 
     Iterator<CharSequence> errors =

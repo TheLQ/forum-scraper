@@ -23,9 +23,10 @@ import sh.xana.forum.server.parser.ParserException;
 
 public class PageSpiderThread extends AbstractTaskThread {
   private static final Logger log = LoggerFactory.getLogger(PageSpiderThread.class);
-  public static final int NUM_THREADS = 2;
+  public static final int NUM_THREADS = Runtime.getRuntime().availableProcessors();
   /** Wait until any queue is this big to flush */
   private static final int SQL_FLUSH_LIMIT = 100;
+  private static int THREAD_COUNTER = 0;
 
   private final ServerConfig config;
   private final DatabaseStorage dbStorage;
@@ -45,7 +46,7 @@ public class PageSpiderThread extends AbstractTaskThread {
       PageSpiderFeederThread feeder,
       PageParser pageParser) {
     // Use queue blocking instead of post-cycle sleeps
-    super("Spider", 0);
+    super("Spider" + THREAD_COUNTER++, 0);
     this.config = config;
     this.dbStorage = dbStorage;
     this.feeder = feeder;

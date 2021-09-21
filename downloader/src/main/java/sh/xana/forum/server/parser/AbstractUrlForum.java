@@ -103,7 +103,9 @@ public abstract class AbstractUrlForum implements AbstractForum {
     }
 
     PageType pageType = _getPageType(linkBuilder);
-    getValidLink_pre(linkBuilder);
+    if (getValidLink_pre(baseUri, linkBuilder) == ProcessState.STOP) {
+      return null;
+    }
     switch (pageType) {
       case ForumList -> ForumStream.cleanUrl(linkBuilder, queryKeysForum);
       case TopicPage -> ForumStream.cleanUrl(linkBuilder, queryKeysTopic);
@@ -111,7 +113,9 @@ public abstract class AbstractUrlForum implements AbstractForum {
         return null;
       }
     }
-    getValidLink_post(linkBuilder);
+    if (getValidLink_post(baseUri, linkBuilder) == ProcessState.STOP) {
+      return null;
+    }
 
     String linkFinal = linkBuilder.toString();
     ValidatedUrl validatedUrl;
@@ -125,9 +129,15 @@ public abstract class AbstractUrlForum implements AbstractForum {
     return new Subpage("", validatedUrl, pageType);
   }
 
-  protected void getValidLink_pre(URIBuilder uriBuilder) {}
+  @NotNull
+  protected ProcessState getValidLink_pre(String baseUri, URIBuilder uriBuilder) {
+    return ProcessState.CONTINUE;
+  }
 
-  protected void getValidLink_post(URIBuilder uriBuilder) {}
+  @NotNull
+  protected ProcessState getValidLink_post(String baseUri, URIBuilder uriBuilder) {
+    return ProcessState.CONTINUE;
+  }
 
   private void softThrow(String message, Exception e, boolean throwErrors) {
     if (throwErrors) {
@@ -135,5 +145,10 @@ public abstract class AbstractUrlForum implements AbstractForum {
     } else {
       log.warn(message + " || " + e.getMessage());
     }
+  }
+
+  protected enum ProcessState {
+    CONTINUE,
+    STOP
   }
 }
