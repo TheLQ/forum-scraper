@@ -26,6 +26,7 @@ import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Query;
+import org.jooq.Record;
 import org.jooq.Result;
 import org.jooq.SQLDialect;
 import org.jooq.conf.Settings;
@@ -33,6 +34,7 @@ import org.jooq.conf.ThrowExceptions;
 import org.jooq.impl.DSL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sh.xana.forum.common.Utils;
 import sh.xana.forum.common.ipc.ScraperDownload;
 import sh.xana.forum.server.ServerConfig;
 import sh.xana.forum.server.db.tables.Dataset;
@@ -289,8 +291,6 @@ public class DatabaseStorage implements AutoCloseable {
     return context.select().from(PAGES).where(conditions).fetchInto(PagesRecord.class);
   }
 
-  public record PageUrl(URI pageUrl, URI siteUrl, ForumType forumType) {}
-
   public List<URI> getPageUrlsOnly(Condition... conditions) {
     return context.select(PAGES.PAGEURL).from(PAGES).where(conditions).fetch(PAGES.PAGEURL);
   }
@@ -299,16 +299,25 @@ public class DatabaseStorage implements AutoCloseable {
     return context.select(PAGES.PAGEID).from(PAGES).where(conditions).fetch(PAGES.PAGEID);
   }
 
-  public List<PageUrl> getPageUrls(Condition... conditions) {
+  public Result<Record> getPageUrls(Condition... conditions) {
     var query =
         context
-            .select(PAGES.PAGEURL, SITES.SITEURL, SITES.FORUMTYPE)
+            .select(PAGES.PAGEID, PAGES.PAGEURL, PAGES.PAGETYPE, SITES.SITEURL, SITES.FORUMTYPE)
             .from(PAGES)
             .innerJoin(SITES)
             .on(PAGES.SITEID.eq(SITES.SITEID))
             .where(conditions);
-    log.info(query.toString());
-    return query.fetch().map(e -> new PageUrl(e.component1(), e.component2(), e.component3()));
+    return (Result<Record>) (Object) query.fetch();
+  }
+
+  public void setPageUrl(UUID pageId, String pageUrl) {
+    Query query =
+        context
+            .update(PAGES)
+            .set(PAGES.PAGEURL, Utils.toURI(pageUrl))
+            .where(PAGES.PAGEID.eq(pageId));
+
+    executeOneRow(query);
   }
 
   public record ValidationRecord(UUID pageId, URI url, boolean isRedirect) {}

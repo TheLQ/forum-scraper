@@ -138,6 +138,15 @@ public class Auditor {
               auditorCache.toFile(), new TypeReference<List<ParserPage>>() {});
     } else {
       log.info("query start");
+
+      dbStorage
+          .siteCache
+          .mapByDomains(List.of("forums.nasioc.com", "xlforum.net"), SitesRecord::getSiteid)
+          .forEach(System.out::println);
+      if (true) {
+        return;
+      }
+
       List<String> domains =
           List.of(
               // Validated with XenForo_F @ 8d57e93464511ff6b2d51c7c01949bea40720492
@@ -160,10 +169,11 @@ public class Auditor {
               //
               // vBulletin_Url1
               // "forum.miata.net"
+              // vBulletin_Url2
               // "forums.nasioc.com"
               "xlforum.net"
               //
-
+              // Forkboard
               // "www.sr20-forum.com"
               );
       log.info("domains {}", domains);
@@ -290,17 +300,17 @@ public class Auditor {
         dbStorage.getPageByUrl(
             result.subpages().stream()
                 .map(Subpage::url)
-                .map(url -> url.url)
+                .map(url -> url.urlStr)
                 .collect(Collectors.toList()));
     for (ValidationRecord page : pages) {
       if (result.subpages().stream()
-          .noneMatch(parserEntry -> parserEntry.url().equals(page.url().toString()))) {
+          .noneMatch(parserEntry -> parserEntry.url().urlStr.equals(page.url().toString()))) {
         errors.add("parser missing url " + page.url());
       }
     }
     for (Subpage subpage : result.subpages()) {
-      if (pages.stream().noneMatch(page -> page.url().toString().equals(subpage.url()))) {
-        errors.add("db missing url " + subpage.url());
+      if (pages.stream().noneMatch(page -> page.url().toString().equals(subpage.url().urlStr))) {
+        errors.add("db missing url " + subpage.url().urlStr);
       }
     }
   }

@@ -10,14 +10,14 @@ import org.slf4j.LoggerFactory;
  */
 public class ValidatedUrl {
   private static final Logger log = LoggerFactory.getLogger(ValidatedUrl.class);
-  public final String url;
+  public final String urlStr;
 
-  public ValidatedUrl(String url, SourcePage page, AbstractForum parser) {
-    this(url, page.doc().baseUri(), parser);
+  public ValidatedUrl(String urlStr, SourcePage page, AbstractForum parser) {
+    this(urlStr, page.doc().baseUri(), parser);
   }
 
-  public ValidatedUrl(String url, String baseUri, AbstractForum parser) {
-    this.url = validateUrl(url, baseUri, parser);
+  public ValidatedUrl(String urlStr, String baseUri, AbstractForum parser) {
+    this.urlStr = validateUrl(urlStr, baseUri, parser);
   }
 
   public static String validateUrl(String pageUrl, String baseUrl, AbstractForum parser) {
