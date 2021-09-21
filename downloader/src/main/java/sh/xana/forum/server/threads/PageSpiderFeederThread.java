@@ -12,9 +12,11 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.AbstractTaskThread;
+import sh.xana.forum.server.db.tables.records.SitesRecord;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
 import sh.xana.forum.server.dbutil.DlStatus;
 import sh.xana.forum.server.dbutil.ParserPage;
+import sh.xana.forum.server.parser.PageParser;
 
 /**
  * Problem: getParserPages can be slow when lots of other traffic going on, starving the
@@ -63,9 +65,13 @@ public class PageSpiderFeederThread extends AbstractTaskThread {
     }
 
     log.info("Loading pages excluding {} WIP pages", pagesWIP.size());
+    List<UUID> siteIdsWithAvailableForumType =
+        dbStorage.siteCache.filterMap(
+            e -> PageParser.PARSERS.containsKey(e.getForumtype()), SitesRecord::getSiteid);
     List<ParserPage> parserPages =
         dbStorage.getParserPages(
             true,
+            PAGES.SITEID.in(siteIdsWithAvailableForumType),
             PAGES.DLSTATUS.eq(DlStatus.Parse),
             PAGES.EXCEPTION.isNull(),
             PAGES.PAGEID.notIn(pagesWIP));

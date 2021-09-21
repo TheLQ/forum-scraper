@@ -67,7 +67,7 @@ public class vBulletin_Url2 extends AbstractUrlForum {
         // index.php homepage
         Pattern.compile("index.php"),
         // forumdisplay.php?f=139&order=desc&page=5
-        Pattern.compile("forumdisplay.php\\?f=[0-9]+(&order=[a-z]+)?(&page=[0-9]+)?"),
+        Pattern.compile("forumdisplay.php\\?f=[0-9]+(&page=[0-9]+)?"),
         // showthread.php?t=717252&page=2
         Pattern.compile("showthread.php\\?[tp]=[0-9]+(&page=[0-9]+)?")
       };

@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,5 +61,9 @@ public class SiteCache {
       throw new RuntimeException("Asked for " + domains.size() + " but found " + res.size());
     }
     return res;
+  }
+
+  public <T> List<T> filterMap(Predicate<SitesRecord> include, Function<SitesRecord, T> mapper) {
+    return lazyGet().stream().filter(include).map(mapper).collect(Collectors.toList());
   }
 }
