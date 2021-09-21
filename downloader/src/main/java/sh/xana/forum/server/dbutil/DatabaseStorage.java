@@ -410,7 +410,7 @@ public class DatabaseStorage implements AutoCloseable {
 
           //noinspection StatementWithEmptyBody
           if (root.getMessage().startsWith("Duplicate entry")
-              && root.getMessage().endsWith("for key 'url'")) {
+              && root.getMessage().endsWith("for key 'Pages.url'")) {
             // silently ignore...
           } else if (root.getMessage().startsWith("Data too long for column 'pageUrl'")) {
             String pageUrl = page.pageUrl().toString();
