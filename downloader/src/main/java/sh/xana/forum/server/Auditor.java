@@ -159,8 +159,9 @@ public class Auditor {
               // "www.corvetteforum.com", "www.rx7club.com", "www.rx8club.com"
               //
               // vBulletin_Url1
-              //                          "forum.miata.net"
-              "forums.nasioc.com"
+              // "forum.miata.net"
+              // "forums.nasioc.com"
+              "xlforum.net"
               //
 
               // "www.sr20-forum.com"
@@ -287,7 +288,10 @@ public class Auditor {
   private static void getErrors(UUID pageId, ParserResult result, Collection<String> errors) {
     List<ValidationRecord> pages =
         dbStorage.getPageByUrl(
-            result.subpages().stream().map(Subpage::url).collect(Collectors.toList()));
+            result.subpages().stream()
+                .map(Subpage::url)
+                .map(url -> url.url)
+                .collect(Collectors.toList()));
     for (ValidationRecord page : pages) {
       if (result.subpages().stream()
           .noneMatch(parserEntry -> parserEntry.url().equals(page.url().toString()))) {

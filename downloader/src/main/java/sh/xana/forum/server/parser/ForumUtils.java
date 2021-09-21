@@ -63,7 +63,7 @@ public class ForumUtils {
         throw new RuntimeException("href blank in " + element.outerHtml());
       }
 
-      results.add(new ValidatedUrl(url, parser, sourcePage));
+      results.add(new ValidatedUrl(url, sourcePage, parser));
     }
     return results;
   }

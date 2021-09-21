@@ -100,7 +100,7 @@ public class PageSpiderThread extends AbstractTaskThread {
       for (Subpage subpage : results.subpages()) {
         sqlNewPages.add(
             new DatabaseStorage.InsertPage(
-                pageId, page.siteId(), Utils.toURI(subpage.url()), subpage.pageType()));
+                pageId, page.siteId(), Utils.toURI(subpage.url().url), subpage.pageType()));
       }
 
       sqlDone.add(pageId);

@@ -1,10 +1,9 @@
 package sh.xana.forum.server.parser;
 
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.NameValuePair;
@@ -29,9 +28,9 @@ public class ForumStream {
     return uri.startsWith(doc.baseUri());
   }
 
-  public static void toValidUriBuilder(String uri, Consumer<URIBuilder> streamMapper) {
+  public static void toValidUri(String uri, Consumer<URI> streamMapper) {
     try {
-      URIBuilder uriBuilder = new URIBuilder(uri);
+      URI uriBuilder = new URI(uri);
       streamMapper.accept(uriBuilder);
     } catch (URISyntaxException e) {
       log.warn("Soft fail could not parse Uri " + uri + " exception " + e.getMessage());
@@ -87,16 +86,5 @@ public class ForumStream {
       newUri = newUri.substring(0, newUri.length() - 1);
     }
     return newUri;
-  }
-
-  public static BiConsumer<String, Consumer<ValidatedUrl>> softLogFail(
-      Function<String, ValidatedUrl> supplier, SourcePage sourcePage) {
-    return (uri, streamMapper) -> {
-      try {
-        streamMapper.accept(supplier.apply(uri));
-      } catch (ValidatedUrlException e) {
-        log.warn("Soft fail page {} error {}", sourcePage.pageId(), e.getMessage());
-      }
-    };
   }
 }

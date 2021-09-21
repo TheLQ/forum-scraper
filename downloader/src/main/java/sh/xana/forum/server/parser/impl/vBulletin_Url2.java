@@ -3,13 +3,11 @@ package sh.xana.forum.server.parser.impl;
 import java.util.Collection;
 import java.util.List;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.message.BasicNameValuePair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,8 +21,8 @@ public class vBulletin_Url2 extends AbstractUrlForum {
 
   public vBulletin_Url2() {
     super(
-        "forumdisplay.php",
-        "showthread.php",
+        new String[] {"forumdisplay.php", "index.php"},
+        new String[] {"showthread.php"},
         new String[] {"f", "page"},
         new String[] {"t", /*old way??*/ "p", "page"});
   }
@@ -35,38 +33,28 @@ public class vBulletin_Url2 extends AbstractUrlForum {
   }
 
   @Override
-  public boolean detectLoginRequired(SourcePage sourcePage) {
-    return false;
-  }
-
-  @Override
-  protected Stream<URIBuilder> getBaseUrls(Document doc) {
-    return super.getBaseUrls(doc)
-        // remap long param keys to short keys for consistency
-        .peek(
-            e -> {
-              List<NameValuePair> queryParams = e.getQueryParams();
-              boolean queryChanged = false;
-              for (var iter = queryParams.listIterator(); iter.hasNext(); ) {
-                NameValuePair pair = iter.next();
-                if (pair.getName().equals("threadid")) {
-                  iter.set(new BasicNameValuePair("t", pair.getValue()));
-                  e.setParameters(queryParams);
-                  queryChanged = true;
-                } else if (pair.getName().equals("forumid")) {
-                  iter.set(new BasicNameValuePair("f", pair.getValue()));
-                  e.setParameters(queryParams);
-                  queryChanged = true;
-                } else if (pair.getName().equals("postid")) {
-                  iter.set(new BasicNameValuePair("p", pair.getValue()));
-                  e.setParameters(queryParams);
-                  queryChanged = true;
-                }
-              }
-              if (queryChanged) {
-                e.setParameters(queryParams);
-              }
-            });
+  protected void getValidLink_pre(URIBuilder e) {
+    List<NameValuePair> queryParams = e.getQueryParams();
+    boolean queryChanged = false;
+    for (var iter = queryParams.listIterator(); iter.hasNext(); ) {
+      NameValuePair pair = iter.next();
+      if (pair.getName().equals("threadid")) {
+        iter.set(new BasicNameValuePair("t", pair.getValue()));
+        e.setParameters(queryParams);
+        queryChanged = true;
+      } else if (pair.getName().equals("forumid")) {
+        iter.set(new BasicNameValuePair("f", pair.getValue()));
+        e.setParameters(queryParams);
+        queryChanged = true;
+      } else if (pair.getName().equals("postid")) {
+        iter.set(new BasicNameValuePair("p", pair.getValue()));
+        e.setParameters(queryParams);
+        queryChanged = true;
+      }
+    }
+    if (queryChanged) {
+      e.setParameters(queryParams);
+    }
   }
 
   @Override

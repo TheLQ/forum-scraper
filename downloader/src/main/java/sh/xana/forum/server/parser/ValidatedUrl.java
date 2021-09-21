@@ -12,8 +12,12 @@ public class ValidatedUrl {
   private static final Logger log = LoggerFactory.getLogger(ValidatedUrl.class);
   public final String url;
 
-  public ValidatedUrl(String url, AbstractForum parser, SourcePage page) {
-    this.url = validateUrl(url, page.doc().baseUri(), parser);
+  public ValidatedUrl(String url, SourcePage page, AbstractForum parser) {
+    this(url, page.doc().baseUri(), parser);
+  }
+
+  public ValidatedUrl(String url, String baseUri, AbstractForum parser) {
+    this.url = validateUrl(url, baseUri, parser);
   }
 
   public static String validateUrl(String pageUrl, String baseUrl, AbstractForum parser) {
