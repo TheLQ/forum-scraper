@@ -2,10 +2,17 @@ package sh.xana.forum.common;
 
 import com.amazon.sqs.javamessaging.AmazonSQSExtendedClient;
 import com.amazon.sqs.javamessaging.ExtendedClientConfiguration;
+import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
+import com.amazonaws.AmazonWebServiceRequest;
+import com.amazonaws.ClientConfiguration;
+import com.amazonaws.retry.PredefinedRetryPolicies;
+import com.amazonaws.retry.PredefinedRetryPolicies.SDKDefaultRetryCondition;
+import com.amazonaws.retry.RetryPolicy;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
+import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.CreateQueueRequest;
 import com.amazonaws.services.sqs.model.DeleteMessageBatchRequestEntry;
@@ -23,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.ipc.IScraperRequest;
@@ -41,14 +49,25 @@ public class SqsManager implements Closeable {
 
   public SqsManager(CommonConfig config) {
     if (!config.isDebugMode()) {
-      final AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
+      ClientConfiguration clientConfiguration =
+          new ClientConfiguration()
+              .withRetryPolicy(
+                  new RetryPolicy(
+                      new MyRetryCondition(),
+                      PredefinedRetryPolicies.DEFAULT_BACKOFF_STRATEGY,
+                      // aggressive retry forever due to network errors
+                      50,
+                      true));
+      AmazonS3 s3 =
+          AmazonS3ClientBuilder.standard().withClientConfiguration(clientConfiguration).build();
+      AmazonSQS sqsClientBackend =
+          AmazonSQSClientBuilder.standard().withClientConfiguration(clientConfiguration).build();
 
-      final ExtendedClientConfiguration extendedClientConfig =
+      ExtendedClientConfiguration extendedClientConfig =
           new ExtendedClientConfiguration()
               .withPayloadSupportEnabled(s3, config.get(config.ARG_QUEUE_S3), true);
 
-      sqsClient =
-          new AmazonSQSExtendedClient(AmazonSQSClientBuilder.defaultClient(), extendedClientConfig);
+      sqsClient = new AmazonSQSExtendedClient(sqsClientBackend, extendedClientConfig);
     } else {
       sqsClient = null;
     }
@@ -251,5 +270,23 @@ public class SqsManager implements Closeable {
 
   public static String getQueueNameSafeOrig(String str) {
     return str.replace("_", ".");
+  }
+
+  /** Extends PredefinedRetryPolicies.DEFAULT_RETRY_CONDITION */
+  public static class MyRetryCondition extends SDKDefaultRetryCondition {
+
+    @Override
+    public boolean shouldRetry(
+        AmazonWebServiceRequest originalRequest,
+        AmazonClientException exception,
+        int retriesAttempted) {
+      boolean result = super.shouldRetry(originalRequest, exception, retriesAttempted);
+      log.warn(
+          "Retry {} continue {} due to exception {}",
+          retriesAttempted,
+          result,
+          ExceptionUtils.getRootCauseMessage(exception));
+      return result;
+    }
   }
 }
