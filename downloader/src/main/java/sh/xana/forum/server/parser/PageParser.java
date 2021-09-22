@@ -12,6 +12,7 @@ import sh.xana.forum.common.ipc.ParserResult.Subpage;
 import sh.xana.forum.server.dbutil.ForumType;
 import sh.xana.forum.server.dbutil.PageType;
 import sh.xana.forum.server.dbutil.ParserPage;
+import sh.xana.forum.server.parser.impl.XenForo_F;
 import sh.xana.forum.server.parser.impl.vBulletin_Url1;
 import sh.xana.forum.server.parser.impl.vBulletin_Url2;
 
@@ -26,9 +27,9 @@ public class PageParser {
           ForumType.vBulletin_Url1,
           new vBulletin_Url1(),
           ForumType.vBulletin_Url2,
-          new vBulletin_Url2()
-          //          ForumType.XenForo_F,
-          //          new XenForo_F(),
+          new vBulletin_Url2(),
+          ForumType.XenForo_F,
+          new XenForo_F()
           //          ForumType.ForkBoard,
           //          new ForkBoard()
           //          ForumType.SMF,
