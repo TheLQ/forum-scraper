@@ -70,7 +70,10 @@ public class ForumStream {
           }
           return doRemove;
         });
-    if (actualArgs.size() != actualArgsOrigSize) {
+    if (actualArgs.size() == 0) {
+      // remove empty ?
+      uriBuilder.clearParameters();
+    } else if (actualArgs.size() != actualArgsOrigSize) {
       uriBuilder.setParameters(actualArgs);
     }
 
