@@ -554,6 +554,25 @@ public class DatabaseStorage implements AutoCloseable {
         .fetchOneInto(DatasetRecord.class);
   }
 
+  // ******************************
+
+  public int _debug_resetPagesToParse(List<UUID> siteId) {
+    return context
+        .update(PAGES)
+        .set(PAGES.EXCEPTION, (String) null)
+        .set(PAGES.DLSTATUS, DlStatus.Parse)
+        .where(PAGES.SITEID.in(siteId))
+        .execute();
+  }
+
+  public int _debug_setPageStatusCode(List<UUID> pageId, int code) {
+    return context
+        .update(PAGES)
+        .set(PAGES.DLSTATUSCODE, 0)
+        .where(PAGES.PAGEID.in(pageId))
+        .execute();
+  }
+
   // *******************************
 
   private static void executeOneRow(Query query) {

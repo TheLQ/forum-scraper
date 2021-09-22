@@ -12,9 +12,9 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.AbstractTaskThread;
-import sh.xana.forum.server.db.tables.records.SitesRecord;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
 import sh.xana.forum.server.dbutil.DlStatus;
+import sh.xana.forum.server.dbutil.ForumType;
 import sh.xana.forum.server.dbutil.ParserPage;
 import sh.xana.forum.server.parser.PageParser;
 
@@ -44,11 +44,15 @@ public class PageSpiderFeederThread extends AbstractTaskThread {
    * <p><b>public write</b>
    */
   private final List<UUID> queuedForWIPDone = new ArrayList<>(QUEUE_SIZE);
+  /** Cache of sites we should query */
+  private final List<UUID> siteIdsWithAvailableForumType;
 
   public PageSpiderFeederThread(DatabaseStorage dbStorage) {
     // Use queue blocking instead of post-cycle sleeps
     super("SpiderFeeder", 0);
     this.dbStorage = dbStorage;
+    this.siteIdsWithAvailableForumType =
+        dbStorage.siteCache.idsByForumType(PageParser.PARSERS.keySet().toArray(new ForumType[0]));
   }
 
   @Override
@@ -65,9 +69,6 @@ public class PageSpiderFeederThread extends AbstractTaskThread {
     }
 
     log.info("Loading pages excluding {} WIP pages", pagesWIP.size());
-    List<UUID> siteIdsWithAvailableForumType =
-        dbStorage.siteCache.filterMap(
-            e -> PageParser.PARSERS.containsKey(e.getForumtype()), SitesRecord::getSiteid);
     List<ParserPage> parserPages =
         dbStorage.getParserPages(
             true,

@@ -14,7 +14,10 @@ import sh.xana.forum.common.AbstractTaskThread;
 import sh.xana.forum.common.SqsManager;
 import sh.xana.forum.common.Utils;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
+import sh.xana.forum.server.parser.PageParser;
 import sh.xana.forum.server.threads.PageDownloadsThread;
+import sh.xana.forum.server.threads.PageSpiderFeederThread;
+import sh.xana.forum.server.threads.PageSpiderThread;
 import sh.xana.forum.server.threads.PageUploadsThread;
 import sh.xana.forum.server.threads.RuntimeDebugThread;
 import sh.xana.forum.server.threads.WebServer;
@@ -86,11 +89,11 @@ public class ServerMain implements AutoCloseable {
     createTasks(2, () -> new PageUploadsThread(config, dbStorage, sqsManager));
 
     // -- Production spider
-    /*
     PageParser parser = new PageParser();
     PageSpiderFeederThread feeder = createTask(new PageSpiderFeederThread(dbStorage));
-    createTasks(PageSpiderThread.NUM_THREADS, () -> new PageSpiderThread(config, dbStorage, feeder, parser));
-     */
+    createTasks(
+        PageSpiderThread.NUM_THREADS,
+        () -> new PageSpiderThread(config, dbStorage, feeder, parser));
   }
 
   private <T extends AbstractTaskThread> T createTask(T thread) {
