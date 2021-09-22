@@ -7,6 +7,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sh.xana.forum.server.db.tables.records.SitesRecord;
@@ -65,5 +66,12 @@ public class SiteCache {
 
   public <T> List<T> filterMap(Predicate<SitesRecord> include, Function<SitesRecord, T> mapper) {
     return lazyGet().stream().filter(include).map(mapper).collect(Collectors.toList());
+  }
+
+  public List<UUID> idsByForumType(ForumType... forumTypes) {
+    return lazyGet().stream()
+        .filter(e -> ArrayUtils.contains(forumTypes, e.getForumtype()))
+        .map(SitesRecord::getSiteid)
+        .collect(Collectors.toList());
   }
 }

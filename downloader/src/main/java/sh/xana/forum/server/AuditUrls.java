@@ -28,6 +28,17 @@ public class AuditUrls {
 
     dbStorage = new DatabaseStorage(config);
 
+    dbStorage
+        .siteCache
+        .idsByForumType(ForumType.XenForo_F)
+        .forEach(
+            e -> {
+              System.out.println("UUID_TO_BIN('" + e + "'),");
+            });
+    if (true) {
+      return;
+    }
+
     //    Stream<PageUrl> pageUrls;
     //    Path cacheUrlsPath = Path.of("AuditUrls.cache.txt");
     //    if (Files.exists(cacheUrlsPath)) {
@@ -61,7 +72,9 @@ public class AuditUrls {
     //      pageUrls = dbPageUrls.stream();
     //    }
 
-    var result = dbStorage.getPageUrls(Sites.SITES.FORUMTYPE.in(ForumType.vBulletin_Url1, ForumType.vBulletin_Url2));
+    var result =
+        dbStorage.getPageUrls(
+            Sites.SITES.FORUMTYPE.in(ForumType.vBulletin_Url1, ForumType.vBulletin_Url2));
     log.info("Loaded {} pages", NumberFormat.getNumberInstance().format(result.size()));
 
     Iterator<CharSequence> errors =

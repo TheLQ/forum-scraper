@@ -23,7 +23,6 @@ import sh.xana.forum.common.Utils;
 import sh.xana.forum.common.ipc.ParserResult;
 import sh.xana.forum.common.ipc.ParserResult.Subpage;
 import sh.xana.forum.server.db.tables.Pages;
-import sh.xana.forum.server.db.tables.records.SitesRecord;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
 import sh.xana.forum.server.dbutil.DatabaseStorage.ValidationRecord;
 import sh.xana.forum.server.dbutil.DlStatus;
@@ -139,14 +138,6 @@ public class Auditor {
     } else {
       log.info("query start");
 
-      dbStorage
-          .siteCache
-          .mapByDomains(List.of("forums.nasioc.com", "xlforum.net"), SitesRecord::getSiteid)
-          .forEach(System.out::println);
-      if (true) {
-        return;
-      }
-
       List<String> domains =
           List.of(
               // Validated with XenForo_F @ 8d57e93464511ff6b2d51c7c01949bea40720492
@@ -182,8 +173,9 @@ public class Auditor {
               false,
               // Pages.PAGES.EXCEPTION.isNull(),
               // Pages.PAGES.DLSTATUS.eq(DlStatus.Done)
-              Pages.PAGES.SITEID.in(
-                  dbStorage.siteCache.mapByDomains(domains, SitesRecord::getSiteid)),
+              // Pages.PAGES.SITEID.in(
+              //    dbStorage.siteCache.mapByDomains(domains, SitesRecord::getSiteid)),
+              Pages.PAGES.SITEID.in(dbStorage.siteCache.idsByForumType(ForumType.XenForo_F)),
               Pages.PAGES.DLSTATUS.in(DlStatus.Parse, DlStatus.Done));
       log.info("writing " + pages.size() + " rows to " + auditorCache);
       Utils.jsonMapper.writeValue(auditorCache.toFile(), pages);

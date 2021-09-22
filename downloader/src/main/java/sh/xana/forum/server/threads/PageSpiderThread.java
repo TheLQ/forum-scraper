@@ -26,6 +26,7 @@ public class PageSpiderThread extends AbstractTaskThread {
   public static final int NUM_THREADS = Runtime.getRuntime().availableProcessors();
   /** Wait until any queue is this big to flush */
   private static final int SQL_FLUSH_LIMIT = 100;
+
   private static int THREAD_COUNTER = 0;
 
   private final ServerConfig config;
