@@ -23,7 +23,7 @@ import sh.xana.forum.server.parser.ParserException;
 
 public class PageSpiderThread extends AbstractTaskThread {
   private static final Logger log = LoggerFactory.getLogger(PageSpiderThread.class);
-  public static final int NUM_THREADS = Runtime.getRuntime().availableProcessors();
+  public static final int NUM_THREADS = Runtime.getRuntime().availableProcessors() * 2;
   /** Wait until any queue is this big to flush */
   private static final int SQL_FLUSH_LIMIT = 100;
 
@@ -57,29 +57,11 @@ public class PageSpiderThread extends AbstractTaskThread {
   @Override
   protected boolean runCycle() throws Exception {
     ParserPage page = feeder.getPageToParse_Poll();
+    boolean nothingToParse = page == null;
 
-    // flush to db if full, or we have nothing else to do
-    if (sqlNewPages.size() == SQL_FLUSH_LIMIT || (page == null && !sqlNewPages.isEmpty())) {
-      log.debug("dbsync insert");
-      dbStorage.insertPagesQueued(sqlNewPages, true);
-      sqlNewPages.clear();
-    }
-    if (sqlDone.size() == SQL_FLUSH_LIMIT || (page == null && !sqlDone.isEmpty())) {
-      log.debug("dbsync dlstatus done");
-      dbStorage.setPageStatus(sqlDone, DlStatus.Done);
-      feeder.setPageDone(sqlDone);
-      sqlDone.clear();
-    }
-    if (sqlExceptions.size() == SQL_FLUSH_LIMIT || (page == null && !sqlExceptions.isEmpty())) {
-      log.debug("dbsync exceptions");
-      dbStorage.setPageException(sqlExceptions);
-      for (UpdatePageException sqlException : sqlExceptions) {
-        feeder.setPageDone(sqlException.pageId());
-      }
-      sqlExceptions.clear();
-    }
+    flushToDatabase(nothingToParse);
 
-    if (page == null) {
+    if (nothingToParse) {
       // already flushed above, wait till new requests come in
       log.info("Waiting for new requests...");
       page = feeder.getPageToParse_Blocking();
@@ -88,6 +70,29 @@ public class PageSpiderThread extends AbstractTaskThread {
     spider(page);
 
     return true;
+  }
+
+  private void flushToDatabase(boolean flushNow) {
+    // flush to db if full, or we have nothing else to do
+    if (sqlNewPages.size() == SQL_FLUSH_LIMIT || (flushNow && !sqlNewPages.isEmpty())) {
+      log.debug("dbsync insert");
+      dbStorage.insertPagesQueued(sqlNewPages, true);
+      sqlNewPages.clear();
+    }
+    if (sqlDone.size() == SQL_FLUSH_LIMIT || (flushNow && !sqlDone.isEmpty())) {
+      log.debug("dbsync dlstatus done");
+      dbStorage.setPageStatus(sqlDone, DlStatus.Done);
+      feeder.setPageDone(sqlDone);
+      sqlDone.clear();
+    }
+    if (sqlExceptions.size() == SQL_FLUSH_LIMIT || (flushNow && !sqlExceptions.isEmpty())) {
+      log.debug("dbsync exceptions");
+      dbStorage.setPageException(sqlExceptions);
+      for (UpdatePageException sqlException : sqlExceptions) {
+        feeder.setPageDone(sqlException.pageId());
+      }
+      sqlExceptions.clear();
+    }
   }
 
   private void spider(ParserPage page) {
@@ -120,5 +125,11 @@ public class PageSpiderThread extends AbstractTaskThread {
       sqlExceptions.add(
           new UpdatePageException(pageId, ExceptionUtils.getStackTrace(loggedException)));
     }
+  }
+
+  @Override
+  protected void onInterrupt() {
+    log.info("flushing");
+    flushToDatabase(true);
   }
 }
