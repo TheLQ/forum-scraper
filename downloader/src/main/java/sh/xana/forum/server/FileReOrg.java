@@ -44,7 +44,9 @@ public class FileReOrg {
         .parallel()
         .forEach(
             currentPath -> {
-              if (Files.isDirectory(currentPath)) {
+              // Micro-opt, don't consult the fs each time
+              // if (Files.isDirectory(currentPath)) {
+              if (currentPath.getFileName().toString().length() < 16) {
                 return;
               }
 

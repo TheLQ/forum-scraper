@@ -16,13 +16,14 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.AuditorExecutor;
 import sh.xana.forum.common.Utils;
-import sh.xana.forum.common.ipc.ParserResult;
 import sh.xana.forum.common.ipc.ParserResult.Subpage;
 import sh.xana.forum.server.db.tables.Pages;
+import sh.xana.forum.server.db.tables.records.SitesRecord;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
 import sh.xana.forum.server.dbutil.DatabaseStorage.ValidationRecord;
 import sh.xana.forum.server.dbutil.DlStatus;
@@ -30,20 +31,19 @@ import sh.xana.forum.server.dbutil.ForumType;
 import sh.xana.forum.server.dbutil.PageType;
 import sh.xana.forum.server.dbutil.ParserPage;
 import sh.xana.forum.server.parser.LoginRequiredException;
-import sh.xana.forum.server.parser.PageParser;
 import sh.xana.forum.server.parser.ParserException;
+import sh.xana.forum.server.spider.Spider;
 
 /** Audits complete file cache */
 public class Auditor {
   private static final Logger log = LoggerFactory.getLogger(Auditor.class);
   private static DatabaseStorage dbStorage;
-  private static PageParser parser;
+  private static Spider spider = new Spider();
   private static ServerConfig config;
 
   public static void main(String[] args) throws Exception {
     config = new ServerConfig();
     dbStorage = new DatabaseStorage(config);
-    parser = new PageParser();
 
     if (args.length == 0) {
       throw new RuntimeException("no args");
@@ -74,16 +74,18 @@ public class Auditor {
         log.info("Page URL " + page.pageUri());
       }
 
-      ParserResult result = parser.parsePage(Files.readAllBytes(path), page);
       List<String> errors = new ArrayList<>();
-      getErrors(page.pageId(), result, errors);
+      byte[] data = Files.readAllBytes(path);
+
+      List<Subpage> subpages = runParser(data, page, errors);
+
       log.info("error size" + errors.size());
       for (String error : errors) {
         log.info("Error " + error);
       }
-      log.info(
-          "result {}",
-          Utils.jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(result));
+      for (Subpage subpage : subpages) {
+        log.info("Subpage {} {}", subpage.pageType(), subpage.url().urlStr);
+      }
       return;
     } else if (args[0].equals("delete")) {
       log.error("================== DELETE");
@@ -102,10 +104,11 @@ public class Auditor {
       AtomicInteger pageCounter = new AtomicInteger();
       AtomicInteger deleteCounter = new AtomicInteger();
       Files.walk(Path.of(config.get(config.ARG_FILE_CACHE)), 1)
+          .parallel()
           .forEach(
               path -> {
                 String rawId = path.getFileName().toString();
-                if (!rawId.endsWith(".response")) {
+                if (!rawId.endsWith(".response") && !rawId.endsWith(".headers")) {
                   return;
                 }
                 if (pageCounter.incrementAndGet() % 1000 == 0) {
@@ -173,9 +176,10 @@ public class Auditor {
               false,
               // Pages.PAGES.EXCEPTION.isNull(),
               // Pages.PAGES.DLSTATUS.eq(DlStatus.Done)
-              // Pages.PAGES.SITEID.in(
-              //    dbStorage.siteCache.mapByDomains(domains, SitesRecord::getSiteid)),
-              Pages.PAGES.SITEID.in(dbStorage.siteCache.idsByForumType(ForumType.XenForo_F)),
+              Pages.PAGES.SITEID.in(
+                  dbStorage.siteCache.mapByDomains(domains, SitesRecord::getSiteid)),
+              //
+              // Pages.PAGES.SITEID.in(dbStorage.siteCache.idsByForumType(ForumType.XenForo_F)),
               Pages.PAGES.DLSTATUS.in(DlStatus.Parse, DlStatus.Done));
       log.info("writing " + pages.size() + " rows to " + auditorCache);
       Utils.jsonMapper.writeValue(auditorCache.toFile(), pages);
@@ -201,8 +205,7 @@ public class Auditor {
               }
               try {
                 byte[] data = Files.readAllBytes(config.getPagePath(page.pageId()));
-                ParserResult result = parser.parsePage(data, page);
-                getErrors(page.pageId(), result, new ArrayList<>());
+                runParser(data, page, new ArrayList<>());
               } catch (Exception e) {
                 log.error("FAIL ON " + page, e);
                 System.exit(1);
@@ -269,10 +272,10 @@ public class Auditor {
     Files.write(Path.of("auditor-errors.log"), errors);
   }
 
-  private static List<String> runParser(byte[] data, ParserPage page, Collection<String> errors) {
+  private static List<Subpage> runParser(byte[] data, ParserPage page, Collection<String> errors) {
     try {
-      ParserResult result = parser.parsePage(data, page);
-      getErrors(page.pageId(), result, errors);
+      Stream<Subpage> subpages = spider.spiderPage(page, data);
+      return getErrors(page.pageId(), subpages, errors);
     } catch (LoginRequiredException e) {
       // nothing
     } catch (ParserException e) {
@@ -287,23 +290,26 @@ public class Auditor {
     return List.of();
   }
 
-  private static void getErrors(UUID pageId, ParserResult result, Collection<String> errors) {
+  private static List<Subpage> getErrors(
+      UUID pageId, Stream<Subpage> subpagesStream, Collection<String> errors) {
+    List<Subpage> subpages = subpagesStream.collect(Collectors.toList());
     List<ValidationRecord> pages =
         dbStorage.getPageByUrl(
-            result.subpages().stream()
+            subpages.stream()
                 .map(Subpage::url)
                 .map(url -> url.urlStr)
                 .collect(Collectors.toList()));
     for (ValidationRecord page : pages) {
-      if (result.subpages().stream()
+      if (subpages.stream()
           .noneMatch(parserEntry -> parserEntry.url().urlStr.equals(page.url().toString()))) {
         errors.add("parser missing url " + page.url());
       }
     }
-    for (Subpage subpage : result.subpages()) {
+    for (Subpage subpage : subpages) {
       if (pages.stream().noneMatch(page -> page.url().toString().equals(subpage.url().urlStr))) {
         errors.add("db missing url " + subpage.url().urlStr);
       }
     }
+    return subpages;
   }
 }
