@@ -5,6 +5,8 @@ import org.apache.http.client.utils.URIBuilder;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sh.xana.forum.common.Position;
+import sh.xana.forum.common.SuperStringTokenizer;
 
 public record DirectoryLinkHandler(
     @Nullable String pathPrefix,
@@ -35,25 +37,10 @@ public record DirectoryLinkHandler(
       return false;
     }
     String linkPart = linkParts[this.directoryDepth()];
+    SuperStringTokenizer linkTok = new SuperStringTokenizer(linkPart, idPosition());
 
     // grab number
-    int linkOffset = 1;
-    Integer id = null;
-    for (; true; linkOffset++) {
-      String numStr;
-      if (this.idPosition() == Position.start) {
-        numStr = linkPart.substring(0, linkOffset);
-      } else {
-        numStr = linkPart.substring(linkPart.length() - linkOffset);
-      }
-      try {
-        id = Integer.parseInt(numStr);
-      } catch (NumberFormatException e) {
-        // reset back to previous pos
-        linkOffset--;
-        break;
-      }
-    }
+    Integer id = linkTok.readUnsignedInt();
     if (id == null) {
       log.trace("can't find id");
       return false;
@@ -61,36 +48,18 @@ public record DirectoryLinkHandler(
 
     // check prefix
     if (this.idPrefix() != null) {
-      String expectedIdPrefix;
-      if (this.idPosition() == Position.start) {
-        throw new UnsupportedOperationException();
-      } else {
-        expectedIdPrefix = linkPart.substring(linkPart.length() - linkOffset - this.idPrefix().length(), linkPart.length() - linkOffset);
-      }
-      if (!this.idPrefix().equals(expectedIdPrefix)) {
-        log.trace("expected prefix {} found {}", this.idPrefix(), expectedIdPrefix);
+      if (!linkTok.readStringEquals(this.idPrefix())) {
+        log.trace("missing prefix");
         return false;
       }
-      linkOffset = linkOffset - this.idPrefix().length();
     }
 
     if (this.idSep() != null) {
-      String expectedSep;
-      if (this.idPosition() == Position.start) {
-        expectedSep = linkRelative.substring(linkOffset, linkOffset + this.idSep().length());
-      } else {
-        expectedSep = linkRelative.substring(linkPart.length() - linkOffset - this.idSep().length(), linkPart.length() - linkOffset);
-      }
-      if (!this.idSep().equals(expectedSep)) {
-        log.trace("expected prefix {} found {}", this.idSep(), expectedSep);
+      if (!linkTok.readStringEquals(this.idSep())) {
+        log.trace("missing prefix");
         return false;
       }
     }
     return true;
-  }
-
-  public enum Position {
-    start,
-    end
   }
 }
