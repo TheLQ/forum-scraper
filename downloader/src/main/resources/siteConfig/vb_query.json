@@ -1,0 +1,32 @@
+{
+  "domains": [
+    "// vBulletin_URL1/2",
+    "forums.nasioc.com",
+    "forum.miata.net"
+  ],
+  "linkForum": {
+    "type": "QueryKey",
+    "pathEquals": "forumdisplay.php",
+    "allowedKeys": [
+      "f",
+      "page"
+    ]
+  },
+  "linkTopic": {
+    "type": "QueryKey",
+    "pathEquals": "showthread.php",
+    "allowedKeys": [
+      "t",
+      "p",
+      "page"
+    ]
+  },
+  "linkMultipage": null,
+  "excludePathStart": "archive/",
+  "homepageAlias": "index.php",
+  "validRegex": [
+    "index.php",
+    "forumdisplay.php\\?f=[0-9]+(&page=[0-9]+)?",
+    "showthread.php\\?[tp]=[0-9]+(&page=[0-9]+)?"
+  ]
+}

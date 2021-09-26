@@ -1,0 +1,30 @@
+{
+  "domains": [
+    "//vBulletin_IB",
+    "www.rx7club.com",
+    "www.rx8club.com"
+  ],
+    "linkForum": {
+      "type": "Directory",
+      "idPosition": "end",
+      "idSep": "-",
+      "directoryDepth": 0
+    },
+    "linkTopic": {
+      "type": "Directory",
+      "idPosition": "end",
+      "idSep": "-",
+      "directoryDepth": 1
+    },
+    "linkMultipage": {
+      "type": "Directory",
+      "idPosition": "end",
+      "directoryDepth": 2
+    },
+  "excludePathStart": "archive/",
+  "homepageAlias": "index.php",
+  "validRegex": [
+    "[a-zA-Z0-9\\-]+-[0-9]+/(page[0-9]+/)?",
+    "[a-zA-Z0-9\\-]+-[0-9]+/[0-9]+-[a-zA-Z0-9\\-%_\\(\\)!\\*\\?']+/(page[0-9]+/)? "
+  ]
+}

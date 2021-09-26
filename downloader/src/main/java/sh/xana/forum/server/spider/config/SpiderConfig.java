@@ -2,6 +2,7 @@ package sh.xana.forum.server.spider.config;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -49,7 +50,7 @@ public record SpiderConfig(
       objPass.set(path.toString());
       spiderConfig = Utils.jsonMapper.readValue(path, SpiderConfig.class);
       objPass.remove();
-    } catch (Exception e) {
+    } catch (Throwable e) {
       throw new RuntimeException("Failed to load " + path, e);
     }
 
@@ -64,6 +65,18 @@ public record SpiderConfig(
     if (result.isEmpty()) {
       throw new RuntimeException("no configs loaded");
     }
+
+    HashMap<String, String> domainsToConfig = new HashMap<>();
+    for (SpiderConfig spiderConfig : result) {
+      for (String domain : spiderConfig.domains()) {
+        String existingSource = domainsToConfig.get(domain);
+        if (existingSource != null) {
+          throw new IllegalArgumentException("Duplicate domain " + domain + " exists in " + existingSource + " and " + spiderConfig.source());
+        }
+        domainsToConfig.put(domain, spiderConfig.source());
+      }
+    }
+
     return result;
   }
 }

@@ -1,0 +1,37 @@
+{
+  "domains": [
+    "xlforum.net"
+  ],
+  "linkForum": {
+    "type": "QueryKey",
+    "pathEquals": "forumdisplay.php",
+    "allowedKeys": [
+      "f",
+      "page"
+    ],
+    "remapKeys": {
+      "forumid": "f"
+    }
+  },
+  "linkTopic": {
+    "type": "QueryKey",
+    "pathEquals": "showthread.php",
+    "allowedKeys": [
+      "t",
+      "p",
+      "page"
+    ],
+    "remapKeys": {
+      "postid": "p",
+      "threadid": "t"
+    }
+  },
+  "linkMultipage": null,
+  "excludePathStart": "archive/",
+  "homepageAlias": "index.php",
+  "validRegex": [
+    "index.php",
+    "forumdisplay.php\\?f=[0-9]+(&page=[0-9]+)?",
+    "showthread.php\\?[tp]=[0-9]+(&page=[0-9]+)?"
+  ]
+}
