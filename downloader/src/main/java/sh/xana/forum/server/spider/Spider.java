@@ -5,8 +5,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -19,9 +19,6 @@ import sh.xana.forum.server.dbutil.ParserPage;
 import sh.xana.forum.server.parser.ForumStream;
 import sh.xana.forum.server.parser.ValidatedUrl;
 import sh.xana.forum.server.parser.ValidatedUrlException;
-import sh.xana.forum.server.spider.config.DirectoryLinkHandler;
-import sh.xana.forum.server.spider.config.LinkHandler;
-import sh.xana.forum.server.spider.config.QueryKeyLinkHandler;
 import sh.xana.forum.server.spider.config.SpiderConfig;
 
 public class Spider {
@@ -32,32 +29,39 @@ public class Spider {
     configs = SpiderConfig.load();
   }
 
-  public void spiderPage(ParserPage page, byte[] rawPage) {
+  public Stream<Subpage> spiderPage(ParserPage page, byte[] rawPage) {
     try {
+      String domain = page.pageUri().getHost();
       SpiderConfig spiderConfig =
           configs.stream()
-              .filter(e -> e.domains().contains(page.pageUri().getHost()))
+              .filter(e -> e.domains().contains(domain))
               .findFirst()
-              .orElseThrow(() -> new RuntimeException("cannot find spider config"));
+              .orElseThrow(
+                  () -> new RuntimeException("cannot find spider config for domain " + domain));
+      // log.info("found " + spiderConfig.source());
 
       Document doc = Jsoup.parse(new String(rawPage), page.siteUrl().toString());
 
-      doc.getElementsByTag("a").stream()
+      return doc.getElementsByTag("a").stream()
           // must be link
           .filter(ForumStream::anchorIsNavLink)
           .map(ForumStream::getAnchorFullUrl)
           .filter(e -> ForumStream.isBaseUri(e, doc))
           .<Subpage>mapMulti(
               (e, streamMapper) -> {
-                Subpage subpage = spiderPage(spiderConfig, page, e, doc.baseUri(), true);
+                Subpage subpage;
+                try {
+                  subpage = spiderPage(spiderConfig, page, e, doc.baseUri(), true);
+                } catch (Exception ex) {
+                  throw new SpiderException("Failed to create subpage for " + page.pageId(), ex);
+                }
+
                 if (subpage != null) {
                   streamMapper.accept(subpage);
                 }
               });
-    } catch (SpiderException e) {
-      throw e;
     } catch (Exception e) {
-      throw new SpiderException("Failed for " + page.pageId());
+      throw new SpiderException("Failed for " + page.pageId(), e);
     }
   }
 
@@ -94,6 +98,15 @@ public class Spider {
       throw new RuntimeException("link " + linkRaw + " is not starting with baseUri " + baseUri);
     }
     String linkRelative = linkRaw.substring(baseUri.length());
+    if (linkRelative.startsWith("/")) {
+      throw new RuntimeException(
+          "unexpected relative with / relative "
+              + linkRelative
+              + " baseUri "
+              + baseUri
+              + " url "
+              + linkRaw);
+    }
 
     // url pre-process - don't care about fragment
     String oldFragment = link.getFragment();
@@ -110,15 +123,19 @@ public class Spider {
       link.setPath(newPath);
     }
 
-    boolean handled = processLink(config.linkMultipage(), link, linkRelative);
-    if (!handled) {
-      handled = processLink(config.linkTopic(), link, linkRelative);
+    // url pre-process - handle home page alias
+
+    boolean handled = false;
+    if (config.linkMultipage() != null) {
+      handled = config.linkMultipage().processLink(link, linkRelative);
     }
     if (!handled) {
-      handled = processLink(config.linkForum(), link, linkRelative);
+      handled = config.linkTopic().processLink(link, linkRelative);
     }
     if (!handled) {
-      log.trace("{} link not handled {}", pageId, linkRaw);
+      handled = config.linkForum().processLink(link, linkRelative);
+    }
+    if (!handled) {
       return null;
     }
 
@@ -138,59 +155,6 @@ public class Spider {
     }
 
     return new Subpage("", validatedUrl, page.pageType());
-  }
-
-  private boolean processLink(LinkHandler config, URIBuilder link, String linkRelative) {
-    if (config instanceof DirectoryLinkHandler e) {
-      return processLinksDirectory(e, link, linkRelative);
-    } else if (config instanceof QueryKeyLinkHandler e) {
-      return processLinksQueryKey(e, link, linkRelative);
-    } else {
-      return false;
-    }
-    //    return switch(linkHandler) {
-    //      case DirectoryLinkHandler e -> processLinksDirectory(linkBuilder, e);
-    //      case QueryKeyLinkHandler f -> processLinksQueryKey(linkBuilder, f);
-    //      case null -> false;
-    //      default -> throw new IllegalStateException("Unexpected value: " + linkHandler);
-    //    };
-  }
-
-  private boolean processLinksDirectory(
-      DirectoryLinkHandler config, URIBuilder link, String linkRelative) {
-    return true;
-  }
-
-  private boolean processLinksQueryKey(
-      QueryKeyLinkHandler config, URIBuilder link, String linkRelative) {
-    if (linkRelative.startsWith(config.pathEquals())) {
-      return false;
-    }
-
-    // strip any args that are not in our list
-    List<NameValuePair> actualArgs = link.getQueryParams();
-    int actualArgsOrigSize = actualArgs.size();
-    actualArgs.removeIf(
-        e -> {
-          boolean doRemove = !config.allowedKeys().contains(e.getName());
-          if (doRemove) {
-            log.trace("Removing {} query {}={}", link, e.getName(), e.getValue());
-          }
-          return doRemove;
-        });
-    if (actualArgs.size() == 0) {
-      // remove empty ?
-      link.clearParameters();
-    } else if (actualArgs.size() != actualArgsOrigSize) {
-      link.setParameters(actualArgs);
-    }
-
-    // remove unnessesary /
-    //    String newUri = uriBuilder.toString();
-    //    if (newUri.endsWith("/")) {
-    //      newUri = newUri.substring(0, newUri.length() - 1);
-    //    }
-    return true;
   }
 
   private void softThrow(@NotNull String message, @Nullable Exception e, boolean throwErrors) {
