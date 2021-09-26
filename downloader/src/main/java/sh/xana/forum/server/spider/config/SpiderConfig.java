@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.Utils;
 
 public record SpiderConfig(
+    String source,
     @NotNull @JsonProperty(required = true) List<String> domains,
     @NotNull @JsonProperty(required = true) LinkHandler linkForum,
     @NotNull @JsonProperty(required = true) LinkHandler linkTopic,
@@ -20,8 +21,15 @@ public record SpiderConfig(
     @Nullable String homepageAlias,
     @NotNull @JsonProperty(required = true) List<Pattern> validRegex) {
   private static final Logger log = LoggerFactory.getLogger(SpiderConfig.class);
+  /**
+   * Horrible Dependency Injection hack. InjectableValues.Std fails with "Can not set final field"
+   * since this is a record
+   */
+  private static final ThreadLocal<String> objPass = new ThreadLocal<>();
 
   public SpiderConfig {
+    source = objPass.get();
+
     // clean comments
     domains.removeIf(s -> s.startsWith("/"));
 
@@ -38,7 +46,9 @@ public record SpiderConfig(
     log.debug("loading {}", path);
     SpiderConfig spiderConfig;
     try {
+      objPass.set(path.toString());
       spiderConfig = Utils.jsonMapper.readValue(path, SpiderConfig.class);
+      objPass.remove();
     } catch (Exception e) {
       throw new RuntimeException("Failed to load " + path, e);
     }
