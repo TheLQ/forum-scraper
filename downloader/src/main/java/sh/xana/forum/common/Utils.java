@@ -2,7 +2,6 @@ package sh.xana.forum.common;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -12,14 +11,15 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
-import org.apache.commons.io.IOUtils;
+import java.util.stream.Stream;
+import org.reflections.Reflections;
+import org.reflections.scanners.Scanners;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.helpers.MessageFormatter;
@@ -33,6 +33,7 @@ public class Utils {
   public static final HttpClient httpClient =
       HttpClient.newBuilder().followRedirects(Redirect.ALWAYS).build();
   public static final ObjectMapper jsonMapper = new ObjectMapper();
+  private static final Reflections reflections = new Reflections(null, Scanners.Resources);
 
   public static String BACKEND_SERVER;
   public static String BACKEND_KEY;
@@ -153,20 +154,13 @@ public class Utils {
     }
   }
 
-  public static List<URL> listResourceDirectory(String dir) throws IOException {
-    if (!dir.endsWith("/")) {
-      dir = dir + "/";
-    }
-    ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-
-    InputStream resourceAsStream = classLoader.getResourceAsStream(dir);
-    if (resourceAsStream == null) {
-      throw new IllegalStateException("cannot find " + dir + "?");
-    }
-    List<URL> result = new ArrayList<>();
-    for (String line : IOUtils.readLines(resourceAsStream, StandardCharsets.UTF_8)) {
-      result.add(classLoader.getResource(dir + line));
-    }
-    return result;
+  public static Stream<URL> listResourceDirectory(String pathStartsWith, String fileEndsWith) {
+    // Search the internal store since the regex is somewhat inflexible, inefficient,
+    // Map<ResourceType, Map<Filename, Set<FullRelativePath>>
+    return reflections.getStore().get(Scanners.Resources.index()).entrySet().stream()
+        .filter(filenameToPaths -> filenameToPaths.getKey().endsWith(fileEndsWith))
+        .flatMap(filenameToPaths -> filenameToPaths.getValue().stream())
+        .filter(path -> path.startsWith(pathStartsWith))
+        .map(Thread.currentThread().getContextClassLoader()::getResource);
   }
 }
