@@ -1,6 +1,7 @@
 package sh.xana.forum.server.parser;
 
-import java.util.Arrays;
+import java.util.List;
+import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,10 +18,14 @@ public class ValidatedUrl {
   }
 
   public ValidatedUrl(String urlStr, String baseUri, AbstractForum parser) {
-    this.urlStr = validateUrl(urlStr, baseUri, parser);
+    this.urlStr = validateUrl(urlStr, baseUri, List.of(parser.validateUrl()));
   }
 
-  public static String validateUrl(String pageUrl, String baseUrl, AbstractForum parser) {
+  public ValidatedUrl(String pageUrl, String baseUrl, List<Pattern> patterns) {
+    this.urlStr = validateUrl(pageUrl, baseUrl, patterns);
+  }
+
+  public static String validateUrl(String pageUrl, String baseUrl, List<Pattern> patterns) {
     if (pageUrl.equals(baseUrl)) {
       // this is the root page, skip
       return pageUrl;
@@ -54,14 +59,8 @@ public class ValidatedUrl {
     }
 
     String subUrlFinal = subUrl;
-    if (Arrays.stream(parser.validateUrl()).noneMatch(e -> e.matcher(subUrlFinal).matches())) {
-      throw new ValidatedUrlException(
-          "Failed to regex validate "
-              + subUrl
-              + " from "
-              + pageUrl
-              + " in "
-              + parser.getClass().getCanonicalName());
+    if (patterns.stream().noneMatch(e -> e.matcher(subUrlFinal).matches())) {
+      throw new ValidatedUrlException("Failed to regex validate " + subUrl + " from " + pageUrl);
     }
     return pageUrl;
   }

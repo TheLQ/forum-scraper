@@ -2,20 +2,24 @@ package sh.xana.forum.common;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Redirect;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.helpers.MessageFormatter;
@@ -147,5 +151,22 @@ public class Utils {
     } else {
       log.info("Thread not alive");
     }
+  }
+
+  public static List<URL> listResourceDirectory(String dir) throws IOException {
+    if (!dir.endsWith("/")) {
+      dir = dir + "/";
+    }
+    ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+
+    InputStream resourceAsStream = classLoader.getResourceAsStream(dir);
+    if (resourceAsStream == null) {
+      throw new IllegalStateException("cannot find " + dir + "?");
+    }
+    List<URL> result = new ArrayList<>();
+    for (String line : IOUtils.readLines(resourceAsStream, StandardCharsets.UTF_8)) {
+      result.add(classLoader.getResource(dir + line));
+    }
+    return result;
   }
 }

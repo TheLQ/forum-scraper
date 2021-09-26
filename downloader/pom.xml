@@ -459,8 +459,8 @@
   </profiles>
 
   <properties>
-    <maven.compiler.source>16</maven.compiler.source>
-    <maven.compiler.target>16</maven.compiler.target>
+    <maven.compiler.source>17</maven.compiler.source>
+    <maven.compiler.target>17</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <dep.slf4j>2.0.0-alpha5</dep.slf4j>
   </properties>

@@ -32,6 +32,7 @@ import org.jooq.SQLDialect;
 import org.jooq.conf.Settings;
 import org.jooq.conf.ThrowExceptions;
 import org.jooq.impl.DSL;
+import org.jsoup.helper.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.Utils;
@@ -85,6 +86,7 @@ public class DatabaseStorage implements AutoCloseable {
 
   /** Stage: Load pages to be downloaded by Scraper */
   public List<ScraperDownload> movePageQueuedToDownloadIPC(UUID siteId, int size) {
+    Validate.notNull(siteId, "siteId");
     // TODO: VERY SUSPICIOUS RACE. Seems multiple clients can request the page,
     List<ScraperDownload> pages =
         context
@@ -109,6 +111,7 @@ public class DatabaseStorage implements AutoCloseable {
 
   /** Stage: Page is finished downloading */
   public void movePageDownloadToParse(UUID pageId, int statusCode) {
+    Validate.notNull(pageId, "siteId");
     Query query =
         context
             .update(PAGES)
@@ -477,6 +480,9 @@ public class DatabaseStorage implements AutoCloseable {
 
   /** Change page status */
   public void setPageStatus(Collection<UUID> pageIds, DlStatus status) {
+    if (pageIds.isEmpty()) {
+      throw new IllegalArgumentException("No pages provided");
+    }
     Query query =
         context
             .update(PAGES)
@@ -498,6 +504,9 @@ public class DatabaseStorage implements AutoCloseable {
   public record UpdatePageException(UUID pageId, String exception) {}
 
   public void setPageException(List<UpdatePageException> updates) {
+    if (updates.isEmpty()) {
+      throw new IllegalArgumentException("No updates provided");
+    }
     var batchQuery =
         context.batch(
             context

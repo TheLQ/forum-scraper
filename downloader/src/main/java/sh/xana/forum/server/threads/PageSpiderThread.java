@@ -23,7 +23,7 @@ import sh.xana.forum.server.parser.ParserException;
 
 public class PageSpiderThread extends AbstractTaskThread {
   private static final Logger log = LoggerFactory.getLogger(PageSpiderThread.class);
-  public static final int NUM_THREADS = Runtime.getRuntime().availableProcessors() * 2;
+  public static final int NUM_THREADS = Runtime.getRuntime().availableProcessors() * 4;
   /** Wait until any queue is this big to flush */
   private static final int SQL_FLUSH_LIMIT = 100;
 
