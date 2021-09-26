@@ -31,6 +31,43 @@ public class DirectoryLinkHandlerTest {
     Assert.assertFalse(process(h, "http://example.com/app/", "mytopic-x555"));
   }
 
+  @Test
+  public void startAndIdPrefix() throws URISyntaxException {
+    DirectoryLinkHandler h = new DirectoryLinkHandler(null, 0, Position.start, null, "t");
+    Assert.assertTrue(process(h, "http://example.com/app/", "t555-mytopic"));
+    Assert.assertFalse(process(h, "http://example.com/app/", "x555-mytopic"));
+  }
+
+  @Test
+  public void startAndIdSep() throws URISyntaxException {
+    DirectoryLinkHandler h = new DirectoryLinkHandler(null, 0, Position.start, "-", null);
+    Assert.assertTrue(process(h, "http://example.com/app/", "555-mytopic"));
+    Assert.assertFalse(process(h, "http://example.com/app/", "555+mytopic"));
+  }
+
+  @Test
+  public void startAndIdSepAndPrefix() throws URISyntaxException {
+    DirectoryLinkHandler h = new DirectoryLinkHandler(null, 0, Position.start, "-", "t");
+    Assert.assertTrue(process(h, "http://example.com/app/", "t555-mytopic"));
+    Assert.assertFalse(process(h, "http://example.com/app/", "t555+mytopic"));
+    Assert.assertFalse(process(h, "http://example.com/app/", "x555-mytopic"));
+  }
+
+  @Test
+  public void ignorePrefix() throws URISyntaxException {
+    DirectoryLinkHandler h = new DirectoryLinkHandler("forum/", 1, Position.end, null, null);
+    Assert.assertTrue(process(h, "http://example.com/app/", "forum/myTopic51"));
+    Assert.assertFalse(process(h, "http://example.com/app/", "other/page51"));
+  }
+
+  @Test
+  public void depthWrong() throws URISyntaxException {
+    DirectoryLinkHandler h = new DirectoryLinkHandler(null, 1, Position.end, null, null);
+    Assert.assertTrue(process(h, "http://example.com/app/", "forum55/myTopic51"));
+    Assert.assertFalse(process(h, "http://example.com/app/", "forum55"));
+    Assert.assertFalse(process(h, "http://example.com/app/", "forum55/myTopic51/page1"));
+  }
+
   private boolean process(DirectoryLinkHandler h, String linkBase, String linkRelative)
       throws URISyntaxException {
     return h.processLink(new URIBuilder(linkBase + linkRelative), linkRelative);

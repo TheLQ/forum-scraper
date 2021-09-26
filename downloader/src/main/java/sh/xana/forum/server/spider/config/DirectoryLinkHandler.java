@@ -17,12 +17,6 @@ public record DirectoryLinkHandler(
     implements LinkHandler {
   private static final Logger log = LoggerFactory.getLogger(DirectoryLinkHandler.class);
 
-  public DirectoryLinkHandler {
-    if (StringUtils.isNotBlank(idPrefix) && idPosition == Position.start) {
-      throw new IllegalArgumentException("can't prefix start");
-    }
-  }
-
   @Override
   public boolean processLink(URIBuilder link, String linkRelative) {
     // must start with prefix
@@ -39,23 +33,41 @@ public record DirectoryLinkHandler(
     String linkPart = linkParts[this.directoryDepth()];
     SuperStringTokenizer linkTok = new SuperStringTokenizer(linkPart, idPosition());
 
-    // grab number
-    Integer id = linkTok.readUnsignedInt();
-    if (id == null) {
-      log.trace("can't find id");
-      return false;
+    Integer id;
+    boolean checkResult;
+    if (idPosition() == Position.start) {
+      checkResult = checkPrefix(linkTok);
+      id = extractId(linkTok);
+    } else {
+      id = extractId(linkTok);
+      checkResult = checkPrefix(linkTok);
     }
-
-    // check prefix
-    if (this.idPrefix() != null) {
-      if (!linkTok.readStringEquals(this.idPrefix())) {
-        log.trace("missing prefix");
-        return false;
-      }
+    if (id == null || !checkResult) {
+      return false;
     }
 
     if (this.idSep() != null) {
       if (!linkTok.readStringEquals(this.idSep())) {
+        log.trace("missing prefix");
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private Integer extractId(SuperStringTokenizer linkTok) {
+    // grab number
+    Integer id = linkTok.readUnsignedInt();
+    if (id == null) {
+      log.trace("can't find id");
+    }
+    return id;
+  }
+
+  private boolean checkPrefix(SuperStringTokenizer linkTok) {
+    // check prefix
+    if (this.idPrefix() != null) {
+      if (!linkTok.readStringEquals(this.idPrefix())) {
         log.trace("missing prefix");
         return false;
       }
