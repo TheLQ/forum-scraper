@@ -1,10 +1,9 @@
-package sh.xana.forum.server.spider;
+package sh.xana.forum.server.spider.config;
 
 import java.net.URISyntaxException;
 import org.apache.http.client.utils.URIBuilder;
 import org.testng.Assert;
 import org.testng.annotations.Test;
-import sh.xana.forum.server.spider.config.DirectoryLinkHandler;
 import sh.xana.forum.common.Position;
 
 @Test
@@ -68,8 +67,14 @@ public class DirectoryLinkHandlerTest {
     Assert.assertFalse(process(h, "http://example.com/app/", "forum55/myTopic51/page1"));
   }
 
+//  @Test
+//  public void baseUriTooBig() throws URISyntaxException {
+//    DirectoryLinkHandler h = new DirectoryLinkHandler(null, 1, Position.end, null, null);
+//    Assert.assertFalse(h.processLink(new URIBuilder("http://example.com"), "http://example.com/"));
+//  }
+
   private boolean process(DirectoryLinkHandler h, String linkBase, String linkRelative)
       throws URISyntaxException {
-    return h.processLink(new URIBuilder(linkBase + linkRelative), linkRelative);
+    return h.processLink(new URIBuilder(linkBase + linkRelative), linkBase);
   }
 }

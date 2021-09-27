@@ -94,18 +94,13 @@ public class Spider {
       }
     }
 
+    // url pre-process - make sure we have a base path
+    if (link.getPath().equals("")) {
+      link.setPath("/");
+    }
+
     if (!linkRaw.startsWith(baseUri)) {
       throw new RuntimeException("link " + linkRaw + " is not starting with baseUri " + baseUri);
-    }
-    String linkRelative = linkRaw.substring(baseUri.length());
-    if (linkRelative.startsWith("/")) {
-      throw new RuntimeException(
-          "unexpected relative with / relative "
-              + linkRelative
-              + " baseUri "
-              + baseUri
-              + " url "
-              + linkRaw);
     }
 
     // url pre-process - don't care about fragment
@@ -117,23 +112,40 @@ public class Spider {
 
     // url pre-process - convert double directory path
     String newPath = link.getPath();
-    int newPathLen = newPath.length();
+    int newPathOrig = newPath.length();
     newPath = StringUtils.replace(newPath, "//", "/");
-    if (newPath.length() != newPathLen) {
+    // >0 due to empty path causing IndexOutOfBounds
+    // >1 since we do want empty paths
+    while (newPath.length() > 1 && newPath.charAt(0) == '/') {
+      newPath = newPath.substring(1);
+    }
+    if (newPath.length() != newPathOrig) {
       link.setPath(newPath);
     }
 
     // url pre-process - handle home page alias
 
+    // validate relative
+    String linkRelative = link.toString().substring(baseUri.length());
+    if (linkRelative.startsWith("/")) {
+      throw new RuntimeException(
+          "unexpected relative with / relative "
+              + linkRelative
+              + " baseUri "
+              + baseUri
+              + " url "
+              + linkRaw);
+    }
+
     boolean handled = false;
     if (config.linkMultipage() != null) {
-      handled = config.linkMultipage().processLink(link, linkRelative);
+      handled = config.linkMultipage().processLink(link, baseUri);
     }
     if (!handled) {
-      handled = config.linkTopic().processLink(link, linkRelative);
+      handled = config.linkTopic().processLink(link, baseUri);
     }
     if (!handled) {
-      handled = config.linkForum().processLink(link, linkRelative);
+      handled = config.linkForum().processLink(link, baseUri);
     }
     if (!handled) {
       return null;

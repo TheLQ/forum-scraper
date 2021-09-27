@@ -26,7 +26,8 @@ public record QueryKeyLinkHandler(
   }
 
   @Override
-  public boolean processLink(URIBuilder link, String linkRelative) {
+  public boolean processLink(URIBuilder link, String baseUri) {
+    String linkRelative = link.toString().substring(baseUri.length());
     if (!linkRelative.startsWith(this.pathEquals())) {
       return false;
     }

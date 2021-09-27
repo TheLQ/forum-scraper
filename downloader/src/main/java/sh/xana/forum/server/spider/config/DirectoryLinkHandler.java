@@ -1,6 +1,7 @@
 package sh.xana.forum.server.spider.config;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -18,11 +19,20 @@ public record DirectoryLinkHandler(
   private static final Logger log = LoggerFactory.getLogger(DirectoryLinkHandler.class);
 
   @Override
-  public boolean processLink(URIBuilder link, String linkRelative) {
+  public boolean processLink(URIBuilder link, String baseUri) {
+    String linkRelative = link.toString().substring(baseUri.length());
+
     // must start with prefix
     if (this.pathPrefix() != null && !linkRelative.startsWith(this.pathPrefix())) {
       return false;
     }
+
+    // strip extras
+    for (NameValuePair queryParam : link.getQueryParams()) {
+      log.trace("stripping key {} from {}", queryParam.getName(), link);
+    }
+    link.clearParameters();
+    linkRelative = link.toString().substring(baseUri.length());
 
     // path must be at our index
     String[] linkParts = StringUtils.split(linkRelative, "/");
