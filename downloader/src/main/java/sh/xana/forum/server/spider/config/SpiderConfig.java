@@ -71,7 +71,13 @@ public record SpiderConfig(
       for (String domain : spiderConfig.domains()) {
         String existingSource = domainsToConfig.get(domain);
         if (existingSource != null) {
-          throw new IllegalArgumentException("Duplicate domain " + domain + " exists in " + existingSource + " and " + spiderConfig.source());
+          throw new IllegalArgumentException(
+              "Duplicate domain "
+                  + domain
+                  + " exists in "
+                  + existingSource
+                  + " and "
+                  + spiderConfig.source());
         }
         domainsToConfig.put(domain, spiderConfig.source());
       }

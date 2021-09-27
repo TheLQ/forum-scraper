@@ -10,8 +10,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** Re-organize filecache directory to implement and/or verify a/b/abcd... paths */
-public class FileReOrg {
-  private static final Logger log = LoggerFactory.getLogger(FileReOrg.class);
+public class FileCacheReOrg {
+  private static final Logger log = LoggerFactory.getLogger(FileCacheReOrg.class);
 
   public static void main(String[] args) throws Exception {
     ServerConfig config = new ServerConfig();

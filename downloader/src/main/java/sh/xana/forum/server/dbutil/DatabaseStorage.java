@@ -29,6 +29,7 @@ import org.jooq.Query;
 import org.jooq.Record;
 import org.jooq.Result;
 import org.jooq.SQLDialect;
+import org.jooq.TableField;
 import org.jooq.conf.Settings;
 import org.jooq.conf.ThrowExceptions;
 import org.jooq.impl.DSL;
@@ -291,7 +292,12 @@ public class DatabaseStorage implements AutoCloseable {
   }
 
   public List<PagesRecord> getPages(Condition... conditions) {
-    return context.select().from(PAGES).where(conditions).fetchInto(PagesRecord.class);
+    return getPages(List.of(), conditions);
+  }
+
+  public List<PagesRecord> getPages(
+      Collection<TableField<PagesRecord, ?>> field, Condition... conditions) {
+    return context.select(field).from(PAGES).where(conditions).fetchInto(PagesRecord.class);
   }
 
   public List<URI> getPageUrlsOnly(Condition... conditions) {
@@ -565,21 +571,35 @@ public class DatabaseStorage implements AutoCloseable {
 
   // ******************************
 
+  public int _debug_resetPagesToQueued(List<UUID> pageId) {
+//    var query = context
+//        .update(PAGES)
+//        .set(PAGES.EXCEPTION, (String) null)
+//        .set(PAGES.DLSTATUS, DlStatus.Queued)
+//        .set(PAGES.DLSTATUSCODE, (Integer) null)
+//        .where(PAGES.PAGEID.in(pageId));
+////    log.info("query " + query);
+//    return query.execute();
+    throw new UnsupportedOperationException();
+  }
+
   public int _debug_resetPagesToParse(List<UUID> siteId) {
-    return context
-        .update(PAGES)
-        .set(PAGES.EXCEPTION, (String) null)
-        .set(PAGES.DLSTATUS, DlStatus.Parse)
-        .where(PAGES.SITEID.in(siteId))
-        .execute();
+//    return context
+//        .update(PAGES)
+//        .set(PAGES.EXCEPTION, (String) null)
+//        .set(PAGES.DLSTATUS, DlStatus.Parse)
+//        .where(PAGES.SITEID.in(siteId))
+//        .execute();
+    throw new UnsupportedOperationException();
   }
 
   public int _debug_setPageStatusCode(List<UUID> pageId, int code) {
-    return context
-        .update(PAGES)
-        .set(PAGES.DLSTATUSCODE, 0)
-        .where(PAGES.PAGEID.in(pageId))
-        .execute();
+//    return context
+//        .update(PAGES)
+//        .set(PAGES.DLSTATUSCODE, 0)
+//        .where(PAGES.PAGEID.in(pageId))
+//        .execute();
+    throw new UnsupportedOperationException();
   }
 
   // *******************************

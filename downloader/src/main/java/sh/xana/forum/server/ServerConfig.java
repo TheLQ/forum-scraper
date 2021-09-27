@@ -34,4 +34,8 @@ public class ServerConfig extends CommonConfig {
         "" + pageIdStr.charAt(1),
         pageIdStr + ".headers");
   }
+
+  public Path getFileCache() {
+    return Path.of(get(ARG_FILE_CACHE));
+  }
 }

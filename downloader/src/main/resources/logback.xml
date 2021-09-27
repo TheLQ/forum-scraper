@@ -7,6 +7,7 @@
   </appender>
 
   <timestamp key="timestamp" datePattern="yyyy-MM-dd-HHmmss"/>
+
   <appender name="FILE" class="ch.qos.logback.core.FileAppender">
     <file>server-errors-${timestamp}.log</file>
     <append>true</append>
@@ -41,6 +42,9 @@
   <logger name="software.amazon.payloadoffloading.S3Dao" level="off"/>
   <!-- .wire is super chatty in debug, .headers is less but still annoying. Just block all of it -->
   <logger name="org.apache.http" level="info"/>
+
+<!--  <logger name="sh.xana.forum.server.parser.ForumStream" level="DEBUG"/>-->
+<!--  <logger name="sh.xana.forum.server.spider.Spider" level="DEBUG"/>-->
 
   <root level="trace">
     <appender-ref ref="STDOUT"/>
