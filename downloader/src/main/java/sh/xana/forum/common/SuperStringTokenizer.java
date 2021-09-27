@@ -22,6 +22,15 @@ public class SuperStringTokenizer {
 
   @Nullable
   public Integer readUnsignedInt() {
+    try {
+      return _readUnsignedInt();
+    } catch (Exception e) {
+      throw new RuntimeException("Failed on url " + str, e);
+    }
+  }
+
+  @Nullable
+  private Integer _readUnsignedInt() {
     char[] buffer = new char[str.length()];
     int bufferPos = 0;
 
@@ -58,10 +67,22 @@ public class SuperStringTokenizer {
     return Integer.parseInt(intStr);
   }
 
-  @NotNull
+  @Nullable
   public String readString(int length) {
+    try {
+      return _readString(length);
+    } catch (Exception e) {
+      throw new RuntimeException("Failed on url " + str, e);
+    }
+  }
+
+  @Nullable
+  private String _readString(int length) {
     if (length <= 0) {
       throw new IllegalArgumentException("cannot be <0");
+    }
+    if (offset + length >= str.length()) {
+      return null;
     }
 
     String actual;
@@ -78,6 +99,10 @@ public class SuperStringTokenizer {
     if (StringUtils.isEmpty(expected)) {
       throw new IllegalArgumentException("Can't get empty string");
     }
-    return readString(expected.length()).equals(expected);
+    String actual = readString(expected.length());
+    if (actual == null) {
+      return false;
+    }
+    return actual.equals(expected);
   }
 }

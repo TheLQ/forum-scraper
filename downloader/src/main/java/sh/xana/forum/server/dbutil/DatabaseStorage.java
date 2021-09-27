@@ -572,33 +572,33 @@ public class DatabaseStorage implements AutoCloseable {
   // ******************************
 
   public int _debug_resetPagesToQueued(List<UUID> pageId) {
-//    var query = context
-//        .update(PAGES)
-//        .set(PAGES.EXCEPTION, (String) null)
-//        .set(PAGES.DLSTATUS, DlStatus.Queued)
-//        .set(PAGES.DLSTATUSCODE, (Integer) null)
-//        .where(PAGES.PAGEID.in(pageId));
-////    log.info("query " + query);
-//    return query.execute();
+    //    var query = context
+    //        .update(PAGES)
+    //        .set(PAGES.EXCEPTION, (String) null)
+    //        .set(PAGES.DLSTATUS, DlStatus.Queued)
+    //        .set(PAGES.DLSTATUSCODE, (Integer) null)
+    //        .where(PAGES.PAGEID.in(pageId));
+    ////    log.info("query " + query);
+    //    return query.execute();
     throw new UnsupportedOperationException();
   }
 
   public int _debug_resetPagesToParse(List<UUID> siteId) {
-//    return context
-//        .update(PAGES)
-//        .set(PAGES.EXCEPTION, (String) null)
-//        .set(PAGES.DLSTATUS, DlStatus.Parse)
-//        .where(PAGES.SITEID.in(siteId))
-//        .execute();
+    //    return context
+    //        .update(PAGES)
+    //        .set(PAGES.EXCEPTION, (String) null)
+    //        .set(PAGES.DLSTATUS, DlStatus.Parse)
+    //        .where(PAGES.SITEID.in(siteId))
+    //        .execute();
     throw new UnsupportedOperationException();
   }
 
   public int _debug_setPageStatusCode(List<UUID> pageId, int code) {
-//    return context
-//        .update(PAGES)
-//        .set(PAGES.DLSTATUSCODE, 0)
-//        .where(PAGES.PAGEID.in(pageId))
-//        .execute();
+    //    return context
+    //        .update(PAGES)
+    //        .set(PAGES.DLSTATUSCODE, 0)
+    //        .where(PAGES.PAGEID.in(pageId))
+    //        .execute();
     throw new UnsupportedOperationException();
   }
 

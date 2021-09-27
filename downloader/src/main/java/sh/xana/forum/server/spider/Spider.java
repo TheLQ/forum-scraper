@@ -89,7 +89,7 @@ public class Spider {
         }
       }
       if (link == null) {
-        softThrow(pageId + " unable to convert to uri " + linkRaw, e, throwErrors);
+        log.warn(pageId + " unable to convert to uri " + linkRaw + " - " + e);
         return null;
       }
     }
