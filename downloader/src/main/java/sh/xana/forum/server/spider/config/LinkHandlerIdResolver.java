@@ -5,9 +5,11 @@ import com.fasterxml.jackson.databind.DatabindContext;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.jsontype.impl.TypeIdResolverBase;
 import java.io.IOException;
+import sh.xana.forum.server.spider.DirectoryLinkHandler;
 
 /** Jackson JSON mapper */
 public class LinkHandlerIdResolver extends TypeIdResolverBase {
+  private static final String PACKAGE = DirectoryLinkHandler.class.getPackageName();
 
   private JavaType mBaseType;
 
@@ -35,7 +37,7 @@ public class LinkHandlerIdResolver extends TypeIdResolverBase {
   public JavaType typeFromId(DatabindContext context, String id) throws IOException {
     try {
       return context.constructSpecializedType(
-          mBaseType, Class.forName("sh.xana.forum.server.spider.config." + id + "LinkHandler"));
+          mBaseType, Class.forName(PACKAGE + "." + id + "LinkHandler"));
     } catch (ClassNotFoundException e) {
       throw new IOException("que?", e);
     }

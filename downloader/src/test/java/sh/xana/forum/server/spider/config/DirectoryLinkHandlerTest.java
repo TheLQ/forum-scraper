@@ -5,6 +5,7 @@ import org.apache.http.client.utils.URIBuilder;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 import sh.xana.forum.common.Position;
+import sh.xana.forum.server.spider.DirectoryLinkHandler;
 
 @Test
 public class DirectoryLinkHandlerTest {

@@ -11,7 +11,7 @@ import org.jooq.Record;
 import org.jooq.exception.DataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sh.xana.forum.common.ipc.ParserResult.Subpage;
+import sh.xana.forum.common.ipc.Subpage;
 import sh.xana.forum.server.db.tables.Pages;
 import sh.xana.forum.server.db.tables.Sites;
 import sh.xana.forum.server.dbutil.DatabaseStorage;

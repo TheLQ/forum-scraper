@@ -21,7 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.AuditorExecutor;
 import sh.xana.forum.common.Utils;
-import sh.xana.forum.common.ipc.ParserResult.Subpage;
+import sh.xana.forum.common.ipc.Subpage;
 import sh.xana.forum.server.db.tables.Pages;
 import sh.xana.forum.server.db.tables.records.SitesRecord;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
@@ -165,11 +165,13 @@ public class Auditor {
               // "forum.miata.net"
               // vBulletin_Url2
               // "forums.nasioc.com"
-              "xlforum.net"
+              // "xlforum.net"
               //
               // Forkboard
               // "www.sr20-forum.com"
-              );
+              //
+              // other
+              "kiwifarms.net");
       log.info("domains {}", domains);
       pages =
           dbStorage.getParserPages(
@@ -184,6 +186,13 @@ public class Auditor {
       log.info("writing " + pages.size() + " rows to " + auditorCache);
       Utils.jsonMapper.writeValue(auditorCache.toFile(), pages);
     }
+
+    Files.write(
+        Path.of("cached.7z.in"),
+        () ->
+            pages.stream()
+                .map(e -> (CharSequence) config.getPagePath(e.pageId()).toString())
+                .iterator());
 
     log.info("start");
     switch (args[0]) {

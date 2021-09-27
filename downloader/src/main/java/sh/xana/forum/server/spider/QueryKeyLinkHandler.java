@@ -1,16 +1,16 @@
-package sh.xana.forum.server.spider.config;
+package sh.xana.forum.server.spider;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.http.NameValuePair;
-import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.message.BasicNameValuePair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sh.xana.forum.server.spider.config.LinkHandler;
 
 public record QueryKeyLinkHandler(
     @NotNull @JsonProperty(required = true) String pathEquals,
@@ -26,13 +26,12 @@ public record QueryKeyLinkHandler(
   }
 
   @Override
-  public boolean processLink(URIBuilder link, String baseUri) {
-    String linkRelative = link.toString().substring(baseUri.length());
-    if (!linkRelative.startsWith(this.pathEquals())) {
+  public boolean processLink(LinkBuilder link) {
+    if (!link.relativeLink().equals(this.pathEquals())) {
       return false;
     }
 
-    List<NameValuePair> queryParams = link.getQueryParams();
+    List<NameValuePair> queryParams = link.queryParams();
     MutableBoolean changed = new MutableBoolean(false);
 
     // remap
@@ -60,15 +59,12 @@ public record QueryKeyLinkHandler(
                 e.getName(),
                 e.getValue(),
                 this.allowedKeys(),
-                linkRelative);
+                link.relativeLink());
           }
           return doRemove;
         });
-    if (queryParams.size() == 0) {
-      // remove empty ?
-      link.clearParameters();
-    } else if (changed.isTrue()) {
-      link.setParameters(queryParams);
+    if (changed.isTrue()) {
+      link.queryParams(queryParams);
     }
 
     // remove unnessesary /

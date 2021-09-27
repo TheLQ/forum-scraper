@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import sh.xana.forum.common.ipc.ParserResult;
+import sh.xana.forum.common.ipc.Subpage;
 import sh.xana.forum.server.dbutil.ForumType;
 import sh.xana.forum.server.dbutil.PageType;
 
@@ -27,10 +27,10 @@ public interface AbstractForum {
   PageType getPageType(SourcePage sourcePage);
 
   @NotNull
-  Stream<ParserResult.Subpage> getSubpages(SourcePage sourcePage, PageType currentPageType);
+  Stream<Subpage> getSubpages(SourcePage sourcePage, PageType currentPageType);
 
   @Nullable
-  ParserResult.Subpage getValidLink(
+  Subpage getValidLink(
       String link, PageType currentPageType, String baseUri, UUID pageId, boolean throwErrors);
 
   @NotNull

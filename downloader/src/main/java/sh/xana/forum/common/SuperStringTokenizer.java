@@ -63,6 +63,14 @@ public class SuperStringTokenizer {
       // we read the string backwards
       ArrayUtils.reverse(buffer, 0, bufferPos);
     }
+
+    // Integer.MAX_INT = 2147483647 = 10 chars. Assume broken or unexpected number to avoid NumberFormatException
+    // TODO Go 1 less because 999 Milli is gigantic?
+    int maxIntChars = 10;
+    if (bufferPos > maxIntChars) {
+      return null;
+    }
+
     String intStr = new String(buffer, 0, bufferPos);
     return Integer.parseInt(intStr);
   }

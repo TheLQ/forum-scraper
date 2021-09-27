@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.AbstractTaskThread;
 import sh.xana.forum.common.Utils;
 import sh.xana.forum.common.ipc.ParserResult;
-import sh.xana.forum.common.ipc.ParserResult.Subpage;
+import sh.xana.forum.common.ipc.Subpage;
 import sh.xana.forum.server.ServerConfig;
 import sh.xana.forum.server.SpiderWarningException;
 import sh.xana.forum.server.dbutil.DatabaseStorage;

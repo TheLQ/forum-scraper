@@ -6,19 +6,14 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.http.client.utils.URIBuilder;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sh.xana.forum.common.ipc.ParserResult.Subpage;
+import sh.xana.forum.common.ipc.Subpage;
+import sh.xana.forum.server.dbutil.PageType;
 import sh.xana.forum.server.dbutil.ParserPage;
 import sh.xana.forum.server.parser.ForumStream;
-import sh.xana.forum.server.parser.ValidatedUrl;
-import sh.xana.forum.server.parser.ValidatedUrlException;
 import sh.xana.forum.server.spider.config.SpiderConfig;
 
 public class Spider {
@@ -49,9 +44,14 @@ public class Spider {
           .filter(e -> ForumStream.isBaseUri(e, doc))
           .<Subpage>mapMulti(
               (e, streamMapper) -> {
+                LinkBuilder link = rawToUsableLink(spiderConfig, page.pageId(), e, doc.baseUri());
+                if (link == null) {
+                  return;
+                }
+
                 Subpage subpage;
                 try {
-                  subpage = spiderPage(spiderConfig, page, e, doc.baseUri(), true);
+                  subpage = linkToSubpage(spiderConfig, page, link);
                 } catch (Exception ex) {
                   throw new SpiderException("Failed to create subpage for " + page.pageId(), ex);
                 }
@@ -65,13 +65,10 @@ public class Spider {
     }
   }
 
-  private Subpage spiderPage(
-      SpiderConfig config, ParserPage page, String linkRaw, String baseUri, boolean throwErrors) {
-    UUID pageId = page.pageId();
-
-    URIBuilder link = null;
+  private LinkBuilder rawToUsableLink(
+      SpiderConfig config, UUID pageId, String linkRaw, String baseUri) {
     try {
-      link = new URIBuilder(linkRaw);
+      return new LinkBuilder(linkRaw, baseUri);
     } catch (URISyntaxException e) {
       // attempt to extract a usable url
       for (Pattern pattern : config.validRegex()) {
@@ -80,101 +77,46 @@ public class Spider {
           if (matcher.find()) {
             // must prepend baseUri since the validator only grabs the end path
             String extracted = baseUri + matcher.group();
-            link = new URIBuilder(extracted);
+            LinkBuilder link = new LinkBuilder(linkRaw, baseUri);
             log.warn("Extracted {} from broken {}", extracted, linkRaw);
-            break;
+            return link;
           }
         } catch (URISyntaxException e2) {
           // continue...
         }
       }
-      if (link == null) {
-        log.warn(pageId + " unable to convert to uri " + linkRaw + " - " + e);
-        return null;
-      }
-    }
 
-    // url pre-process - make sure we have a base path
-    if (link.getPath().equals("")) {
-      link.setPath("/");
+      // loop ended, log failure
+      log.warn(pageId + " unable to convert to uri " + linkRaw + " - " + e);
+      return null;
     }
+  }
 
-    if (!linkRaw.startsWith(baseUri)) {
-      throw new RuntimeException("link " + linkRaw + " is not starting with baseUri " + baseUri);
-    }
+  private Subpage linkToSubpage(SpiderConfig config, ParserPage page, LinkBuilder link) {
 
-    // url pre-process - don't care about fragment
-    String oldFragment = link.getFragment();
-    if (oldFragment != null) {
-      log.trace("Removing {} fragment {}", link, oldFragment);
-      link.setFragment(null);
-    }
-
-    // url pre-process - convert double directory path
-    String newPath = link.getPath();
-    int newPathOrig = newPath.length();
-    newPath = StringUtils.replace(newPath, "//", "/");
-    // >0 due to empty path causing IndexOutOfBounds
-    // >1 since we do want empty paths
-    while (newPath.length() > 1 && newPath.charAt(0) == '/') {
-      newPath = newPath.substring(1);
-    }
-    if (newPath.length() != newPathOrig) {
-      link.setPath(newPath);
-    }
-
-    // url pre-process - handle home page alias
-
-    // validate relative
-    String linkRelative = link.toString().substring(baseUri.length());
-    if (linkRelative.startsWith("/")) {
-      throw new RuntimeException(
-          "unexpected relative with / relative "
-              + linkRelative
-              + " baseUri "
-              + baseUri
-              + " url "
-              + linkRaw);
-    }
-
+    PageType pageType = page.pageType();
     boolean handled = false;
     if (config.linkMultipage() != null) {
-      handled = config.linkMultipage().processLink(link, baseUri);
+      handled = config.linkMultipage().processLink(link);
     }
     if (!handled) {
-      handled = config.linkTopic().processLink(link, baseUri);
+      handled = config.linkTopic().processLink(link);
+      if (handled) {
+        pageType = PageType.TopicPage;
+      }
     }
     if (!handled) {
-      handled = config.linkForum().processLink(link, baseUri);
+      handled = config.linkForum().processLink(link);
+      if (handled) {
+        pageType = PageType.ForumList;
+      }
     }
     if (!handled) {
       return null;
     }
 
-    // url pre-process - remove empty ?
-    if (link.getQueryParams().isEmpty()) {
-      link.clearParameters();
-    }
+    link.validate(config.validRegex());
 
-    String linkFinal = link.toString();
-    ValidatedUrl validatedUrl;
-    try {
-      validatedUrl = new ValidatedUrl(linkFinal, baseUri, config.validRegex());
-    } catch (ValidatedUrlException e) {
-      //      softThrow(pageId + " unable to validate final " + linkFinal, e, throwErrors);
-      //      return null;
-      throw e;
-    }
-
-    return new Subpage("", validatedUrl, page.pageType());
-  }
-
-  private void softThrow(@NotNull String message, @Nullable Exception e, boolean throwErrors) {
-    if (throwErrors) {
-      throw new RuntimeException(message, e);
-    } else {
-      String exceptionMessage = e != null ? " || " + e.getMessage() : "";
-      log.warn(message + exceptionMessage);
-    }
+    return new Subpage(link.fullLink(), pageType);
   }
 }
