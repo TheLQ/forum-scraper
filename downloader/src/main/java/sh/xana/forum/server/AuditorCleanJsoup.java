@@ -2,72 +2,72 @@ package sh.xana.forum.server;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sh.xana.forum.common.PerformanceCounter;
-import sh.xana.forum.common.Utils;
-import sh.xana.forum.server.db.tables.Pages;
+import sh.xana.forum.common.AuditorExecutor;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
-import sh.xana.forum.server.dbutil.DlStatus;
 import sh.xana.forum.server.dbutil.ParserPage;
 
 public class AuditorCleanJsoup {
   private static final Logger log = LoggerFactory.getLogger(AuditorCleanJsoup.class);
+  private static final PageBytes BYTE_INPUT_DEATH = new PageBytes(null, null);
 
-  public static void main(String[] args) throws IOException {
+  private record PageBytes(ParserPage page, byte[] data) {}
+
+  private record PageAsXmlString(UUID pageId, String data) {}
+
+  public static void main(String[] args) throws IOException, InterruptedException {
+    log.info("v2");
     ServerConfig config = new ServerConfig();
     DatabaseStorage dbStorage = new DatabaseStorage(config);
 
-    log.info("query start");
+    AuditorCache cache = new AuditorCache(config);
+    AuditorCache.CacheIterator cacheItr = cache.iterator();
 
-    List<String> domains = List.of("kiwifarms.net", "xlforum.net");
-    log.info("domains {}", domains);
-    List<ParserPage> pages =
-        dbStorage.getParserPages(
-            false,
-//            Pages.PAGES.SITEID.in(
-//                dbStorage.siteCache.mapByDomains(domains, SitesRecord::getSiteid)),
-            Pages.PAGES.DLSTATUS.in(DlStatus.Parse, DlStatus.Done));
+    BlockingQueue<ParserPage> pagesToRead = new ArrayBlockingQueue<>(2000);
+    BlockingQueue<PageBytes> pagesToParse = new ArrayBlockingQueue<>(2000);
+    BlockingQueue<PageAsXmlString> pagesToSave = new ArrayBlockingQueue<>(2000);
 
-    PerformanceCounter counter = new PerformanceCounter(log, 1000);
-    Utils.threadRunner(
-        16,
-        "parser",
-        () -> {
-          try {
-            int idx;
-            while ((idx = counter.incrementAndLog(pages)) < pages.size()) {
-              ParserPage page = pages.get(idx);
-              Document doc =
-                  Jsoup.parse(
-                      config.getPagePath(page.pageId()).toFile(), null, page.siteUrl().toString());
-              Files.writeString(config.getPageXMLPath(page.pageId()), doc.outerHtml());
+    log.info("starting");
+    // Parsing
+    AuditorExecutor executor = new AuditorExecutor(log);
 
+    executor.startConverterForSupplierToSize(
+        "pageReader",
+        6,
+        pagesToRead::take,
+        cache.getCacheSize(),
+        e -> new PageBytes(e, Files.readAllBytes(config.getPagePath(e.pageId()))),
+        pagesToParse
+    );
 
-              //              OutputStream fileOut = Files.newOutputStream(
-              //                  config.getPageJsoupPath(page.pageId()));
-              //              try (ObjectOutputStream objOut = new ObjectOutputStream(new
-              // BufferedOutputStream(fileOut))) {
-              //                objOut.writeObject(doc);
-              //              }
+    executor.startConverterForSupplierToNull(
+        "pageParser",
+        6,
+        pagesToParse::take,
+        pageBytes -> {
+          Document doc =
+              Jsoup.parse(
+                  config.getPagePath(pageBytes.page().pageId()).toFile(),
+                  null,
+                  pageBytes.page().siteUrl().toString());
+          return new PageAsXmlString(pageBytes.page().pageId(), doc.outerHtml());
+        },
+        pagesToSave
+    );
 
-//              ByteArrayOutputStream out = new ByteArrayOutputStream(150_998);
-//              try (ObjectOutputStream objOut = new ObjectOutputStream(out)) {
-//                objOut.writeObject(doc);
-//              }
-//              try (OutputStream out2 =
-//                  new FileOutputStream(config.getPageJsoupPath(page.pageId()).toFile())) {
-//                out2.write(out.toByteArray());
-//              }
+    executor.startConsumer(pagesToSave, 2, e -> {
+      Files.writeString(config.getPageXMLPath(e.pageId()), e.data());
+    });
 
-              //              Files.write(config.getPageJsoupPath(page.pageId()), );
-            }
-          } catch (Exception e) {
-            log.error("PARSER CRASH", e);
-          }
-        });
+    for (ParserPage parserPage : cache) {
+      pagesToRead.put(parserPage);
+    }
+    log.info("done with main");
   }
 }

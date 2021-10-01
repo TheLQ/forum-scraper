@@ -2,33 +2,32 @@ package sh.xana.forum.common;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 
-public class AuditorExecutor<Input, Output> {
+public class AuditorExecutor{
   private final Logger log;
-  private final PerformanceCounter readCounter;
+  private final List<Thread> allThreads = new ArrayList<>();
 
   public AuditorExecutor(Logger log) {
     this.log = log;
-    readCounter = new PerformanceCounter(log, 1000);
   }
 
-  public void run(
-      List<Input> input,
+  public  <Input, Output> void startConverterForList(
+      String prefix,
       int inputThreadsNum,
-      InputFunction<Input, Output> inputFunction,
-      int outputThreadsNum,
-      OutputFunction<Output> outputFunction)
-      throws InterruptedException {
-    BlockingQueue<Output> outputQueue = new ArrayBlockingQueue<>(5000);
+      List<Input> input,
+      ExceptionFunction<Input, Output> converter,
+      BlockingQueue<Output> outputQueue) {
+    log.info("starting {} {} threads", inputThreadsNum, prefix);
+
+    PerformanceCounter readCounter = new PerformanceCounter(log, 1000);
 
     List<Thread> inputThreads =
         Utils.threadRunner(
             inputThreadsNum,
-            "input-",
+            prefix + "-",
             () -> {
               while (true) {
                 int idx = readCounter.incrementAndLog(input, outputQueue);
@@ -39,7 +38,7 @@ public class AuditorExecutor<Input, Output> {
                   }
 
                   Input entry = input.get(idx);
-                  outputQueue.put(inputFunction.run(entry));
+                  outputQueue.put(converter.run(entry));
                 } catch (Exception e) {
                   log.error("FAILED TO PUT", e);
                   // System.exit(1);
@@ -47,45 +46,125 @@ public class AuditorExecutor<Input, Output> {
               }
             });
 
+    allThreads.addAll(inputThreads);
+  }
+
+  public <Input, Output> void startConverterForSupplierToSize(
+      String prefix,
+      int inputThreadsNum,
+      ExceptionSupplier<Input> supplier,
+      int supplierTotalSize,
+      ExceptionFunction<Input, Output> converter,
+      BlockingQueue<Output> outputQueue) {
+    log.info("starting {} {} threads", inputThreadsNum, prefix);
+
+    PerformanceCounter readCounter = new PerformanceCounter(log, 1000);
+
+    List<Thread> inputThreads =
+        Utils.threadRunner(
+            inputThreadsNum,
+            prefix + "-",
+            () -> {
+              while (true) {
+                int idx = readCounter.incrementAndLog(supplierTotalSize, outputQueue);
+                try {
+                  if (idx >= supplierTotalSize) {
+                    log.info("End");
+                    break;
+                  }
+
+                  Input entry = supplier.run();
+                  outputQueue.put(converter.run(entry));
+                } catch (Exception e) {
+                  log.error("FAILED TO PUT", e);
+                  // System.exit(1);
+                }
+              }
+            });
+
+    allThreads.addAll(inputThreads);
+  }
+
+  public <Input, Output> void startConverterForSupplierToNull(
+      String prefix,
+      int inputThreadsNum,
+      ExceptionSupplier<Input> supplier,
+      ExceptionFunction<Input, Output> converter,
+      BlockingQueue<Output> outputQueue) {
+    log.info("starting {} {} threads", inputThreadsNum, prefix);
+
+    PerformanceCounter readCounter = new PerformanceCounter(log, 1000);
+
+    List<Thread> inputThreads =
+        Utils.threadRunner(
+            inputThreadsNum,
+            prefix + "-",
+            () -> {
+              while (true) {
+                readCounter.incrementAndLog();
+
+                try {
+                  Input entry = supplier.run();
+                  if (entry == null) {
+                    log.info("End");
+                    break;
+                  }
+
+                  outputQueue.put(converter.run(entry));
+                } catch (Exception e) {
+                  log.error("FAILED TO PUT", e);
+                  // System.exit(1);
+                }
+              }
+            });
+
+    allThreads.addAll(inputThreads);
+  }
+
+  public <Input> void startConsumer(BlockingQueue<Input> input, int outputThreadsNum, ExceptionConsumer<Input> consumer) {
     List<Thread> outputThreads =
         Utils.threadRunner(
             outputThreadsNum,
             "processor-",
             () -> {
-              while (anyThreadAlive(inputThreads)) {
+              while (anyThreadAlive()) {
                 try {
-                  Output entry = outputQueue.poll(10, TimeUnit.SECONDS);
+                  Input entry = input.poll(10, TimeUnit.SECONDS);
                   if (entry == null) {
                     // check if threads are still running
                     continue;
                   }
 
-                  outputFunction.run(entry);
+                  consumer.run(entry);
                 } catch (Exception e) {
                   log.error("PROCESSOR ERROR", e);
                 }
               }
               log.info("Ending processor");
             });
-
-    List<Thread> allThreads = new ArrayList<>();
-    allThreads.addAll(inputThreads);
     allThreads.addAll(outputThreads);
-    while (anyThreadAlive(allThreads)) {
+  }
+
+  public void waitForAllThreads() throws InterruptedException {
+    while (anyThreadAlive()) {
       TimeUnit.SECONDS.sleep(10);
     }
   }
 
-  public interface InputFunction<Input, Output> {
+  public interface ExceptionFunction<Input, Output> {
     Output run(Input in) throws Exception;
   }
 
-  public interface OutputFunction<Output> {
-    void run(Output out) throws Exception;
+  public interface ExceptionConsumer<Input> {
+    void run(Input out) throws Exception;
   }
 
-  private static boolean anyThreadAlive(List<Thread> threads) {
-    for (Thread thread : threads) {
+  public interface ExceptionSupplier<Output> {
+    Output run() throws Exception;
+  }
+
+  public boolean anyThreadAlive() {
+    for (Thread thread : allThreads) {
       if (thread.isAlive()) {
         return true;
       }
