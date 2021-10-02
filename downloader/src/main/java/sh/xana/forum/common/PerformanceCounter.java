@@ -6,13 +6,18 @@ import org.slf4j.Logger;
 
 public class PerformanceCounter {
   private final AtomicInteger counter = new AtomicInteger();
-  private final long startTime = System.currentTimeMillis();
+  private long startTime;
   private final Logger log;
   private final int splitBy;
 
   public PerformanceCounter(Logger log, int splitBy) {
     this.log = log;
     this.splitBy = splitBy;
+    start();
+  }
+
+  public void start() {
+    startTime = System.currentTimeMillis();
   }
 
   public int current() {
@@ -74,7 +79,7 @@ public class PerformanceCounter {
   }
 
   public int incrementAndLog(long inputSize) {
-    log.info("COUNTING");
+    // log.info("COUNTING");
     int idx = counter.getAndIncrement();
     if (idx % splitBy == 0) {
       // avoid divide by zero error

@@ -62,9 +62,10 @@ public class AuditorCleanJsoup {
           Files.writeString(config.getPageXMLPath(e.pageId()), e.data());
         });
 
-    for (ParserPage e : cache) {
-      pagesToParse.put(new PageBytes(e, Files.readAllBytes(config.getPagePath(e.pageId()))));
-    }
+    // TODO
+    //    for (ParserPage e : cache) {
+    //      pagesToParse.put(new PageBytes(e, Files.readAllBytes(config.getPagePath(e.pageId()))));
+    //    }
     log.info("done with main");
   }
 }

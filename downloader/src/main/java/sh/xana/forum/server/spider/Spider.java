@@ -11,6 +11,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.ipc.Subpage;
@@ -29,7 +30,11 @@ public class Spider {
 
   /** Use Jsoup's build while reading perf optimization. Actually the slowest part */
   public Document loadPage(Path path, String baseUri) throws IOException {
-    return Jsoup.parse(Files.readString(path), baseUri);
+    return loadPage(path, baseUri, Parser.htmlParser());
+  }
+
+  public Document loadPage(Path path, String baseUri, Parser parser) throws IOException {
+    return Jsoup.parse(Files.readString(path), baseUri, parser);
     //    return Jsoup.parse(new BufferedInputStream(Files.newInputStream(path,
     // StandardOpenOption.READ)), null, baseUri);
     //     return Jsoup.parse(path.toFile(), StandardCharsets.UTF_8.toString(), baseUri);

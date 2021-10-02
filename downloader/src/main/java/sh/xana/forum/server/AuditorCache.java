@@ -18,11 +18,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 import org.apache.commons.lang3.mutable.MutableBoolean;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.Utils;
@@ -31,7 +27,7 @@ import sh.xana.forum.server.dbutil.DatabaseStorage;
 import sh.xana.forum.server.dbutil.DlStatus;
 import sh.xana.forum.server.dbutil.ParserPage;
 
-public class AuditorCache implements Iterable<ParserPage> {
+public class AuditorCache implements Iterable<byte[]> {
   private static final Logger log = LoggerFactory.getLogger(AuditorCache.class);
 
   public static void main(String[] args) throws Exception {
@@ -101,14 +97,15 @@ public class AuditorCache implements Iterable<ParserPage> {
     log.info("done");
   }
 
-  public class CacheIterator implements Iterator<ParserPage>, AutoCloseable {
-    private static final ParserPage NULL_PAGE = new ParserPage(null, null, null, 0, null, null, null);
+  public class RawIterator implements Iterator<byte[]>, AutoCloseable {
+    private static final ParserPage NULL_PAGE =
+        new ParserPage(null, null, null, 0, null, null, null);
     private final ObjectInputStream in;
-    private ParserPage next = null;
+    private byte[] next = null;
 
-    private CacheIterator() {
+    private RawIterator() {
       try {
-        in = getObjectInput();
+        in = new ObjectInputStream(new BufferedInputStream(Files.newInputStream(parserPagePath)));
       } catch (Exception e) {
         throw new RuntimeException("failed to create", e);
       }
@@ -121,22 +118,11 @@ public class AuditorCache implements Iterable<ParserPage> {
     }
 
     @Override
-    public ParserPage next() {
+    public byte[] next() {
       fetchNext();
-      ParserPage result = next;
+      byte[] result = next;
       if (next == null) {
         throw new IllegalStateException("Already at EOF");
-      }
-      next = null;
-      return result;
-    }
-
-    @Nullable
-    public ParserPage nextOrNull() {
-      fetchNext();
-      ParserPage result = next;
-      if (next == null) {
-        return null;
       }
       next = null;
       return result;
@@ -148,8 +134,7 @@ public class AuditorCache implements Iterable<ParserPage> {
       }
 
       try {
-        byte[] data = (byte[]) in.readObject();
-        next = Utils.jsonMapper.readValue(data, ParserPage.class);
+        next = (byte[]) in.readObject();
       } catch (EOFException e) {
         try {
           close();
@@ -167,19 +152,16 @@ public class AuditorCache implements Iterable<ParserPage> {
     }
   }
 
-  private ObjectInputStream getObjectInput() throws IOException {
-    return new ObjectInputStream(new BufferedInputStream(Files.newInputStream(parserPagePath)));
+  public Iterator<byte[]> iterator() {
+    return new RawIterator();
   }
 
-  @NotNull
-  @Override
-  public CacheIterator iterator() {
-    return new CacheIterator();
-  }
-
-  public Stream<ParserPage> stream() {
-    Iterable<ParserPage> iterable = CacheIterator::new;
-    return StreamSupport.stream(iterable.spliterator(), false);
+  public ParserPage toPage(byte[] bytes) {
+    try {
+      return Utils.jsonMapper.readValue(bytes, ParserPage.class);
+    } catch (IOException e) {
+      throw new RuntimeException("Cannot read", e);
+    }
   }
 
   public int getCacheSize() {
@@ -198,7 +180,9 @@ public class AuditorCache implements Iterable<ParserPage> {
   public Set<String> getPageUrls() {
     if (cachedUrlAll == null) {
       try {
-        cachedUrlAll = Files.lines(urlAllPath).collect(Collectors.toSet());
+        // Performance: This will be processed in multiple threads. Normal HashSet is extremely slow
+        // because keySet (the actual set values) are generated *on demand*
+        cachedUrlAll = Files.lines(urlAllPath).collect(Collectors.toUnmodifiableSet());
       } catch (Exception e) {
         throw new RuntimeException("Failed to read " + urlAllPath, e);
       }

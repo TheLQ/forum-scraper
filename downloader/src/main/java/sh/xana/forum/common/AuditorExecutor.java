@@ -147,7 +147,11 @@ public class AuditorExecutor {
   }
 
   public <Input> void startConsumerForSupplierToSize(
-      String prefix, int threadsNum, ExceptionSupplier<Input> input, int supplierTotalSize, ExceptionConsumer<Input> consumer) {
+      String prefix,
+      int threadsNum,
+      ExceptionSupplier<Input> input,
+      int supplierTotalSize,
+      ExceptionConsumer<Input> consumer) {
     log.info("starting {} {} threads", threadsNum, prefix);
 
     PerformanceCounter readCounter = new PerformanceCounter(log, 1000);

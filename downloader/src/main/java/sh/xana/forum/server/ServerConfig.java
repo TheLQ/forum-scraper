@@ -18,21 +18,24 @@ public class ServerConfig extends CommonConfig {
   }
 
   public Path getPagePath(UUID pageId) {
-    String pageIdStr = pageId.toString();
-    return Path.of(
-        get(ARG_FILE_CACHE),
-        "" + pageIdStr.charAt(0),
-        "" + pageIdStr.charAt(1),
-        pageIdStr + ".response");
+    return getPathFolder(pageId).resolve(pageId + ".response");
+  }
+
+  public Path getPageXMLPath(UUID pageId) {
+    return getPathFolder(pageId).resolve(pageId + ".response.xml");
+  }
+
+  public Path getPageJsoupPath(UUID pageId) {
+    return getPathFolder(pageId).resolve(pageId + ".response.jsoup");
   }
 
   public Path getPageHeaderPath(UUID pageId) {
+    return getPathFolder(pageId).resolve(pageId + ".headers");
+  }
+
+  private Path getPathFolder(UUID pageId) {
     String pageIdStr = pageId.toString();
-    return Path.of(
-        get(ARG_FILE_CACHE),
-        "" + pageIdStr.charAt(0),
-        "" + pageIdStr.charAt(1),
-        pageIdStr + ".headers");
+    return Path.of(get(ARG_FILE_CACHE), "" + pageIdStr.charAt(0), "" + pageIdStr.charAt(1));
   }
 
   public Path getFileCache() {

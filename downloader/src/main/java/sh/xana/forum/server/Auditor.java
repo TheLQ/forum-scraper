@@ -6,12 +6,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.commons.lang3.time.StopWatch;
 import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,8 +38,8 @@ public class Auditor {
   private final ServerConfig config;
   private final Spider spider;
   private final AuditorCache cache;
-  private final ConcurrentSkipListSet<String> errors = new ConcurrentSkipListSet<>();
-  private final PerformanceCounter counter = new PerformanceCounter(log, 10);
+  private final ArrayList<String> errors = new ArrayList<>();
+  private final PerformanceCounter counter = new PerformanceCounter(log, 1000);
   private long totalSize;
 
   public static void main(String[] args) throws Exception {
@@ -86,79 +90,92 @@ public class Auditor {
     }
 
     List<String> errors = new ArrayList<>();
-//    List<Subpage> subpages = runParser(new QueueEntry(page), errors);
-//
-//    log.info("error size" + errors.size());
-//    for (String error : errors) {
-//      log.info("Error " + error);
-//    }
-//    for (Subpage subpage : subpages) {
-//      log.info("Subpage {} {}", subpage.pageType(), subpage.link());
-//    }
-//    return;
+    //    List<Subpage> subpages = runParser(new QueueEntry(page), errors);
+    //
+    //    log.info("error size" + errors.size());
+    //    for (String error : errors) {
+    //      log.info("Error " + error);
+    //    }
+    //    for (Subpage subpage : subpages) {
+    //      log.info("Subpage {} {}", subpage.pageType(), subpage.link());
+    //    }
+    //    return;
   }
 
   public void massAudit() throws InterruptedException, ExecutionException {
-      log.info("query start");
+    log.info("query start");
 
-      List<String> domains =
-          List.of(
-              // Validated with XenForo_F @ 8d57e93464511ff6b2d51c7c01949bea40720492
-              // "Fix Java Warnings"
-              // Only errors are on the home page
-              // "www.avsforum.com",
-              // "www.b15sentra.net",
-              // "www.b15u.com",
-              // "www.clubwrx.net",
-              // "www.iwsti.com",
-              // "www.kboards.com",
-              // "www.nissancubelife.com",
-              // "www.nissanforums.com",
-              // "www.subaruforester.org",
-              // "www.subaruxvforum.com",
-              // "www.wrxtuners.com"
-              //
-              // vBulletin_IB
-              // "www.corvetteforum.com", "www.rx7club.com", "www.rx8club.com"
-              //
-              // vBulletin_Url1
-              // "forum.miata.net"
-              // vBulletin_Url2
-              // "forums.nasioc.com"
-              // "xlforum.net"
-              //
-              // Forkboard
-              // "www.sr20-forum.com"
-              //
-              // other
-              "kiwifarms.net");
+    List<String> domains =
+        List.of(
+            // Validated with XenForo_F @ 8d57e93464511ff6b2d51c7c01949bea40720492
+            // "Fix Java Warnings"
+            // Only errors are on the home page
+            // "www.avsforum.com",
+            // "www.b15sentra.net",
+            // "www.b15u.com",
+            // "www.clubwrx.net",
+            // "www.iwsti.com",
+            // "www.kboards.com",
+            // "www.nissancubelife.com",
+            // "www.nissanforums.com",
+            // "www.subaruforester.org",
+            // "www.subaruxvforum.com",
+            // "www.wrxtuners.com"
+            //
+            // vBulletin_IB
+            // "www.corvetteforum.com", "www.rx7club.com", "www.rx8club.com"
+            //
+            // vBulletin_Url1
+            // "forum.miata.net"
+            // vBulletin_Url2
+            // "forums.nasioc.com"
+            // "xlforum.net"
+            //
+            // Forkboard
+            // "www.sr20-forum.com"
+            //
+            // other
+            "kiwifarms.net");
     log.info("domains {}", domains);
     List<UUID> domainSiteIds = dbStorage.siteCache.mapByDomains(domains, SitesRecord::getSiteid);
     Predicate<ParserPage> pageIsDomain = e -> domainSiteIds.contains(e.siteId());
 
-    var result = cache.stream()
-        .filter(pageIsDomain)
-        .parallel()
-        .map(this::runParser)
-        .collect(Collectors.toList());
+    //    var result = cache.cacheStreamParallel()
+    //        .filter(pageIsDomain)
+    //        .map(this::runParser)
+    //        .collect(Collectors.toList());
 
-    // calc size
-//    long totalSizeStartTime = System.currentTimeMillis();
-//    totalSize = cache.stream().filter(pageIsDomain).count();
-//    log.info("Found size {} in {}", totalSize, DurationFormatUtils.formatDurationHMS(System.currentTimeMillis() - totalSizeStartTime));
-//
-//    // preload cachedUrls
-//    cache.getPageUrls();
-//
-//    log.info("start");
-//
-//    ExecutorService pool = Executors.newFixedThreadPool(16);
-//    List<? extends Future<?>> collect = cache.stream().filter(pageIsDomain)
-//        .map(e -> (Runnable) () -> runParser(e)).map(pool::submit).collect(Collectors.toList());
-//
-//    for (Future<?> future : collect) {
-//      future.get();
-//    }
+    StopWatch timer = new StopWatch();
+    timer.start();
+    List<ParserPage> pages = new ArrayList<>();
+    for (byte[] pageBytes : cache) {
+      ParserPage page = cache.toPage(pageBytes);
+      if (domainSiteIds.contains(page.siteId())) {
+        pages.add(page);
+      }
+    }
+    totalSize = pages.size();
+    log.info("Found query totalSize {} in {}", totalSize, timer.formatTime());
+
+    // preload cachedUrls
+    timer.reset();
+    timer.start();
+    Set<String> pageUrls = cache.getPageUrls();
+    log.info("Loaded {} urls in {}", pageUrls.size(), timer.formatTime());
+
+    log.info("start");
+    counter.start();
+
+    ExecutorService parserPool = Executors.newFixedThreadPool(10);
+    List<Future<?>> collect = new ArrayList<>();
+    for (ParserPage page : pages) {
+      Future<List<Subpage>> submit = parserPool.submit(() -> runParser(page));
+      collect.add(submit);
+    }
+    log.info("all submitted, waiting");
+    for (Future<?> future : collect) {
+      future.get();
+    }
   }
 
   private List<Subpage> runParser(ParserPage page) {
@@ -166,8 +183,9 @@ public class Auditor {
       counter.incrementAndLog(totalSize);
 
       Document doc = spider.loadPage(config.getPagePath(page.pageId()), page.siteUrl().toString());
-      Stream<Subpage> subpages = spider.spiderPage(page, doc);
-      getErrors(subpages);
+      Stream<Subpage> subpagesStream = spider.spiderPage(page, doc);
+      subpagesStream.collect(Collectors.toList());
+      //      getErrors(subpagesStream, page.siteUrl().toString());
     } catch (LoginRequiredException e) {
       // nothing
     } catch (ParserException e) {
@@ -182,22 +200,27 @@ public class Auditor {
     return List.of();
   }
 
-  private List<Subpage> getErrors(Stream<Subpage> subpagesStream) {
-    List<Subpage> subpages = subpagesStream.collect(Collectors.toList());
-//    List<ValidationRecord> pages =
-//        dbStorage.getPageByUrl(subpages.stream().map(Subpage::link).collect(Collectors.toList()));
+  private void getErrors(Stream<Subpage> subpagesStream, String siteUrl) {
+    List<String> subUrls = subpagesStream.map(Subpage::link).collect(Collectors.toList());
 
     for (String url : cache.getPageUrls()) {
-      if (subpages.stream()
-          .noneMatch(parserEntry -> parserEntry.link().equals(url))) {
-        errors.add("parser missing url " + url);
+      if (!url.startsWith(siteUrl)) {
+        continue;
+      }
+
+      if (!subUrls.contains(url)) {
+        synchronized (errors) {
+          errors.add("parser missing url " + url);
+        }
       }
     }
-    for (Subpage subpage : subpages) {
-      if (cache.getPageUrls().stream().noneMatch(page -> page.equals(subpage.link()))) {
-        errors.add("db missing url " + subpage.link());
+
+    for (String subUrl : subUrls) {
+      if (!cache.getPageUrls().contains(subUrl)) {
+        synchronized (errors) {
+          errors.add("db missing url " + subUrl);
+        }
       }
     }
-    return subpages;
   }
 }
