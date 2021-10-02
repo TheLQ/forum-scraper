@@ -6,7 +6,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 
-public class AuditorExecutor{
+public class AuditorExecutor {
   private final Logger log;
   private final List<Thread> allThreads = new ArrayList<>();
 
@@ -14,7 +14,7 @@ public class AuditorExecutor{
     this.log = log;
   }
 
-  public  <Input, Output> void startConverterForList(
+  public <Input, Output> void startConverterForList(
       String prefix,
       int inputThreadsNum,
       List<Input> input,
@@ -121,7 +121,8 @@ public class AuditorExecutor{
     allThreads.addAll(inputThreads);
   }
 
-  public <Input> void startConsumer(BlockingQueue<Input> input, int outputThreadsNum, ExceptionConsumer<Input> consumer) {
+  public <Input> void startConsumer(
+      BlockingQueue<Input> input, int outputThreadsNum, ExceptionConsumer<Input> consumer) {
     List<Thread> outputThreads =
         Utils.threadRunner(
             outputThreadsNum,
@@ -143,6 +144,36 @@ public class AuditorExecutor{
               log.info("Ending processor");
             });
     allThreads.addAll(outputThreads);
+  }
+
+  public <Input> void startConsumerForSupplierToSize(
+      String prefix, int threadsNum, ExceptionSupplier<Input> input, int supplierTotalSize, ExceptionConsumer<Input> consumer) {
+    log.info("starting {} {} threads", threadsNum, prefix);
+
+    PerformanceCounter readCounter = new PerformanceCounter(log, 1000);
+
+    List<Thread> inputThreads =
+        Utils.threadRunner(
+            threadsNum,
+            prefix + "-",
+            () -> {
+              while (true) {
+                int idx = readCounter.incrementAndLog(supplierTotalSize);
+                try {
+                  if (idx >= supplierTotalSize) {
+                    log.info("End");
+                    break;
+                  }
+
+                  consumer.run(input.run());
+                } catch (Exception e) {
+                  log.error("FAILED TO PUT", e);
+                  // System.exit(1);
+                }
+              }
+            });
+
+    allThreads.addAll(inputThreads);
   }
 
   public void waitForAllThreads() throws InterruptedException {

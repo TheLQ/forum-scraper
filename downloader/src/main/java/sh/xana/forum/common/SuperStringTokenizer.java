@@ -64,7 +64,8 @@ public class SuperStringTokenizer {
       ArrayUtils.reverse(buffer, 0, bufferPos);
     }
 
-    // Integer.MAX_INT = 2147483647 = 10 chars. Assume broken or unexpected number to avoid NumberFormatException
+    // Integer.MAX_INT = 2147483647 = 10 chars. Assume broken or unexpected number to avoid
+    // NumberFormatException
     // TODO Go 1 less because 999 Milli is gigantic?
     int maxIntChars = 10;
     if (bufferPos > maxIntChars) {

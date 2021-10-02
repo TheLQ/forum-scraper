@@ -7,6 +7,8 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Document.OutputSettings.Syntax;
+import org.jsoup.nodes.Entities.EscapeMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.AuditorExecutor;
@@ -27,9 +29,7 @@ public class AuditorCleanJsoup {
     DatabaseStorage dbStorage = new DatabaseStorage(config);
 
     AuditorCache cache = new AuditorCache(config);
-    AuditorCache.CacheIterator cacheItr = cache.iterator();
 
-    BlockingQueue<ParserPage> pagesToRead = new ArrayBlockingQueue<>(2000);
     BlockingQueue<PageBytes> pagesToParse = new ArrayBlockingQueue<>(2000);
     BlockingQueue<PageAsXmlString> pagesToSave = new ArrayBlockingQueue<>(2000);
 
@@ -38,35 +38,32 @@ public class AuditorCleanJsoup {
     AuditorExecutor executor = new AuditorExecutor(log);
 
     executor.startConverterForSupplierToSize(
-        "pageReader",
-        6,
-        pagesToRead::take,
-        cache.getCacheSize(),
-        e -> new PageBytes(e, Files.readAllBytes(config.getPagePath(e.pageId()))),
-        pagesToParse
-    );
-
-    executor.startConverterForSupplierToNull(
         "pageParser",
         6,
         pagesToParse::take,
+        cache.getCacheSize(),
         pageBytes -> {
           Document doc =
               Jsoup.parse(
                   config.getPagePath(pageBytes.page().pageId()).toFile(),
                   null,
                   pageBytes.page().siteUrl().toString());
+          doc.outputSettings().escapeMode(EscapeMode.xhtml);
+          doc.outputSettings().syntax(Syntax.xml);
+          doc.outputSettings().prettyPrint(false);
           return new PageAsXmlString(pageBytes.page().pageId(), doc.outerHtml());
         },
-        pagesToSave
-    );
+        pagesToSave);
 
-    executor.startConsumer(pagesToSave, 2, e -> {
-      Files.writeString(config.getPageXMLPath(e.pageId()), e.data());
-    });
+    executor.startConsumer(
+        pagesToSave,
+        2,
+        e -> {
+          Files.writeString(config.getPageXMLPath(e.pageId()), e.data());
+        });
 
-    for (ParserPage parserPage : cache) {
-      pagesToRead.put(parserPage);
+    for (ParserPage e : cache) {
+      pagesToParse.put(new PageBytes(e, Files.readAllBytes(config.getPagePath(e.pageId()))));
     }
     log.info("done with main");
   }
