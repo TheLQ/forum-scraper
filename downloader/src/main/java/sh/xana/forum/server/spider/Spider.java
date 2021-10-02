@@ -1,6 +1,9 @@
 package sh.xana.forum.server.spider;
 
+import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.UUID;
 import java.util.regex.Matcher;
@@ -24,7 +27,20 @@ public class Spider {
     configs = SpiderConfig.load();
   }
 
+  /** Use Jsoup's build while reading perf optimization. Actually the slowest part */
+  public Document loadPage(Path path, String baseUri) throws IOException {
+    return Jsoup.parse(Files.readString(path), baseUri);
+    //    return Jsoup.parse(new BufferedInputStream(Files.newInputStream(path,
+    // StandardOpenOption.READ)), null, baseUri);
+    //     return Jsoup.parse(path.toFile(), StandardCharsets.UTF_8.toString(), baseUri);
+  }
+
+  @Deprecated
   public Stream<Subpage> spiderPage(ParserPage page, byte[] rawPage) {
+    return spiderPage(page, Jsoup.parse(new String(rawPage), page.siteUrl().toString()));
+  }
+
+  public Stream<Subpage> spiderPage(ParserPage page, Document doc) {
     try {
       String domain = page.pageUri().getHost();
       SpiderConfig spiderConfig =
@@ -34,8 +50,6 @@ public class Spider {
               .orElseThrow(
                   () -> new RuntimeException("cannot find spider config for domain " + domain));
       // log.info("found " + spiderConfig.source());
-
-      Document doc = Jsoup.parse(new String(rawPage), page.siteUrl().toString());
 
       return doc.getElementsByTag("a").stream()
           // must be link

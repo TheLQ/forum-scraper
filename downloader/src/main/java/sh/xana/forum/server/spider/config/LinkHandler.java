@@ -7,6 +7,8 @@ import sh.xana.forum.server.spider.LinkBuilder;
 
 @JsonTypeInfo(use = Id.CUSTOM, property = "type")
 @JsonTypeIdResolver(LinkHandlerIdResolver.class)
+// TODO Sealed
+// public sealed interface LinkHandler permits DirectoryLinkHandler, QueryKeyLinkHandler {
 public interface LinkHandler {
 
   /** @return true if handled */
