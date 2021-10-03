@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 
 public class AuditorExecutor {
@@ -66,7 +67,7 @@ public class AuditorExecutor {
             prefix + "-",
             () -> {
               while (true) {
-                int idx = readCounter.incrementAndLog(supplierTotalSize, outputQueue);
+                int idx = readCounter.incrementAndLog(supplierTotalSize, outputQueue.size());
                 try {
                   if (idx >= supplierTotalSize) {
                     log.info("End");
@@ -154,15 +155,16 @@ public class AuditorExecutor {
       ExceptionConsumer<Input> consumer) {
     log.info("starting {} {} threads", threadsNum, prefix);
 
-    PerformanceCounter readCounter = new PerformanceCounter(log, 1000);
-
+    //PerformanceCounter readCounter = new PerformanceCounter(log, 1000);
+    AtomicInteger readCounter = new AtomicInteger();
     List<Thread> inputThreads =
         Utils.threadRunner(
             threadsNum,
             prefix + "-",
             () -> {
               while (true) {
-                int idx = readCounter.incrementAndLog(supplierTotalSize);
+                //int idx = readCounter.incrementAndLog(supplierTotalSize);
+                int idx = readCounter.getAndIncrement();
                 try {
                   if (idx >= supplierTotalSize) {
                     log.info("End");

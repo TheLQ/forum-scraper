@@ -28,6 +28,14 @@ public class Spider {
     configs = SpiderConfig.load();
   }
 
+  public Document loadPage(String data, String baseUri) throws IOException {
+    return Jsoup.parse(data, baseUri, Parser.htmlParser());
+  }
+
+  public Document loadPage(String data, String baseUri, Parser parser) throws IOException {
+    return Jsoup.parse(data, baseUri, Parser.htmlParser());
+  }
+
   /** Use Jsoup's build while reading perf optimization. Actually the slowest part */
   public Document loadPage(Path path, String baseUri) throws IOException {
     return loadPage(path, baseUri, Parser.htmlParser());

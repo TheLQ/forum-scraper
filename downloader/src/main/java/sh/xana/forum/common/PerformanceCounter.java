@@ -37,7 +37,7 @@ public class PerformanceCounter {
     return idx;
   }
 
-  public int incrementAndLog(Collection<?> list) {
+  public int incrementAndLog(long inputTotalSize) {
     int idx = counter.getAndIncrement();
     if (idx % splitBy == 0) {
       // avoid divide by zero error
@@ -48,18 +48,14 @@ public class PerformanceCounter {
       log.info(
           "read {} of {} /sec {} %{}",
           processIndex,
-          list.size(),
+          inputTotalSize,
           processIndex / durationSec,
-          "%.2f".formatted(idx / (double) list.size() * 100));
+          "%.2f".formatted(idx / (double) inputTotalSize * 100));
     }
     return idx;
   }
 
-  public int incrementAndLog(Collection<?> inputList, Collection<?> outputList) {
-    return incrementAndLog(inputList.size(), outputList);
-  }
-
-  public int incrementAndLog(long inputSize, Collection<?> outputList) {
+  public int incrementAndLog(long inputSize, String queueSize) {
     int idx = counter.getAndIncrement();
     if (idx % splitBy == 0) {
       // avoid divide by zero error
@@ -73,27 +69,20 @@ public class PerformanceCounter {
           inputSize,
           processIndex / durationSec,
           "%.2f".formatted(idx / (double) inputSize * 100),
-          outputList.size());
+          queueSize);
     }
     return idx;
   }
 
-  public int incrementAndLog(long inputSize) {
-    // log.info("COUNTING");
-    int idx = counter.getAndIncrement();
-    if (idx % splitBy == 0) {
-      // avoid divide by zero error
-      long processIndex = Math.max(idx, 1);
-      long durationSec = Math.max(System.currentTimeMillis() - startTime, 1);
-      durationSec = Math.max(durationSec / 1000, 1);
+  public int incrementAndLog(Collection<?> input) {
+    return incrementAndLog(input.size());
+  }
 
-      log.info(
-          "read {} of {} /sec {} %{}",
-          processIndex,
-          inputSize,
-          processIndex / durationSec,
-          "%.2f".formatted(idx / (double) inputSize * 100));
-    }
-    return idx;
+  public int incrementAndLog(Collection<?> inputList, Collection<?> outputList) {
+    return incrementAndLog(inputList.size(), outputList.size());
+  }
+
+  public int incrementAndLog(long inputSize, long queueSize) {
+    return incrementAndLog(inputSize, String.valueOf(queueSize));
   }
 }

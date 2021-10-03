@@ -1,26 +1,30 @@
 package sh.xana.forum.server;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.time.StopWatch;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sh.xana.forum.common.AuditorExecutor;
 import sh.xana.forum.common.PerformanceCounter;
 import sh.xana.forum.common.ipc.Subpage;
+import sh.xana.forum.server.AuditorFileServer.Client;
 import sh.xana.forum.server.db.tables.Pages;
 import sh.xana.forum.server.db.tables.records.SitesRecord;
 import sh.xana.forum.server.dbutil.DatabaseStorage;
@@ -40,6 +44,7 @@ public class Auditor {
   private final AuditorCache cache;
   private final ArrayList<String> errors = new ArrayList<>();
   private final PerformanceCounter counter = new PerformanceCounter(log, 1000);
+  private BlockingQueue<LoadedPage> pageQueue;
   private long totalSize;
 
   public static void main(String[] args) throws Exception {
@@ -102,7 +107,7 @@ public class Auditor {
     //    return;
   }
 
-  public void massAudit() throws InterruptedException, ExecutionException {
+  public void massAudit() throws InterruptedException, ExecutionException, IOException {
     log.info("query start");
 
     List<String> domains =
@@ -166,25 +171,42 @@ public class Auditor {
     log.info("start");
     counter.start();
 
-    ExecutorService parserPool = Executors.newFixedThreadPool(10);
-    List<Future<?>> collect = new ArrayList<>();
-    for (ParserPage page : pages) {
-      Future<List<Subpage>> submit = parserPool.submit(() -> runParser(page));
-      collect.add(submit);
-    }
-    log.info("all submitted, waiting");
-    for (Future<?> future : collect) {
-      future.get();
-    }
+    Iterator<ParserPage> parserPageIterator = pages.iterator();
+
+    pageQueue = new ArrayBlockingQueue<>(2000);
+
+    ThreadLocal<Client> clientLocal = new ThreadLocal<>();
+    AuditorExecutor auditorPool = new AuditorExecutor(log);
+    auditorPool.startConsumerForSupplierToSize(
+        "reader",
+        16,
+        parserPageIterator::next,
+        pages.size(),
+        e -> {
+          Client client = clientLocal.get();
+          if (client == null) {
+            client = new Client();
+            clientLocal.set(client);
+          }
+          //String s = new String(client.request(e.pageId()));
+          byte[] s = client.request(e.pageId());
+          pageQueue.put(new LoadedPage(e, s));
+        });
+
+    auditorPool.startConsumer(pageQueue, 16, this::runParser);
   }
 
-  private List<Subpage> runParser(ParserPage page) {
-    try {
-      counter.incrementAndLog(totalSize);
+  public record LoadedPage(ParserPage page, byte[] data) {}
 
-      Document doc = spider.loadPage(config.getPagePath(page.pageId()), page.siteUrl().toString());
-      Stream<Subpage> subpagesStream = spider.spiderPage(page, doc);
-      subpagesStream.collect(Collectors.toList());
+  private List<Subpage> runParser(LoadedPage loadedPage) {
+    try {
+      counter.incrementAndLog(totalSize, pageQueue.size());
+      ParserPage page = loadedPage.page();
+
+      //Document doc = spider.loadPage(loadedPage.data(), page.siteUrl().toString());
+      Document doc = Jsoup.parse(new ByteArrayInputStream(loadedPage.data()), null, page.siteUrl().toString());
+            Stream<Subpage> subpagesStream = spider.spiderPage(page, doc);
+            subpagesStream.collect(Collectors.toList());
       //      getErrors(subpagesStream, page.siteUrl().toString());
     } catch (LoginRequiredException e) {
       // nothing
