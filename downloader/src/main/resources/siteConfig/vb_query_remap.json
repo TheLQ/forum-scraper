@@ -4,7 +4,7 @@
   ],
   "linkForum": {
     "type": "QueryKey",
-    "pathEquals": "forumdisplay.php",
+    "pathPrefix": "forumdisplay.php",
     "allowedKeys": [
       "f",
       "page"
@@ -15,7 +15,7 @@
   },
   "linkTopic": {
     "type": "QueryKey",
-    "pathEquals": "showthread.php",
+    "pathPrefix": "showthread.php",
     "allowedKeys": [
       "t",
       "p",

@@ -12,7 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public record QueryKeyLinkHandler(
-    @NotNull @JsonProperty(required = true) String pathEquals,
+    @NotNull @JsonProperty(required = true) String pathPrefix,
     @NotNull @JsonProperty(required = true) List<String> allowedKeys,
     @Nullable Map<String, String> remapKeys)
     implements LinkHandler {
@@ -26,9 +26,13 @@ public record QueryKeyLinkHandler(
 
   @Override
   public Result processLink(LinkBuilder link) {
-    if (!link.relativeLink().equals(this.pathEquals())) {
+    if (!link.relativeLink().startsWith(this.pathPrefix())) {
+      log.trace("{} relative {} doesn't start with {}", link, link.relativeLink(), this.pathPrefix());
       return Result.FAILED;
     }
+
+    // remove unnessesary /
+    link.noEndSlashWithQuery();
 
     List<NameValuePair> queryParams = link.queryParams();
     MutableBoolean changed = new MutableBoolean(false);
@@ -53,7 +57,7 @@ public record QueryKeyLinkHandler(
           if (doRemove) {
             changed.setTrue();
             log.trace(
-                "Removing {} query {}={} valid {} rel {}",
+                "{} Removing query {}={} valid {} rel {}",
                 link,
                 e.getName(),
                 e.getValue(),
@@ -66,11 +70,7 @@ public record QueryKeyLinkHandler(
       link.queryParams(queryParams);
     }
 
-    // remove unnessesary /
-    //    String newUri = uriBuilder.toString();
-    //    if (newUri.endsWith("/")) {
-    //      newUri = newUri.substring(0, newUri.length() - 1);
-    //    }
+
     return Result.MATCHED;
   }
 }

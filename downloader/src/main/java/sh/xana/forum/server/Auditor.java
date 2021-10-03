@@ -46,6 +46,8 @@ public class Auditor {
   private final AuditorExecutor auditorPool = new AuditorExecutor(log);
 
   public static void main(String[] args) throws Exception {
+    Spider.PROD_THROW_ON_REGEX_FAIL = true;
+
     Auditor audit = new Auditor();
 
     if (args.length == 0) {
@@ -113,17 +115,20 @@ public class Auditor {
             // "forums.tomshardware.com"
             //
             // xf_dir / XenForo_F - validated (though has lots of old site redirects)
-            "www.avsforum.com",
-            "www.b15sentra.net",
-            "www.b15u.com",
-            "www.clubwrx.net",
-            "www.iwsti.com",
-            "www.kboards.com",
-            "www.nissancubelife.com",
-            "www.nissanforums.com",
-            "www.subaruforester.org",
-            "www.subaruxvforum.com",
-            "www.wrxtuners.com"
+            // "www.avsforum.com",
+            // "www.b15sentra.net",
+            // "www.b15u.com",
+            // "www.clubwrx.net",
+            // "www.iwsti.com",
+            // "www.kboards.com",
+            // "www.nissancubelife.com",
+            // "www.nissanforums.com",
+            // "www.subaruforester.org",
+            // "www.subaruxvforum.com",
+            // "www.wrxtuners.com"
+            //
+            // vb_query_remap
+            "xlforum.net"
             //
             // vBulletin_IB
             // "www.corvetteforum.com", "www.rx7club.com", "www.rx8club.com"

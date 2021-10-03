@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
 public class LinkBuilder {
   private static final Logger log = LoggerFactory.getLogger(LinkBuilder.class);
   private final String originalUri;
-  private final URIBuilder builder;
+  private URIBuilder builder;
   private final String baseUri;
   @Nullable private String linkFullCached;
   @Nullable private String linkRelativeCached;
@@ -118,6 +118,20 @@ public class LinkBuilder {
       return;
     }
     builder.setPath(builder.getPath() + "/");
+    invalidateCachedString();
+  }
+
+  public void noEndSlashWithQuery() {
+    if (!builder.getPath().endsWith("/")) {
+      return;
+    }
+    // potentially might have query args, so recaclulate whole uri
+    String newUri = builder.toString();
+    try {
+      builder = new URIBuilder(newUri.substring(0, newUri.length() - 1));
+    } catch (URISyntaxException e) {
+      throw new IllegalStateException("Can't remap to " + newUri, e);
+    }
     invalidateCachedString();
   }
 

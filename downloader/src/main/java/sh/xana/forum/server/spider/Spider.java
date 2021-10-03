@@ -23,6 +23,7 @@ import sh.xana.forum.server.spider.LinkHandler.Result;
 
 public class Spider {
   private static final Logger log = LoggerFactory.getLogger(Spider.class);
+  public static boolean PROD_THROW_ON_REGEX_FAIL = false;
   private final List<SpiderConfig> configs;
 
   public Spider() {
@@ -153,7 +154,19 @@ public class Spider {
       return null;
     }
 
-    link.validate(config.validRegex());
+
+    try {
+      link.validate(config.validRegex());
+    } catch (LinkValidationException e) {
+      // Some urls pass initial validation but are ultimately invalid. In prod mode, ignore
+      if (PROD_THROW_ON_REGEX_FAIL) {
+        throw e;
+      } else {
+        log.warn("{} Failed validation", link);
+        return null;
+      }
+    }
+
 
     return new Subpage(link.fullLink(), pageType);
   }
