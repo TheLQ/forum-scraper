@@ -19,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+import org.apache.commons.lang3.StringUtils;
 import org.reflections.Reflections;
 import org.reflections.scanners.Scanners;
 import org.slf4j.Logger;
@@ -112,10 +113,12 @@ public class Utils {
     }
   }
 
-
-
   public static void threadRunner(
-      Collection<Thread> threads, int numThreads, String namePrefix, ExceptionRunnable runner, Consumer<Throwable> exceptionHandler) {
+      Collection<Thread> threads,
+      int numThreads,
+      String namePrefix,
+      ExceptionRunnable runner,
+      Consumer<Throwable> exceptionHandler) {
     for (int i = 0; i < numThreads; i++) {
       Thread thread =
           new Thread(
@@ -214,5 +217,14 @@ public class Utils {
     }
     threads.clear();
     return false;
+  }
+
+  public static String newlinePlaceholder(String message) {
+    int start = StringUtils.indexOfAny(message, '\r', '\n');
+    if (start == -1) {
+      return message;
+    } else {
+      return message.substring(0, start) + "(...newline clipped)";
+    }
   }
 }

@@ -200,7 +200,7 @@ public class AuditorCache implements Iterable<byte[]> {
     List<Thread> jsonThreads = new ArrayList<>();
     Utils.threadRunner(
         jsonThreads,
-        Runtime.getRuntime().availableProcessors() - 1,
+        Runtime.getRuntime().availableProcessors() / 2,
         "json",
         () -> {
           while (true) {

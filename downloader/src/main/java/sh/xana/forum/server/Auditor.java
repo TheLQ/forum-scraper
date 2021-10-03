@@ -108,20 +108,22 @@ public class Auditor {
   public void massAudit() throws InterruptedException, ExecutionException, IOException {
     List<String> domains =
         List.of(
-            // Validated with XenForo_F @ 8d57e93464511ff6b2d51c7c01949bea40720492
-            // "Fix Java Warnings"
-            // Only errors are on the home page
-            // "www.avsforum.com",
-            // "www.b15sentra.net",
-            // "www.b15u.com",
-            // "www.clubwrx.net",
-            // "www.iwsti.com",
-            // "www.kboards.com",
-            // "www.nissancubelife.com",
-            // "www.nissanforums.com",
-            // "www.subaruforester.org",
-            // "www.subaruxvforum.com",
-            // "www.wrxtuners.com"
+            // xf_dir - validated
+            // "kiwifarms.net"
+            // "forums.tomshardware.com"
+            //
+            // xf_dir / XenForo_F - validated (though has lots of old site redirects)
+            "www.avsforum.com",
+            "www.b15sentra.net",
+            "www.b15u.com",
+            "www.clubwrx.net",
+            "www.iwsti.com",
+            "www.kboards.com",
+            "www.nissancubelife.com",
+            "www.nissanforums.com",
+            "www.subaruforester.org",
+            "www.subaruxvforum.com",
+            "www.wrxtuners.com"
             //
             // vBulletin_IB
             // "www.corvetteforum.com", "www.rx7club.com", "www.rx8club.com"
@@ -135,8 +137,7 @@ public class Auditor {
             // Forkboard
             // "www.sr20-forum.com"
             //
-            // other
-            "kiwifarms.net");
+            );
     log.info("domains {}", domains);
     List<UUID> domainSiteIds = dbStorage.siteCache.mapByDomains(domains, SitesRecord::getSiteid);
     Predicate<ParserPage> pageIsDomain = e -> domainSiteIds.contains(e.siteId());
@@ -179,8 +180,7 @@ public class Auditor {
         e -> {
           counter.incrementAndLog(pages.size(), toSpiderQueue.size());
           runSpider(e);
-        }
-    );
+        });
 
     log.info("waiting...");
     auditorPool.waitForAllThreads();

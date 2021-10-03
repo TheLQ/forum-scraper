@@ -31,6 +31,11 @@
       <artifactId>jcl-over-slf4j</artifactId>
       <version>${dep.slf4j}</version>
     </dependency>
+    <dependency>
+      <groupId>org.codehaus.janino</groupId>
+      <artifactId>janino</artifactId>
+      <version>3.1.6</version>
+    </dependency>
     <!-- Web server -->
     <dependency>
       <groupId>org.nanohttpd</groupId>

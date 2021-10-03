@@ -22,7 +22,8 @@ public record DirectoryLinkHandler(
   public Result processLink(LinkBuilder link) {
     // must start with prefix
     if (this.pathPrefix() != null && !link.relativeLink().startsWith(this.pathPrefix())) {
-      log.trace("{} does not start {} with prefix {}", link, link.relativeLink(), this.pathPrefix());
+      log.trace(
+          "{} does not start {} with prefix {}", link, link.relativeLink(), this.pathPrefix());
       return Result.FAILED;
     }
 
@@ -38,6 +39,10 @@ public record DirectoryLinkHandler(
     // path must be at our index
     String[] linkParts = StringUtils.split(link.relativeLink(), "/");
 
+    if (this.directoryDepth() >= linkParts.length) {
+      log.trace("{} not deep enough {} {}", link, linkParts.length, this.directoryDepth());
+      return Result.FAILED;
+    }
     String linkPart = linkParts[this.directoryDepth()];
     SuperStringTokenizer linkTok = new SuperStringTokenizer(linkPart, idPosition());
 

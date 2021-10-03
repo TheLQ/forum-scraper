@@ -14,6 +14,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.parser.Parser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sh.xana.forum.common.Utils;
 import sh.xana.forum.common.ipc.Subpage;
 import sh.xana.forum.server.dbutil.PageType;
 import sh.xana.forum.server.dbutil.ParserPage;
@@ -114,7 +115,11 @@ public class Spider {
       }
 
       // loop ended, log failure
-      log.warn(pageId + " unable to convert to uri " + linkRaw + " - " + e);
+      log.warn(
+          "{} unable to convert to uri {} - {}",
+          pageId,
+          Utils.newlinePlaceholder(linkRaw),
+          Utils.newlinePlaceholder(e.toString()));
       return null;
     }
   }
