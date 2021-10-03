@@ -18,7 +18,6 @@ import sh.xana.forum.common.ipc.Subpage;
 import sh.xana.forum.server.dbutil.PageType;
 import sh.xana.forum.server.dbutil.ParserPage;
 import sh.xana.forum.server.parser.ForumStream;
-import sh.xana.forum.server.spider.config.SpiderConfig;
 
 public class Spider {
   private static final Logger log = LoggerFactory.getLogger(Spider.class);

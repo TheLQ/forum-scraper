@@ -10,7 +10,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sh.xana.forum.server.spider.config.LinkHandler;
 
 public record QueryKeyLinkHandler(
     @NotNull @JsonProperty(required = true) String pathEquals,

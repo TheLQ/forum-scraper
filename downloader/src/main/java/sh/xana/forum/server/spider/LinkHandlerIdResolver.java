@@ -1,11 +1,10 @@
-package sh.xana.forum.server.spider.config;
+package sh.xana.forum.server.spider;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.fasterxml.jackson.databind.DatabindContext;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.jsontype.impl.TypeIdResolverBase;
 import java.io.IOException;
-import sh.xana.forum.server.spider.DirectoryLinkHandler;
 
 /** Jackson JSON mapper */
 public class LinkHandlerIdResolver extends TypeIdResolverBase {

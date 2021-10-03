@@ -1,4 +1,4 @@
-package sh.xana.forum.server.spider.config;
+package sh.xana.forum.server.spider;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URL;

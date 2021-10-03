@@ -1,4 +1,4 @@
-package sh.xana.forum.server.spider.config;
+package sh.xana.forum.server.spider;
 
 import static org.testng.Assert.*;
 
