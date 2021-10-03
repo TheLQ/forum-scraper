@@ -53,11 +53,9 @@ public class AuditorCache implements Iterable<byte[]> {
   private ImmutableMap<String, Collection<String>> urlAll;
 
   public AuditorCache(ServerConfig config) throws IOException {
-    parserPagePath = Path.of("parserPage.jsonChain");
-    parserPageSizePath = Path.of("parserPage.jsonChainSize");
-    urlAllPath = Path.of("urlAll.txt");
-    // cachePath = config.getFileCache().resolve("..").resolve("parserPage.jsonChain");
-    // cacheSizePath = config.getFileCache().resolve("..").resolve("parserPage.jsonChainSize");
+    parserPagePath = config.getFileCache().resolve("..").resolve("parserPage.jsonChain");
+    parserPageSizePath = config.getFileCache().resolve("..").resolve("parserPage.jsonChainSize");
+    urlAllPath = config.getFileCache().resolve("..").resolve("urlAll.txt");
 
     Utils.jsonMapper.configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false);
     Utils.jsonMapper.configure(Feature.AUTO_CLOSE_SOURCE, false);

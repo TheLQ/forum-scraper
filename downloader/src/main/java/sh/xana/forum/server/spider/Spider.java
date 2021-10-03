@@ -144,7 +144,7 @@ public class Spider {
     }
 
     if (handled == Result.FAILED) {
-      log.trace("{} failed to process link", link);
+      log.debug("{} failed to process link", link);
       return null;
     }
 

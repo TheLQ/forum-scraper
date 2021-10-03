@@ -54,7 +54,8 @@ public record DirectoryLinkHandler(
       return Result.FAILED;
     }
 
-    if (this.idSep() != null) {
+    // idSep is optional, eg topic title before it is missing so no sep needed
+    if (!linkTok.endOfString() && this.idSep() != null) {
       if (!linkTok.readStringEquals(this.idSep())) {
         log.trace("{} missing sep {}", link, this.idSep());
         return Result.FAILED;

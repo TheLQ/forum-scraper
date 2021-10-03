@@ -92,6 +92,8 @@ public class Auditor {
       log.info("Page URL " + page.pageUri());
     }
 
+    cache.loadPageUrls(List.of(page.siteUrl().toString()));
+
     List<Subpage> subpages = runSpider(new LoadedPage(page, Files.readAllBytes(path)));
 
     log.info("error size" + errors.size());

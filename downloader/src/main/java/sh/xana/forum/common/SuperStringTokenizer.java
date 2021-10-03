@@ -118,4 +118,8 @@ public class SuperStringTokenizer {
     }
     return match;
   }
+
+  public boolean endOfString() {
+    return offset == str.length();
+  }
 }

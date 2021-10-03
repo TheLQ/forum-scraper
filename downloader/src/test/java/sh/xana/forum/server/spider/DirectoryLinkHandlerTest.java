@@ -74,9 +74,15 @@ public class DirectoryLinkHandlerTest {
 //  }
 
   @Test
-  public void x() throws URISyntaxException {
+  public void idPrefix() throws URISyntaxException {
     DirectoryLinkHandler h = new DirectoryLinkHandler(null, 2, Position.end, null, "page-");
     Assert.assertTrue(process(h, "http://example.com/app/", "threads/topic-name.123/page-54/"));
+  }
+
+  @Test
+  public void idOnly() throws URISyntaxException {
+    DirectoryLinkHandler h = new DirectoryLinkHandler(null, 1, Position.end, ".", null);
+    Assert.assertTrue(process(h, "http://example.com/app/", "threads/123/"));
   }
 
   private boolean process(DirectoryLinkHandler h, String linkBase, String linkRelative)
