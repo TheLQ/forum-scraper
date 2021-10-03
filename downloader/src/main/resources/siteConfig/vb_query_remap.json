@@ -1,6 +1,8 @@
 {
   "domains": [
-    "xlforum.net"
+    "xlforum.net",
+    "forums.nasioc.com",
+    "forum.miata.net"
   ],
   "linkForum": {
     "type": "QueryKey",

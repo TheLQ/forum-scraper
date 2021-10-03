@@ -127,8 +127,12 @@ public class Auditor {
             // "www.subaruxvforum.com",
             // "www.wrxtuners.com"
             //
-            // vb_query_remap
-            "xlforum.net"
+            // vb_query_remap - validated
+            //"xlforum.net"
+            //
+            // vb_query
+//            "forums.nasioc.com",
+            "forum.miata.net"
             //
             // vBulletin_IB
             // "www.corvetteforum.com", "www.rx7club.com", "www.rx8club.com"

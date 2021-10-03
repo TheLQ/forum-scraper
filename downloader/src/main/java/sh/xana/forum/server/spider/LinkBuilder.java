@@ -83,6 +83,18 @@ public class LinkBuilder {
       invalidateCachedString();
       builder.clearParameters();
     }
+
+    // url post-process - remove empty &
+    String newUri = builder.toString();
+    if (newUri.endsWith("&")) {
+      try {
+        String substring = newUri.substring(0, newUri.length() - 1);
+        builder = new URIBuilder(substring);
+        invalidateCachedString();
+      } catch (URISyntaxException e) {
+        throw new IllegalStateException("Can't remap to " + newUri, e);
+      }
+    }
   }
 
   public String fullLink() {
@@ -122,7 +134,7 @@ public class LinkBuilder {
   }
 
   public void noEndSlashWithQuery() {
-    if (!builder.getPath().endsWith("/")) {
+    if (!fullLink().endsWith("/")) {
       return;
     }
     // potentially might have query args, so recaclulate whole uri
