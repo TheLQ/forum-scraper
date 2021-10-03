@@ -120,25 +120,28 @@ public class Spider {
   }
 
   private Subpage linkToSubpage(SpiderConfig config, ParserPage page, LinkBuilder link) {
-
+    log.trace("{} start", link);
     PageType pageType = page.pageType();
     boolean handled = false;
     if (config.linkMultipage() != null) {
       handled = config.linkMultipage().processLink(link);
     }
     if (!handled) {
+      log.trace("{} trying topic", link);
       handled = config.linkTopic().processLink(link);
       if (handled) {
         pageType = PageType.TopicPage;
       }
     }
     if (!handled) {
+      log.trace("{} trying forum", link);
       handled = config.linkForum().processLink(link);
       if (handled) {
         pageType = PageType.ForumList;
       }
     }
     if (!handled) {
+      log.trace("{} failed to process link", link);
       return null;
     }
 

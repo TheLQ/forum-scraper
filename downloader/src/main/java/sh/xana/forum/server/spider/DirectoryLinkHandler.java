@@ -23,6 +23,7 @@ public record DirectoryLinkHandler(
   public boolean processLink(LinkBuilder link) {
     // must start with prefix
     if (this.pathPrefix() != null && !link.relativeLink().startsWith(this.pathPrefix())) {
+      log.trace("{} does not start {} with prefix {}", link, link.relativeLink(), this.pathPrefix());
       return false;
     }
 
@@ -31,14 +32,14 @@ public record DirectoryLinkHandler(
 
     // strip extras
     for (NameValuePair queryParam : link.queryParams()) {
-      log.trace("stripping key {} from {}", queryParam.getName(), link);
+      log.trace("{} stripping key {}", link, queryParam.getName());
     }
     link.queryParams(List.of());
 
     // path must be at our index
     String[] linkParts = StringUtils.split(link.relativeLink(), "/");
     if (linkParts.length != this.directoryDepth() + 1) {
-      log.trace("depth is wrong");
+      log.trace("{} depth is wrong", link);
       return false;
     }
     String linkPart = linkParts[this.directoryDepth()];
@@ -47,11 +48,11 @@ public record DirectoryLinkHandler(
     Integer id;
     boolean checkResult;
     if (idPosition() == Position.start) {
-      checkResult = checkPrefix(linkTok);
-      id = extractId(linkTok);
+      checkResult = checkPrefix(linkTok, link);
+      id = extractId(linkTok, link);
     } else {
-      id = extractId(linkTok);
-      checkResult = checkPrefix(linkTok);
+      id = extractId(linkTok, link);
+      checkResult = checkPrefix(linkTok, link);
     }
     if (id == null || !checkResult) {
       return false;
@@ -59,27 +60,27 @@ public record DirectoryLinkHandler(
 
     if (this.idSep() != null) {
       if (!linkTok.readStringEquals(this.idSep())) {
-        log.trace("missing prefix");
+        log.trace("{} missing sep {}", link, this.idSep());
         return false;
       }
     }
     return true;
   }
 
-  private Integer extractId(SuperStringTokenizer linkTok) {
+  private Integer extractId(SuperStringTokenizer linkTok, LinkBuilder link) {
     // grab number
     Integer id = linkTok.readUnsignedInt();
     if (id == null) {
-      log.trace("can't find id");
+      log.trace("{} can't find id", link);
     }
     return id;
   }
 
-  private boolean checkPrefix(SuperStringTokenizer linkTok) {
+  private boolean checkPrefix(SuperStringTokenizer linkTok, LinkBuilder link) {
     // check prefix
     if (this.idPrefix() != null) {
       if (!linkTok.readStringEquals(this.idPrefix())) {
-        log.trace("missing prefix");
+        log.trace("{} missing prefix {}", link, this.idPrefix());
         return false;
       }
     }

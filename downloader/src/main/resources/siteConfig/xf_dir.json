@@ -21,11 +21,10 @@
   "linkMultipage": {
     "type": "Directory",
     "idPosition": "end",
-    "idSep": "-",
-    "idPrefix": "page",
+    "idPrefix": "page-",
     "directoryDepth": 2
   },
   "validRegex": [
-    "(forums|threads)/[a-zA-Z0-9\\-%_\\.]+\\.[0-9]+/?(page-[0-9]+)?"
+    "(forums|threads)/[a-zA-Z0-9\\-%_\\.]+\\.[0-9]+/?(page-[0-9]+/)?"
   ]
 }

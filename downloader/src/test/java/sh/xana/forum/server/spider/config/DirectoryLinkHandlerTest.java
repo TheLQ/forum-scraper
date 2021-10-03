@@ -1,11 +1,11 @@
 package sh.xana.forum.server.spider.config;
 
 import java.net.URISyntaxException;
-import org.apache.http.client.utils.URIBuilder;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 import sh.xana.forum.common.Position;
 import sh.xana.forum.server.spider.DirectoryLinkHandler;
+import sh.xana.forum.server.spider.LinkBuilder;
 
 @Test
 public class DirectoryLinkHandlerTest {
@@ -74,8 +74,14 @@ public class DirectoryLinkHandlerTest {
 //    Assert.assertFalse(h.processLink(new URIBuilder("http://example.com"), "http://example.com/"));
 //  }
 
+  @Test
+  public void x() throws URISyntaxException {
+    DirectoryLinkHandler h = new DirectoryLinkHandler(null, 2, Position.end, null, "page-");
+    Assert.assertTrue(process(h, "http://example.com/app/", "threads/topic-name.123/page-54/"));
+  }
+
   private boolean process(DirectoryLinkHandler h, String linkBase, String linkRelative)
       throws URISyntaxException {
-    return h.processLink(new URIBuilder(linkBase + linkRelative), linkBase);
+    return h.processLink(new LinkBuilder(linkBase + linkRelative, linkBase));
   }
 }

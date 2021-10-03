@@ -94,7 +94,7 @@ public class LinkBuilder {
 
   public String relativeLink() {
     if (linkRelativeCached == null) {
-      linkRelativeCached = builder.toString();
+      linkRelativeCached = builder.toString().substring(baseUri.length());
     }
     return linkRelativeCached;
   }
@@ -148,5 +148,10 @@ public class LinkBuilder {
   private void invalidateCachedString() {
     linkFullCached = null;
     linkRelativeCached = null;
+  }
+
+  @Override
+  public String toString() {
+    return fullLink();
   }
 }

@@ -66,8 +66,7 @@ public class SuperStringTokenizer {
 
     // Integer.MAX_INT = 2147483647 = 10 chars. Assume broken or unexpected number to avoid
     // NumberFormatException
-    // TODO Go 1 less because 999 Milli is gigantic?
-    int maxIntChars = 10;
+    int maxIntChars = 9;
     if (bufferPos > maxIntChars) {
       return null;
     }
@@ -90,7 +89,7 @@ public class SuperStringTokenizer {
     if (length <= 0) {
       throw new IllegalArgumentException("cannot be <0");
     }
-    if (offset + length >= str.length()) {
+    if (offset + length > str.length()) {
       return null;
     }
 
@@ -110,8 +109,13 @@ public class SuperStringTokenizer {
     }
     String actual = readString(expected.length());
     if (actual == null) {
+      log.trace("Read string is null");
       return false;
     }
-    return actual.equals(expected);
+    boolean match = actual.equals(expected);
+    if (!match) {
+      log.trace("Read string {} does not match expected {}", actual, expected);
+    }
+    return match;
   }
 }
