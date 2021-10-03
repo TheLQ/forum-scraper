@@ -19,11 +19,11 @@ public record DirectoryLinkHandler(
   private static final Logger log = LoggerFactory.getLogger(DirectoryLinkHandler.class);
 
   @Override
-  public boolean processLink(LinkBuilder link) {
+  public Result processLink(LinkBuilder link) {
     // must start with prefix
     if (this.pathPrefix() != null && !link.relativeLink().startsWith(this.pathPrefix())) {
       log.trace("{} does not start {} with prefix {}", link, link.relativeLink(), this.pathPrefix());
-      return false;
+      return Result.FAILED;
     }
 
     // must end with dir slash (everyone does it?)
@@ -37,10 +37,7 @@ public record DirectoryLinkHandler(
 
     // path must be at our index
     String[] linkParts = StringUtils.split(link.relativeLink(), "/");
-    if (linkParts.length != this.directoryDepth() + 1) {
-      log.trace("{} depth is wrong", link);
-      return false;
-    }
+
     String linkPart = linkParts[this.directoryDepth()];
     SuperStringTokenizer linkTok = new SuperStringTokenizer(linkPart, idPosition());
 
@@ -54,16 +51,22 @@ public record DirectoryLinkHandler(
       checkResult = checkPrefix(linkTok, link);
     }
     if (id == null || !checkResult) {
-      return false;
+      return Result.FAILED;
     }
 
     if (this.idSep() != null) {
       if (!linkTok.readStringEquals(this.idSep())) {
         log.trace("{} missing sep {}", link, this.idSep());
-        return false;
+        return Result.FAILED;
       }
     }
-    return true;
+
+    if (linkParts.length != this.directoryDepth() + 1) {
+      log.trace("{} depth is wrong", link);
+      return Result.MATCHED_PARTIAL;
+    } else {
+      return Result.MATCHED;
+    }
   }
 
   private Integer extractId(SuperStringTokenizer linkTok, LinkBuilder link) {

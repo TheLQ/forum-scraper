@@ -18,6 +18,7 @@ import sh.xana.forum.common.ipc.Subpage;
 import sh.xana.forum.server.dbutil.PageType;
 import sh.xana.forum.server.dbutil.ParserPage;
 import sh.xana.forum.server.parser.ForumStream;
+import sh.xana.forum.server.spider.LinkHandler.Result;
 
 public class Spider {
   private static final Logger log = LoggerFactory.getLogger(Spider.class);
@@ -121,25 +122,28 @@ public class Spider {
   private Subpage linkToSubpage(SpiderConfig config, ParserPage page, LinkBuilder link) {
     log.trace("{} start", link);
     PageType pageType = page.pageType();
-    boolean handled = false;
-    if (config.linkMultipage() != null) {
-      handled = config.linkMultipage().processLink(link);
+    Result handled;
+
+    log.trace("{} trying topic", link);
+    handled = config.linkTopic().processLink(link);
+    if (handled == Result.MATCHED) {
+      pageType = PageType.TopicPage;
     }
-    if (!handled) {
-      log.trace("{} trying topic", link);
-      handled = config.linkTopic().processLink(link);
-      if (handled) {
-        pageType = PageType.TopicPage;
-      }
-    }
-    if (!handled) {
+
+    if (handled == Result.FAILED) {
       log.trace("{} trying forum", link);
       handled = config.linkForum().processLink(link);
-      if (handled) {
+      if (handled == Result.MATCHED) {
         pageType = PageType.ForumList;
       }
     }
-    if (!handled) {
+
+    // TODO: Very specific to DirectoryLinkHandler
+    if (handled == Result.MATCHED_PARTIAL && config.linkMultipage() != null) {
+      handled = config.linkMultipage().processLink(link);
+    }
+
+    if (handled == Result.FAILED) {
       log.trace("{} failed to process link", link);
       return null;
     }

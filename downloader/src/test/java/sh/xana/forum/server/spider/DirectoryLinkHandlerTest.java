@@ -1,11 +1,10 @@
-package sh.xana.forum.server.spider.config;
+package sh.xana.forum.server.spider;
 
 import java.net.URISyntaxException;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 import sh.xana.forum.common.Position;
-import sh.xana.forum.server.spider.DirectoryLinkHandler;
-import sh.xana.forum.server.spider.LinkBuilder;
+import sh.xana.forum.server.spider.LinkHandler.Result;
 
 @Test
 public class DirectoryLinkHandlerTest {
@@ -82,6 +81,6 @@ public class DirectoryLinkHandlerTest {
 
   private boolean process(DirectoryLinkHandler h, String linkBase, String linkRelative)
       throws URISyntaxException {
-    return h.processLink(new LinkBuilder(linkBase + linkRelative, linkBase));
+    return h.processLink(new LinkBuilder(linkBase + linkRelative, linkBase)) == Result.MATCHED;
   }
 }

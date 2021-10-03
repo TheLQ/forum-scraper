@@ -9,5 +9,11 @@ import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
 public sealed interface LinkHandler permits DirectoryLinkHandler, QueryKeyLinkHandler {
 
   /** @return true if handled */
-  boolean processLink(LinkBuilder link);
+  Result processLink(LinkBuilder link);
+
+  enum Result {
+    FAILED,
+    MATCHED,
+    MATCHED_PARTIAL
+  }
 }

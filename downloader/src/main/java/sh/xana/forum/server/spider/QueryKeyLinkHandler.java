@@ -25,9 +25,9 @@ public record QueryKeyLinkHandler(
   }
 
   @Override
-  public boolean processLink(LinkBuilder link) {
+  public Result processLink(LinkBuilder link) {
     if (!link.relativeLink().equals(this.pathEquals())) {
-      return false;
+      return Result.FAILED;
     }
 
     List<NameValuePair> queryParams = link.queryParams();
@@ -71,6 +71,6 @@ public record QueryKeyLinkHandler(
     //    if (newUri.endsWith("/")) {
     //      newUri = newUri.substring(0, newUri.length() - 1);
     //    }
-    return true;
+    return Result.MATCHED;
   }
 }
