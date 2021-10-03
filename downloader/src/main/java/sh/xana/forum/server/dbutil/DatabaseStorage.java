@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.commons.collections4.ComparatorUtils;
 import org.apache.commons.dbcp2.ConnectionFactory;
 import org.apache.commons.dbcp2.DriverManagerConnectionFactory;
@@ -125,7 +126,7 @@ public class DatabaseStorage implements AutoCloseable {
   }
 
   /** Stage: Load pages for Parser */
-  public List<ParserPage> getParserPages(boolean limited, Condition... conditions) {
+  public Stream<ParserPage> getParserPagesStream(boolean limited, Condition... conditions) {
     StopWatch timer = new StopWatch();
     timer.start();
     var query =
@@ -145,22 +146,28 @@ public class DatabaseStorage implements AutoCloseable {
     if (limited) {
       query.limit(8000);
     }
-    var res =
-        query
-            .fetch()
-            .map(
-                e ->
-                    new ParserPage(
-                        e.value1(),
-                        e.value2(),
-                        e.value3(),
-                        e.value4(),
-                        e.value5(),
-                        e.value6(),
-                        e.value7()));
-    log.trace(
-        "getParserPages fetched " + res.size() + " in " + timer + System.lineSeparator() + query);
-    return res;
+    return query.stream()
+        .map(
+            e ->
+                new ParserPage(
+                    e.value1(),
+                    e.value2(),
+                    e.value3(),
+                    e.value4(),
+                    e.value5(),
+                    e.value6(),
+                    e.value7()));
+  }
+
+  public List<ParserPage> getParserPages(boolean limited, Condition... conditions) {
+    //    StopWatch timer = new StopWatch();
+    //    timer.start();
+    //
+    //    log.trace(
+    //        "getParserPages fetched " + res.size() + " in " + timer + System.lineSeparator() +
+    // query);
+    //    return res;
+    return getParserPagesStream(limited, conditions).collect(Collectors.toList());
   }
 
   public record OverviewEntry(

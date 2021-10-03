@@ -1,5 +1,6 @@
 package sh.xana.forum.server.dbutil;
 
+import java.net.URI;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
@@ -22,7 +23,6 @@ public class SiteCache {
   }
 
   public void refresh() {
-    log.debug("refresh...");
     sitesRef.set(dbStorage.getSites());
   }
 
@@ -50,6 +50,19 @@ public class SiteCache {
 
   public List<SitesRecord> recordByDomains(Collection<String> domains) {
     return mapByDomains(domains, e -> e);
+  }
+
+  public List<String> siteUrlsByDomains(Collection<String> domains) {
+    List<String> res =
+        lazyGet().stream()
+            .filter(e -> domains.contains(e.getDomain()))
+            .map(SitesRecord::getSiteurl)
+            .map(URI::toString)
+            .collect(Collectors.toList());
+    if (res.size() != domains.size()) {
+      throw new RuntimeException("Asked for " + domains.size() + " but found " + res.size());
+    }
+    return res;
   }
 
   public <T> List<T> mapByDomains(Collection<String> domains, Function<SitesRecord, T> mapper) {

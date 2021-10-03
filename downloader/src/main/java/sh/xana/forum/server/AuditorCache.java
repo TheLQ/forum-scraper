@@ -3,6 +3,8 @@ package sh.xana.forum.server;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser.Feature;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
@@ -13,12 +15,18 @@ import java.io.ObjectOutputStream;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
+import java.util.function.Predicate;
 import org.apache.commons.lang3.mutable.MutableBoolean;
+import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sh.xana.forum.common.Utils;
@@ -41,8 +49,8 @@ public class AuditorCache implements Iterable<byte[]> {
   private final Path parserPagePath;
   private final Path parserPageSizePath;
   private final Path urlAllPath;
-  private Integer cacheSize = null;
-  private Set<String> cachedUrlAll = null;
+  private Integer parserPageSize = null;
+  private ImmutableMap<String, Collection<String>> urlAll;
 
   public AuditorCache(ServerConfig config) throws IOException {
     parserPagePath = Path.of("parserPage.jsonChain");
@@ -102,6 +110,7 @@ public class AuditorCache implements Iterable<byte[]> {
         new ParserPage(null, null, null, 0, null, null, null);
     private final ObjectInputStream in;
     private byte[] next = null;
+    private boolean closed = false;
 
     private RawIterator() {
       try {
@@ -113,16 +122,32 @@ public class AuditorCache implements Iterable<byte[]> {
 
     @Override
     public boolean hasNext() {
+      if (closed) {
+        return false;
+      }
       fetchNext();
       return next != null;
     }
 
     @Override
     public byte[] next() {
+      if (closed) {
+        throw new IllegalStateException("Already closed");
+      }
       fetchNext();
       byte[] result = next;
       if (next == null) {
         throw new IllegalStateException("Already at EOF");
+      }
+      next = null;
+      return result;
+    }
+
+    public byte[] nextToNull() {
+      fetchNext();
+      byte[] result = next;
+      if (next == null) {
+        return null;
       }
       next = null;
       return result;
@@ -136,12 +161,14 @@ public class AuditorCache implements Iterable<byte[]> {
       try {
         next = (byte[]) in.readObject();
       } catch (EOFException e) {
+        closed = true;
         try {
           close();
         } catch (Exception e2) {
           throw new RuntimeException("Failed to close " + parserPagePath, e2);
         }
       } catch (Exception e) {
+        closed = true;
         throw new RuntimeException("Failed to read " + parserPagePath, e);
       }
     }
@@ -152,7 +179,7 @@ public class AuditorCache implements Iterable<byte[]> {
     }
   }
 
-  public Iterator<byte[]> iterator() {
+  public RawIterator iterator() {
     return new RawIterator();
   }
 
@@ -164,29 +191,92 @@ public class AuditorCache implements Iterable<byte[]> {
     }
   }
 
+  public List<ParserPage> loadPagesParallel(Predicate<ParserPage> filter)
+      throws InterruptedException {
+    StopWatch timer = new StopWatch();
+    timer.start();
+
+    ArrayBlockingQueue<byte[]> byteToJsonQueue = new ArrayBlockingQueue<>(2000);
+    List<ParserPage> pages = new ArrayList<>();
+    MutableBoolean processingDone = new MutableBoolean(false);
+    List<Thread> jsonThreads = new ArrayList<>();
+    Utils.threadRunner(
+        jsonThreads,
+        Runtime.getRuntime().availableProcessors() - 1,
+        "json",
+        () -> {
+          while (true) {
+            byte[] input;
+            while (true) {
+              input = byteToJsonQueue.poll(1, TimeUnit.SECONDS);
+              if (input != null) {
+                break;
+              } else if (processingDone.isTrue()) {
+                return;
+              }
+            }
+
+            ParserPage parserPage = toPage(input);
+            if (filter.test(parserPage)) {
+              synchronized (pages) {
+                pages.add(parserPage);
+              }
+            }
+          }
+        });
+
+    for (byte[] raw : this) {
+      byteToJsonQueue.put(raw);
+    }
+    processingDone.setTrue();
+    Utils.waitForAllThreads(jsonThreads);
+
+    log.info("Found query totalSize {} in {}", pages.size(), timer.formatTime());
+    return pages;
+  }
+
   public int getCacheSize() {
-    if (cacheSize == null) {
+    if (parserPageSize == null) {
       String str;
       try {
         str = Files.readString(parserPageSizePath);
       } catch (IOException e) {
         throw new RuntimeException("Failed to read", e);
       }
-      cacheSize = Integer.parseInt(str);
+      parserPageSize = Integer.parseInt(str);
     }
-    return cacheSize;
+    return parserPageSize;
   }
 
-  public Set<String> getPageUrls() {
-    if (cachedUrlAll == null) {
-      try {
-        // Performance: This will be processed in multiple threads. Normal HashSet is extremely slow
-        // because keySet (the actual set values) are generated *on demand*
-        cachedUrlAll = Files.lines(urlAllPath).collect(Collectors.toUnmodifiableSet());
-      } catch (Exception e) {
-        throw new RuntimeException("Failed to read " + urlAllPath, e);
+  public int loadPageUrls(Collection<String> siteUrls) {
+    try {
+      // Performance: This will be processed in multiple threads. Normal HashSet is extremely slow
+      // because keySet (the actual set values) are generated *on demand*
+      // cachedUrlAll = Files.lines(urlAllPath).collect(Collectors.toUnmodifiableSet());
+      AtomicInteger counter = new AtomicInteger();
+      Map<String, Collection<String>> map = new HashMap<>();
+      Files.lines(urlAllPath)
+          .forEach(
+              pageUrl -> {
+                for (String siteUrl : siteUrls) {
+                  if (pageUrl.startsWith(siteUrl)) {
+                    counter.incrementAndGet();
+                    map.computeIfAbsent(siteUrl, e -> new ArrayList<>()).add(pageUrl);
+                    break;
+                  }
+                }
+              });
+      for (String key : new ArrayList<>(map.keySet())) {
+        map.put(key, ImmutableSet.copyOf(map.get(key)));
       }
+      urlAll = ImmutableMap.copyOf(map);
+      return counter.get();
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to read " + urlAllPath, e);
     }
-    return cachedUrlAll;
+  }
+
+  public Collection<String> getPageUrls(String siteUrl) {
+    return urlAll.get(siteUrl);
   }
 }

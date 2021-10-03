@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import org.reflections.Reflections;
@@ -24,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.helpers.MessageFormatter;
 import sh.xana.forum.client.RequestException;
+import sh.xana.forum.common.AuditorExecutor.ExceptionRunnable;
 import sh.xana.forum.server.threads.WebServer;
 
 public class Utils {
@@ -110,15 +112,49 @@ public class Utils {
     }
   }
 
-  public static List<Thread> threadRunner(int numThreads, String namePrefix, Runnable runner) {
-    List<Thread> threads = new ArrayList<>();
+
+
+  public static void threadRunner(
+      Collection<Thread> threads, int numThreads, String namePrefix, ExceptionRunnable runner, Consumer<Throwable> exceptionHandler) {
     for (int i = 0; i < numThreads; i++) {
-      Thread thread = new Thread(runner);
+      Thread thread =
+          new Thread(
+              () -> {
+                try {
+                  runner.run();
+                } catch (Exception e) {
+                  exceptionHandler.accept(e);
+                }
+                log.info("ENDING");
+              });
       thread.setName(namePrefix + i);
       thread.setDaemon(false);
       thread.start();
       threads.add(thread);
     }
+  }
+
+  public static void threadRunner(
+      Collection<Thread> threads, int numThreads, String namePrefix, ExceptionRunnable runner) {
+    threadRunner(
+        threads, numThreads, namePrefix, runner, (throwable) -> log.error("CRASH", throwable));
+  }
+
+  @Deprecated
+  public static List<Thread> threadRunner(
+      int numThreads, String namePrefix, ExceptionRunnable runner) {
+    return threadRunner(
+        numThreads, namePrefix, runner, (throwable) -> log.error("CRASH", throwable));
+  }
+
+  @Deprecated
+  public static List<Thread> threadRunner(
+      int numThreads,
+      String namePrefix,
+      ExceptionRunnable runner,
+      Consumer<Throwable> exceptionHandler) {
+    List<Thread> threads = new ArrayList<>();
+    threadRunner(threads, numThreads, namePrefix, runner, exceptionHandler);
     return threads;
   }
 
@@ -162,5 +198,21 @@ public class Utils {
         .flatMap(filenameToPaths -> filenameToPaths.getValue().stream())
         .filter(path -> path.startsWith(pathStartsWith))
         .map(Thread.currentThread().getContextClassLoader()::getResource);
+  }
+
+  public static void waitForAllThreads(Collection<Thread> threads) throws InterruptedException {
+    while (anyThreadAlive(threads)) {
+      TimeUnit.SECONDS.sleep(1);
+    }
+  }
+
+  public static boolean anyThreadAlive(Collection<Thread> threads) {
+    for (Thread thread : threads) {
+      if (thread.isAlive()) {
+        return true;
+      }
+    }
+    threads.clear();
+    return false;
   }
 }

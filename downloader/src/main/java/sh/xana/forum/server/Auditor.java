@@ -5,10 +5,10 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -42,10 +42,8 @@ public class Auditor {
   private final ServerConfig config;
   private final Spider spider;
   private final AuditorCache cache;
-  private final ArrayList<String> errors = new ArrayList<>();
-  private final PerformanceCounter counter = new PerformanceCounter(log, 1000);
-  private BlockingQueue<LoadedPage> pageQueue;
-  private long totalSize;
+  private final HashSet<String> errors = new HashSet<>();
+  private final AuditorExecutor auditorPool = new AuditorExecutor(log);
 
   public static void main(String[] args) throws Exception {
     Auditor audit = new Auditor();
@@ -67,7 +65,7 @@ public class Auditor {
     cache = new AuditorCache(config);
   }
 
-  public void singleFile(String[] args) {
+  public void singleFile(String[] args) throws IOException {
     Path path = Path.of(args[1]);
 
     ParserPage page;
@@ -94,22 +92,18 @@ public class Auditor {
       log.info("Page URL " + page.pageUri());
     }
 
-    List<String> errors = new ArrayList<>();
-    //    List<Subpage> subpages = runParser(new QueueEntry(page), errors);
-    //
-    //    log.info("error size" + errors.size());
-    //    for (String error : errors) {
-    //      log.info("Error " + error);
-    //    }
-    //    for (Subpage subpage : subpages) {
-    //      log.info("Subpage {} {}", subpage.pageType(), subpage.link());
-    //    }
-    //    return;
+    List<Subpage> subpages = runSpider(new LoadedPage(page, Files.readAllBytes(path)));
+
+    log.info("error size" + errors.size());
+    for (String error : errors) {
+      log.info("Error " + error);
+    }
+    for (Subpage subpage : subpages) {
+      log.info("Subpage {} {}", subpage.pageType(), subpage.link());
+    }
   }
 
   public void massAudit() throws InterruptedException, ExecutionException, IOException {
-    log.info("query start");
-
     List<String> domains =
         List.of(
             // Validated with XenForo_F @ 8d57e93464511ff6b2d51c7c01949bea40720492
@@ -145,38 +139,20 @@ public class Auditor {
     List<UUID> domainSiteIds = dbStorage.siteCache.mapByDomains(domains, SitesRecord::getSiteid);
     Predicate<ParserPage> pageIsDomain = e -> domainSiteIds.contains(e.siteId());
 
-    //    var result = cache.cacheStreamParallel()
-    //        .filter(pageIsDomain)
-    //        .map(this::runParser)
-    //        .collect(Collectors.toList());
-
-    StopWatch timer = new StopWatch();
-    timer.start();
-    List<ParserPage> pages = new ArrayList<>();
-    for (byte[] pageBytes : cache) {
-      ParserPage page = cache.toPage(pageBytes);
-      if (domainSiteIds.contains(page.siteId())) {
-        pages.add(page);
-      }
-    }
-    totalSize = pages.size();
-    log.info("Found query totalSize {} in {}", totalSize, timer.formatTime());
+    List<ParserPage> pages = cache.loadPagesParallel(pageIsDomain);
 
     // preload cachedUrls
-    timer.reset();
+    StopWatch timer = new StopWatch();
     timer.start();
-    Set<String> pageUrls = cache.getPageUrls();
-    log.info("Loaded {} urls in {}", pageUrls.size(), timer.formatTime());
+    int urlCount = cache.loadPageUrls(dbStorage.siteCache.siteUrlsByDomains(domains));
+    log.info("Loaded {} urls in {}", urlCount, timer.formatTime());
 
     log.info("start");
-    counter.start();
-
-    Iterator<ParserPage> parserPageIterator = pages.iterator();
-
-    pageQueue = new ArrayBlockingQueue<>(2000);
+    PerformanceCounter counter = new PerformanceCounter(log, 1000);
+    BlockingQueue<LoadedPage> toSpiderQueue = new ArrayBlockingQueue<>(2000);
 
     ThreadLocal<Client> clientLocal = new ThreadLocal<>();
-    AuditorExecutor auditorPool = new AuditorExecutor(log);
+    Iterator<ParserPage> parserPageIterator = pages.iterator();
     auditorPool.startConsumerForSupplierToSize(
         "reader",
         16,
@@ -188,26 +164,45 @@ public class Auditor {
             client = new Client();
             clientLocal.set(client);
           }
-          //String s = new String(client.request(e.pageId()));
+          // String s = new String(client.request(e.pageId()));
           byte[] s = client.request(e.pageId());
-          pageQueue.put(new LoadedPage(e, s));
+          toSpiderQueue.put(new LoadedPage(e, s));
         });
 
-    auditorPool.startConsumer(pageQueue, 16, this::runParser);
+    auditorPool.startConsumerForSupplierToSize(
+        "spider",
+        16,
+        toSpiderQueue::take,
+        pages.size(),
+        e -> {
+          counter.incrementAndLog(pages.size(), toSpiderQueue.size());
+          runSpider(e);
+        }
+    );
+
+    log.info("waiting...");
+    auditorPool.waitForAllThreads();
+    log.info("DONE");
+
+    Files.write(Path.of("errors.log"), errors);
+    log.info("Wrote {} errors", errors.size());
   }
 
   public record LoadedPage(ParserPage page, byte[] data) {}
 
-  private List<Subpage> runParser(LoadedPage loadedPage) {
+  private List<Subpage> runSpider(LoadedPage loadedPage) {
     try {
-      counter.incrementAndLog(totalSize, pageQueue.size());
+      if (loadedPage.data().length == 0) {
+        throw new RuntimeException("BLANK PAGE");
+      }
       ParserPage page = loadedPage.page();
 
-      //Document doc = spider.loadPage(loadedPage.data(), page.siteUrl().toString());
-      Document doc = Jsoup.parse(new ByteArrayInputStream(loadedPage.data()), null, page.siteUrl().toString());
-            Stream<Subpage> subpagesStream = spider.spiderPage(page, doc);
-            subpagesStream.collect(Collectors.toList());
-      //      getErrors(subpagesStream, page.siteUrl().toString());
+      // Document doc = spider.loadPage(loadedPage.data(), page.siteUrl().toString());
+      Document doc =
+          Jsoup.parse(new ByteArrayInputStream(loadedPage.data()), null, page.siteUrl().toString());
+      Stream<Subpage> subpagesStream = spider.spiderPage(page, doc);
+      //            subpagesStream.collect(Collectors.toList());
+      return getErrors(subpagesStream, page.siteUrl().toString(), page.pageId());
     } catch (LoginRequiredException e) {
       // nothing
     } catch (ParserException e) {
@@ -222,27 +217,20 @@ public class Auditor {
     return List.of();
   }
 
-  private void getErrors(Stream<Subpage> subpagesStream, String siteUrl) {
-    List<String> subUrls = subpagesStream.map(Subpage::link).collect(Collectors.toList());
-
-    for (String url : cache.getPageUrls()) {
-      if (!url.startsWith(siteUrl)) {
-        continue;
-      }
-
-      if (!subUrls.contains(url)) {
-        synchronized (errors) {
-          errors.add("parser missing url " + url);
-        }
-      }
+  private List<Subpage> getErrors(Stream<Subpage> subpagesStream, String siteUrl, UUID pageId) {
+    List<Subpage> subUrls = subpagesStream.collect(Collectors.toList());
+    if (subUrls.isEmpty()) {
+      errors.add(pageId + " No pages matched");
+      return List.of();
     }
 
-    for (String subUrl : subUrls) {
-      if (!cache.getPageUrls().contains(subUrl)) {
-        synchronized (errors) {
-          errors.add("db missing url " + subUrl);
-        }
+    Collection<String> dbUrls = cache.getPageUrls(siteUrl);
+    for (Subpage subUrl : subUrls) {
+      String link = subUrl.link();
+      if (!dbUrls.contains(link)) {
+        errors.add("db missing url " + link);
       }
     }
+    return subUrls;
   }
 }

@@ -111,7 +111,10 @@ public class AuditorExecutor {
                     break;
                   }
 
-                  outputQueue.put(converter.run(entry));
+                  Output run = converter.run(entry);
+                  if (run != null) {
+                    outputQueue.put(run);
+                  }
                 } catch (Exception e) {
                   log.error("FAILED TO PUT", e);
                   // System.exit(1);
@@ -142,7 +145,6 @@ public class AuditorExecutor {
                   log.error("PROCESSOR ERROR", e);
                 }
               }
-              log.info("Ending processor");
             });
     allThreads.addAll(outputThreads);
   }
@@ -155,7 +157,7 @@ public class AuditorExecutor {
       ExceptionConsumer<Input> consumer) {
     log.info("starting {} {} threads", threadsNum, prefix);
 
-    //PerformanceCounter readCounter = new PerformanceCounter(log, 1000);
+    // PerformanceCounter readCounter = new PerformanceCounter(log, 1000);
     AtomicInteger readCounter = new AtomicInteger();
     List<Thread> inputThreads =
         Utils.threadRunner(
@@ -163,11 +165,10 @@ public class AuditorExecutor {
             prefix + "-",
             () -> {
               while (true) {
-                //int idx = readCounter.incrementAndLog(supplierTotalSize);
+                // int idx = readCounter.incrementAndLog(supplierTotalSize);
                 int idx = readCounter.getAndIncrement();
                 try {
                   if (idx >= supplierTotalSize) {
-                    log.info("End");
                     break;
                   }
 
@@ -183,9 +184,7 @@ public class AuditorExecutor {
   }
 
   public void waitForAllThreads() throws InterruptedException {
-    while (anyThreadAlive()) {
-      TimeUnit.SECONDS.sleep(10);
-    }
+    Utils.waitForAllThreads(allThreads);
   }
 
   public interface ExceptionFunction<Input, Output> {
@@ -200,12 +199,11 @@ public class AuditorExecutor {
     Output run() throws Exception;
   }
 
+  public interface ExceptionRunnable {
+    void run() throws Exception;
+  }
+
   public boolean anyThreadAlive() {
-    for (Thread thread : allThreads) {
-      if (thread.isAlive()) {
-        return true;
-      }
-    }
-    return false;
+    return Utils.anyThreadAlive(allThreads);
   }
 }
