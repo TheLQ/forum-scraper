@@ -43,6 +43,15 @@ public record SpiderConfig(
     }
   }
 
+  public static SpiderConfig findForDomain(List<SpiderConfig> configs, String domain) {
+    for (SpiderConfig config : configs) {
+      if (config.domains().contains(domain)) {
+        return config;
+      }
+    }
+    throw new RuntimeException("cannot find spider config for domain " + domain);
+  }
+
   public static SpiderConfig load(URL path) {
     log.debug("loading {}", path);
     SpiderConfig spiderConfig;

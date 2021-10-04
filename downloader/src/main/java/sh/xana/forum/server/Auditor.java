@@ -128,22 +128,17 @@ public class Auditor {
             // "www.wrxtuners.com"
             //
             // vb_query_remap - validated
-            //"xlforum.net"
+            // "xlforum.net"
             //
             // vb_query - validated
-            //"forums.nasioc.com"
+            // "forums.nasioc.com"
             // "forum.miata.net" // check with regex extractor
             //
-            // vb_dir_html
-            "www.corvetteforum.com"
+            // vb_dir_html - validated, rip 200k pages :-(
+            // "www.corvetteforum.com"
             //
-            // "www.rx7club.com", "www.rx8club.com"
-            //
-            // vBulletin_Url1
-            // "forum.miata.net"
-            // vBulletin_Url2
-            // "forums.nasioc.com"
-            // "xlforum.net"
+            // vb_dir
+            "www.rx7club.com", "www.rx8club.com"
             //
             // Forkboard
             // "www.sr20-forum.com"

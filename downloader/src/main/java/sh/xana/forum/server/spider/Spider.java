@@ -58,12 +58,7 @@ public class Spider {
   public Stream<Subpage> spiderPage(ParserPage page, Document doc) {
     try {
       String domain = page.pageUri().getHost();
-      SpiderConfig spiderConfig =
-          configs.stream()
-              .filter(e -> e.domains().contains(domain))
-              .findFirst()
-              .orElseThrow(
-                  () -> new RuntimeException("cannot find spider config for domain " + domain));
+      SpiderConfig spiderConfig = SpiderConfig.findForDomain(configs, domain);
       // log.info("found " + spiderConfig.source());
 
       return doc.getElementsByTag("a").stream()

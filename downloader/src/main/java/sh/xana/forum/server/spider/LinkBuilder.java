@@ -158,10 +158,20 @@ public class LinkBuilder {
     while (true) {
       for (int i = 0; i < subUrl.length(); i++) {
         char character = subUrl.charAt(i);
-        if (character < 32 || character > 126) {
-          log.trace("Replacing char {} in {}", character, subUrl);
-          subUrl = subUrl.replace("" + character, "");
-          continue Outer;
+        if ((character < 48 || character > 57)
+            && (character < 65 || character > 90)
+            && (character < 97 || character > 122)) {
+          switch (character) {
+            case '-', '_', '.', '?', '&', '/' -> {
+              // valid, should handle
+              // last 3 are url parameters, so exclude
+            }
+            default -> {
+              log.trace("Replacing char {} in {}", character, subUrl);
+              subUrl = subUrl.replace("" + character, "");
+              continue Outer;
+            }
+          }
         }
       }
       break;
