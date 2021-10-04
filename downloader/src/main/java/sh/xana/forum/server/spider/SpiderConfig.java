@@ -18,7 +18,7 @@ public record SpiderConfig(
     @NotNull @JsonProperty(required = true) LinkHandler linkForum,
     @NotNull @JsonProperty(required = true) LinkHandler linkTopic,
     @Nullable LinkHandler linkMultipage,
-    @Nullable String excludePathStart,
+    @Nullable List<String> excludePathStart,
     @Nullable String homepageAlias,
     @NotNull @JsonProperty(required = true) List<Pattern> validRegex) {
   private static final Logger log = LoggerFactory.getLogger(SpiderConfig.class);

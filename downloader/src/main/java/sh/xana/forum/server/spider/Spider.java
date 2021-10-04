@@ -126,6 +126,14 @@ public class Spider {
   }
 
   private Subpage linkToSubpage(SpiderConfig config, ParserPage page, LinkBuilder link) {
+    if (config.excludePathStart() != null) {
+      for (String relativeBlock : config.excludePathStart()) {
+        if (link.relativeLink().startsWith(relativeBlock)) {
+          return null;
+        }
+      }
+    }
+
     log.trace("{} start", link);
     PageType pageType = page.pageType();
     Result handled;
@@ -154,7 +162,6 @@ public class Spider {
       return null;
     }
 
-
     try {
       link.validate(config.validRegex());
     } catch (LinkValidationException e) {
@@ -166,7 +173,6 @@ public class Spider {
         return null;
       }
     }
-
 
     return new Subpage(link.fullLink(), pageType);
   }

@@ -27,7 +27,8 @@ public record QueryKeyLinkHandler(
   @Override
   public Result processLink(LinkBuilder link) {
     if (!link.relativeLink().startsWith(this.pathPrefix())) {
-      log.trace("{} relative {} doesn't start with {}", link, link.relativeLink(), this.pathPrefix());
+      log.trace(
+          "{} relative {} doesn't start with {}", link, link.relativeLink(), this.pathPrefix());
       return Result.FAILED;
     }
 
@@ -69,7 +70,6 @@ public record QueryKeyLinkHandler(
     if (changed.isTrue()) {
       link.queryParams(queryParams);
     }
-
 
     return Result.MATCHED;
   }

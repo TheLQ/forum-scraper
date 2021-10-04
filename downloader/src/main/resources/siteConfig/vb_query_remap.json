@@ -29,7 +29,9 @@
     }
   },
   "linkMultipage": null,
-  "excludePathStart": "archive/",
+  "excludePathStart": [
+    "archive/"
+  ],
   "homepageAlias": "index.php",
   "validRegex": [
     "index.php",

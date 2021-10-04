@@ -112,8 +112,8 @@ public class LinkBuilder {
           // edge case for stripped slash mode enabled, getting the root
           return "";
         }
-      linkRelativeCached = uriStr.substring(baseUri.length());
-        } catch (Exception e) {
+        linkRelativeCached = uriStr.substring(baseUri.length());
+      } catch (Exception e) {
         throw e;
       }
     }
@@ -136,8 +136,8 @@ public class LinkBuilder {
 
   public void endingSlashMust(boolean exist) {
     if (exist && !builder.getPath().endsWith("/")) {
-        builder.setPath(builder.getPath() + "/");
-        invalidateCachedString();
+      builder.setPath(builder.getPath() + "/");
+      invalidateCachedString();
     } else if (!exist && builder.getPath().endsWith("/")) {
       // potentially might have query args, so recaclulate whole uri
       String newUri = builder.toString();
