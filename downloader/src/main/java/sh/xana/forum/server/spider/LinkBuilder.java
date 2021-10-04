@@ -106,7 +106,16 @@ public class LinkBuilder {
 
   public String relativeLink() {
     if (linkRelativeCached == null) {
-      linkRelativeCached = builder.toString().substring(baseUri.length());
+      try {
+        String uriStr = builder.toString();
+        if (uriStr.length() == baseUri.length() - 1) {
+          // edge case for stripped slash mode enabled, getting the root
+          return "";
+        }
+      linkRelativeCached = uriStr.substring(baseUri.length());
+        } catch (Exception e) {
+        throw e;
+      }
     }
     return linkRelativeCached;
   }
@@ -125,26 +134,20 @@ public class LinkBuilder {
     invalidateCachedString();
   }
 
-  public void pathMustEndWithSlash() {
-    if (builder.getPath().endsWith("/")) {
-      return;
+  public void endingSlashMust(boolean exist) {
+    if (exist && !builder.getPath().endsWith("/")) {
+        builder.setPath(builder.getPath() + "/");
+        invalidateCachedString();
+    } else if (!exist && builder.getPath().endsWith("/")) {
+      // potentially might have query args, so recaclulate whole uri
+      String newUri = builder.toString();
+      try {
+        builder = new URIBuilder(newUri.substring(0, newUri.length() - 1));
+      } catch (URISyntaxException e) {
+        throw new IllegalStateException("Can't remap to " + newUri, e);
+      }
+      invalidateCachedString();
     }
-    builder.setPath(builder.getPath() + "/");
-    invalidateCachedString();
-  }
-
-  public void noEndSlashWithQuery() {
-    if (!fullLink().endsWith("/")) {
-      return;
-    }
-    // potentially might have query args, so recaclulate whole uri
-    String newUri = builder.toString();
-    try {
-      builder = new URIBuilder(newUri.substring(0, newUri.length() - 1));
-    } catch (URISyntaxException e) {
-      throw new IllegalStateException("Can't remap to " + newUri, e);
-    }
-    invalidateCachedString();
   }
 
   public void validate(List<Pattern> patterns) {

@@ -32,7 +32,7 @@ public record QueryKeyLinkHandler(
     }
 
     // remove unnessesary /
-    link.noEndSlashWithQuery();
+    link.endingSlashMust(false);
 
     List<NameValuePair> queryParams = link.queryParams();
     MutableBoolean changed = new MutableBoolean(false);

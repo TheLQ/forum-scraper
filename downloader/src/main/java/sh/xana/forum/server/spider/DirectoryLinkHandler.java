@@ -14,7 +14,8 @@ public record DirectoryLinkHandler(
     int directoryDepth,
     @Nullable Position idPosition,
     @Nullable String idSep,
-    @Nullable String idPrefix)
+    @Nullable String idPrefix,
+    boolean endingSlashRemoved)
     implements LinkHandler {
   private static final Logger log = LoggerFactory.getLogger(DirectoryLinkHandler.class);
 
@@ -28,7 +29,7 @@ public record DirectoryLinkHandler(
     }
 
     // must end with dir slash (everyone does it?)
-    link.pathMustEndWithSlash();
+    link.endingSlashMust(!endingSlashRemoved);
 
     // strip extras
     for (NameValuePair queryParam : link.queryParams()) {

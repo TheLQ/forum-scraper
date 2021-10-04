@@ -130,12 +130,14 @@ public class Auditor {
             // vb_query_remap - validated
             //"xlforum.net"
             //
-            // vb_query
-//            "forums.nasioc.com",
-            "forum.miata.net"
+            // vb_query - validated
+            //"forums.nasioc.com"
+            // "forum.miata.net" // check with regex extractor
             //
-            // vBulletin_IB
-            // "www.corvetteforum.com", "www.rx7club.com", "www.rx8club.com"
+            // vb_dir_html
+            "www.corvetteforum.com"
+            //
+            // "www.rx7club.com", "www.rx8club.com"
             //
             // vBulletin_Url1
             // "forum.miata.net"
