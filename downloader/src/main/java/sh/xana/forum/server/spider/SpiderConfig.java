@@ -1,6 +1,7 @@
 package sh.xana.forum.server.spider;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
@@ -66,10 +67,27 @@ public record SpiderConfig(
     return spiderConfig;
   }
 
+  public static SpiderConfig loadResource(String path) {
+    log.debug("loading {}", path);
+    SpiderConfig spiderConfig;
+    try {
+      // This works even for non-module runtimes
+      InputStream in = SpiderConfig.class.getModule().getResourceAsStream(path);
+
+      objPass.set(path);
+      spiderConfig = Utils.jsonMapper.readValue(in, SpiderConfig.class);
+      objPass.remove();
+    } catch (Throwable e) {
+      throw new RuntimeException("Failed to load " + path, e);
+    }
+
+    return spiderConfig;
+  }
+
   public static List<SpiderConfig> load() {
     List<SpiderConfig> result =
         Utils.listResourceDirectory("siteConfig", ".json")
-            .map(SpiderConfig::load)
+            .map(SpiderConfig::loadResource)
             .collect(Collectors.toList());
     if (result.isEmpty()) {
       throw new RuntimeException("no configs loaded");

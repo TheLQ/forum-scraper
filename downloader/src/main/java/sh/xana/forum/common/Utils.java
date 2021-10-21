@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Redirect;
 import java.net.http.HttpRequest;
@@ -36,7 +35,7 @@ public class Utils {
   public static final HttpClient httpClient =
       HttpClient.newBuilder().followRedirects(Redirect.ALWAYS).build();
   public static final ObjectMapper jsonMapper = new ObjectMapper();
-  private static final Reflections reflections = new Reflections(null, Scanners.Resources);
+  private static final Reflections reflections = new Reflections("siteConfig", Scanners.Resources);
 
   public static String BACKEND_SERVER;
   public static String BACKEND_KEY;
@@ -193,14 +192,15 @@ public class Utils {
     }
   }
 
-  public static Stream<URL> listResourceDirectory(String pathStartsWith, String fileEndsWith) {
-    // Search the internal store since the regex is somewhat inflexible, inefficient,
-    // Map<ResourceType, Map<Filename, Set<FullRelativePath>>
+  /**
+   * Scan for files in the current module's resource directory
+   */
+  public static Stream<String> listResourceDirectory(String pathStartsWith, String fileEndsWith) {
+    // TODO: Do we really need the fancy reflections dependency?
     return reflections.getStore().get(Scanners.Resources.index()).entrySet().stream()
         .filter(filenameToPaths -> filenameToPaths.getKey().endsWith(fileEndsWith))
         .flatMap(filenameToPaths -> filenameToPaths.getValue().stream())
-        .filter(path -> path.startsWith(pathStartsWith))
-        .map(Thread.currentThread().getContextClassLoader()::getResource);
+        .filter(path -> path.startsWith(pathStartsWith));
   }
 
   public static void waitForAllThreads(Collection<Thread> threads) throws InterruptedException {
